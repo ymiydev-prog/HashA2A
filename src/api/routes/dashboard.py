@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
+import json
 
 router = APIRouter(tags=["dashboard"])
 
@@ -9,58 +10,430 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HashA2A — Dashboard</title>
-<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
 <style>
+:root {
+  --bg-primary: #0b1120;
+  --bg-card: #131b2e;
+  --bg-header: #0d1526;
+  --border: #1e2a45;
+  --text-primary: #e8edf5;
+  --text-secondary: #7b8cae;
+  --text-muted: #4a5a7a;
+  --accent-1: #3b82f6;
+  --accent-2: #8b5cf6;
+  --accent-3: #06b6d4;
+  --green: #22c55e;
+  --yellow: #eab308;
+  --red: #ef4444;
+  --radius: 12px;
+  --gap: 16px;
+}
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-.header { background: linear-gradient(135deg, #1e293b, #0f172a); border-bottom: 1px solid #334155; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-.header h1 { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.header span { font-size: 0.875rem; color: #94a3b8; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; padding: 1.5rem 2rem; }
-.card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.25rem; }
-.card h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.75rem; }
-.card .big { font-size: 2rem; font-weight: 700; }
-.provider { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #1e293b; }
-.provider:last-child { border-bottom: none; }
-.provider .name { font-weight: 600; }
-.provider .price { font-family: monospace; color: #22c55e; }
-.provider .trust { font-family: monospace; }
-.badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-.badge-green { background: #22c55e22; color: #22c55e; border: 1px solid #22c55e44; }
-.badge-blue { background: #3b82f622; color: #3b82f6; border: 1px solid #3b82f644; }
-.badge-yellow { background: #eab30822; color: #eab308; border: 1px solid #eab30844; }
-.badge-red { background: #ef444422; color: #ef4444; border: 1px solid #ef444444; }
-.badge-gray { background: #64748b22; color: #94a3b8; border: 1px solid #64748b44; }
-.topic { background: #0f172a; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-family: monospace; font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem; }
-.progress-bar { height: 0.5rem; background: #334155; border-radius: 9999px; margin-top: 0.5rem; overflow: hidden; }
-.progress-fill { height: 100%; border-radius: 9999px; transition: width 0.5s ease; }
-@media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+.dashboard { max-width: 1440px; margin: 0 auto; padding: var(--gap); }
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #0f1d3a, #1a0e3a);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: var(--gap);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.header h1 { font-size: 22px; font-weight: 700; }
+.header h1 span { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600;
+}
+.badge-live { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+.badge-version { background: rgba(59,130,246,0.1); color: var(--accent-1); border: 1px solid rgba(59,130,246,0.2); }
+
+/* KPI Row */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.kpi-card.blue::before { background: var(--accent-1); }
+.kpi-card.purple::before { background: var(--accent-2); }
+.kpi-card.cyan::before { background: var(--accent-3); }
+.kpi-card.green::before { background: var(--green); }
+.kpi-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.kpi-value { font-size: 30px; font-weight: 700; margin-bottom: 2px; }
+.kpi-sub { font-size: 13px; color: var(--text-muted); }
+
+/* Chart Row */
+.chart-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+@media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+}
+.chart-card h3 { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 16px; }
+.chart-card canvas { max-height: 260px; max-width: 100%; }
+
+/* Providers Table */
+.table-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: var(--gap);
+}
+.table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+.table-header h3 { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+.table-filters { display: flex; gap: 8px; align-items: center; }
+.table-filters select {
+  background: var(--bg-primary); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 10px; font-size: 12px; cursor: pointer;
+}
+.prov-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.prov-table thead th {
+  text-align: left; padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted); font-weight: 600; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  cursor: pointer; user-select: none;
+}
+.prov-table thead th:hover { color: var(--text-secondary); }
+.prov-table tbody td { padding: 10px 12px; border-bottom: 1px solid rgba(30,42,69,0.5); }
+.prov-table tbody tr:hover { background: rgba(59,130,246,0.04); }
+.score-bar { height: 4px; border-radius: 2px; margin-top: 4px; }
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+/* Footer */
+.footer { text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px; }
+
+/* Loading */
+.loading { text-align: center; padding: 60px; color: var(--text-muted); }
+.loading::after { content: ''; display: block; width: 32px; height: 32px; margin: 16px auto; border: 3px solid var(--border); border-top-color: var(--accent-1); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
-<div class="header">
-  <div>
-    <h1>🏪 HashA2A</h1>
-    <span>Agent-to-Agent Intelligence Layer</span>
+<div class="dashboard">
+  <div class="header">
+    <div>
+      <h1>🏪 <span>HashA2A</span></h1>
+      <div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">Agent-to-Agent Intelligence Layer</div>
+    </div>
+    <div class="header-right">
+      <span class="badge badge-live">● Live</span>
+      <span class="badge badge-version">v<span id="agent-version">—</span></span>
+    </div>
   </div>
-  <div id="status-badge"><span class="badge badge-green">● Live</span></div>
-</div>
 
-<div class="grid" hx-get="/dashboard/data" hx-trigger="load, every 5s" hx-swap="innerHTML">
-  <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #64748b;">
-    Loading dashboard data...
+  <div id="dashboard-content">
+    <div class="loading">Loading dashboard data…</div>
+  </div>
+
+  <div class="footer">
+    HashA2A · Data refreshes every 10s · HCS audit trail · HIP-991 + x402 payments
   </div>
 </div>
 
 <script>
-setInterval(() => {
-  document.querySelectorAll('[hx-trigger*="every"]').forEach(el => {
-    htmx.trigger(el, 'every');
+let charts = {};
+
+function initCharts() {
+  Chart.defaults.color = '#7b8cae';
+  Chart.defaults.borderColor = '#1e2a45';
+}
+
+function renderDashboard(data) {
+  const container = document.getElementById('dashboard-content');
+
+  if (data.error) {
+    container.innerHTML = `<div class="loading" style="color:var(--red)">⚠️ ${data.error}</div>`;
+    return;
+  }
+
+  document.getElementById('agent-version').textContent = data.version || '—';
+
+  const providers = data.providers || [];
+  const totalStaked = providers.reduce((s, p) => s + (p.staked_hbar || 0), 0);
+  const totalReqs = data.total_requests || 0;
+  const avgTrust = providers.length ? providers.reduce((s, p) => s + (p.trust_score || 0), 0) / providers.length : 0;
+
+  container.innerHTML = `
+    <div class="kpi-row">
+      <div class="kpi-card blue">
+        <div class="kpi-label">Requests Served</div>
+        <div class="kpi-value">${fmt(totalReqs)}</div>
+        <div class="kpi-sub">${providers.length} active providers</div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-label">Avg Trust Score</div>
+        <div class="kpi-value">${avgTrust.toFixed(0)}</div>
+        <div class="kpi-sub">weighted reputation</div>
+      </div>
+      <div class="kpi-card cyan">
+        <div class="kpi-label">HBAR Staked</div>
+        <div class="kpi-value">${fmt(totalStaked)}</div>
+        <div class="kpi-sub">ℏ across all providers</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Payments</div>
+        <div class="kpi-value" style="font-size:22px;">HIP-991 + x402</div>
+        <div class="kpi-sub">HBAR · USDC (Base)</div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Provider Trust Scores</h3>
+        <canvas id="trust-chart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Cost per Query (HBAR)</h3>
+        <canvas id="cost-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <h3>📦 Providers</h3>
+        <div class="table-filters">
+          <select id="filter-min-trust" onchange="applyTableFilter()">
+            <option value="0">Min Trust: Any</option>
+            <option value="70">Min Trust: ≥70</option>
+            <option value="50">Min Trust: ≥50</option>
+            <option value="30">Min Trust: ≥30</option>
+          </select>
+          <select id="filter-cost" onchange="applyTableFilter()">
+            <option value="all">Any Price</option>
+            <option value="low">≤ 0.3 HBAR</option>
+            <option value="mid">≤ 0.5 HBAR</option>
+            <option value="high">> 0.5 HBAR</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="prov-table" id="prov-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('name')">Provider</th>
+              <th onclick="sortTable('trust_score')">Trust Score</th>
+              <th onclick="sortTable('cost_hbar')">Cost (HBAR)</th>
+              <th onclick="sortTable('staked_hbar')">Staked</th>
+              <th onclick="sortTable('success_rate')">Success</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  window._allProviders = providers;
+  applyTableFilter();
+  renderTrustChart(providers);
+  renderCostChart(providers);
+}
+
+function renderTrustChart(providers) {
+  const canvas = document.getElementById('trust-chart');
+  if (!canvas) return;
+  if (charts.trust) charts.trust.destroy();
+
+  const labels = providers.map(p => p.name.split(' ')[0]);
+  const scores = providers.map(p => p.trust_score || 0);
+  const colors = scores.map(s => s >= 70 ? '#22c55e' : s >= 50 ? '#eab308' : '#ef4444');
+
+  charts.trust = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: scores,
+        backgroundColor: colors.map(c => c + 'CC'),
+        borderColor: colors,
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `Trust: ${ctx.parsed.x}/100` } }
+      },
+      scales: {
+        x: { beginAtZero: true, max: 100, grid: { color: '#1e2a4544' } },
+        y: { grid: { display: false } }
+      }
+    }
   });
-}, 5000);
+}
+
+function renderCostChart(providers) {
+  const canvas = document.getElementById('cost-chart');
+  if (!canvas) return;
+  if (charts.cost) charts.cost.destroy();
+
+  charts.cost = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: providers.map(p => p.name),
+      datasets: [{
+        data: providers.map(p => p.cost_hbar),
+        backgroundColor: ['#3b82f6CC', '#8b5cf6CC', '#06b6d4CC', '#22c55eCC', '#eab308CC'],
+        borderColor: '#131b2e',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, color: '#7b8cae' } },
+        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed} HBAR` } }
+      }
+    }
+  });
+}
+
+let _sortCol = 'trust_score', _sortDir = 'desc';
+
+function applyTableFilter() {
+  const minTrust = parseInt(document.getElementById('filter-min-trust').value);
+  const costFilter = document.getElementById('filter-cost').value;
+
+  let filtered = window._allProviders.filter(p => {
+    if (p.trust_score < minTrust) return false;
+    if (costFilter === 'low' && p.cost_hbar > 0.3) return false;
+    if (costFilter === 'mid' && p.cost_hbar > 0.5) return false;
+    if (costFilter === 'high' && p.cost_hbar <= 0.5) return false;
+    return true;
+  });
+
+  sortData(filtered);
+}
+
+function sortData(data) {
+  const sorted = [...data].sort((a, b) => {
+    let aVal = a[_sortCol] ?? 0, bVal = b[_sortCol] ?? 0;
+    if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+    if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+    return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+  });
+  if (_sortDir === 'desc') sorted.reverse();
+  renderTable(sorted);
+}
+
+function sortTable(col) {
+  if (_sortCol === col) _sortDir = _sortDir === 'asc' ? 'desc' : 'asc';
+  else { _sortCol = col; _sortDir = 'desc'; }
+  sortData(window._allProviders);
+}
+
+function renderTable(providers) {
+  const tbody = document.getElementById('table-body');
+  if (!tbody) return;
+
+  tbody.innerHTML = providers.map(p => {
+    const ts = p.trust_score || 0;
+    const color = ts >= 70 ? 'var(--green)' : ts >= 50 ? 'var(--yellow)' : 'var(--red)';
+    const barColor = ts >= 70 ? '#22c55e' : ts >= 50 ? '#eab308' : '#ef4444';
+    return `<tr>
+      <td><strong>${p.name}</strong><br><span style="font-size:11px;color:var(--text-muted);">${p.provider_id}</span></td>
+      <td>
+        <span style="color:${color};font-weight:600;">${ts.toFixed(0)}</span>
+        <div class="score-bar" style="width:${ts}%;background:${barColor};"></div>
+      </td>
+      <td>${p.cost_hbar} ℏ</td>
+      <td>${(p.staked_hbar || 0).toFixed(0)} ℏ</td>
+      <td>${((p.success_rate || 0) * 100).toFixed(0)}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function fmt(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return n.toLocaleString();
+}
+
+async function fetchData() {
+  try {
+    const resp = await fetch('/dashboard/data');
+    const data = await resp.json();
+    initCharts();
+    renderDashboard(data);
+  } catch (e) {
+    document.getElementById('dashboard-content').innerHTML =
+      `<div class="loading" style="color:var(--red)">⚠️ Connection error</div>`;
+  }
+}
+
+fetchData();
+setInterval(fetchData, 10000);
 </script>
 </body>
 </html>"""
+
+
+def _collect_dashboard_data(request: Request) -> dict:
+    settings = getattr(request.app.state, "settings", None)
+    provider_registry = getattr(request.app.state, "provider_registry", None)
+    agent_registry = getattr(request.app.state, "agent_registry", None)
+
+    providers = []
+    if provider_registry:
+        for p in provider_registry.list_all():
+            r = p.reputation
+            providers.append({
+                "provider_id": p.provider_id,
+                "name": p.name,
+                "cost_hbar": p.cost_hbar,
+                "trust_score": round(r.trust_score, 1),
+                "staked_hbar": r.staked_hbar,
+                "success_rate": round(r.successful_requests / r.total_requests, 3) if r.total_requests > 0 else 1.0,
+                "total_requests": r.total_requests,
+            })
+
+    return {
+        "version": getattr(settings, "agent_version", "?"),
+        "total_requests": getattr(agent_registry, "_total_requests_served", 0) if agent_registry else 0,
+        "providers": providers,
+    }
 
 
 @router.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
@@ -70,86 +443,8 @@ async def get_dashboard():
 
 @router.get("/dashboard/data", include_in_schema=False)
 async def get_dashboard_data(request: Request):
-    from fastapi.responses import JSONResponse
-
-    settings = getattr(request.app.state, "settings", None)
-    hedera = getattr(request.app.state, "hedera", None)
-    provider_registry = getattr(request.app.state, "provider_registry", None)
-    agent_registry = getattr(request.app.state, "agent_registry", None)
-
-    providers_html = ""
-    total_staked = 0
-    if provider_registry:
-        for p in provider_registry.list_all():
-            r = p.reputation
-            trust = r.trust_score
-            total_staked += r.staked_hbar
-            trust_badge = "badge-green" if trust >= 70 else "badge-yellow" if trust >= 40 else "badge-red"
-            providers_html += f"""<div class="provider">
-  <div>
-    <div class="name">{p.name}</div>
-    <div style="font-size:0.75rem;color:#64748b;">{p.provider_id} · {r.total_requests} req</div>
-  </div>
-  <div style="text-align:right;">
-    <div class="price">{p.cost_hbar} HBAR</div>
-    <div class="trust"><span class="badge {trust_badge}">{trust:.0f}</span></div>
-  </div>
-</div>"""
-
-    topics_html = ""
-    if hedera:
-        import asyncio
-        loop = asyncio.new_event_loop()
-        try:
-            topics_html = f"""<div class="topic">📥 Inbound: {loop.run_until_complete(hedera.get_or_create_inbound_topic())}</div>
-<div class="topic">📤 Outbound: {loop.run_until_complete(hedera.get_or_create_outbound_topic())}</div>
-<div class="topic">📜 Audit: {loop.run_until_complete(hedera.get_or_create_audit_topic())}</div>"""
-        except Exception:
-            topics_html = '<div class="topic" style="color:#ef4444;">⚠️ Hedera not configured</div>'
-
-    html = f"""
-<div class="card">
-  <h3>🏪 Agent Status</h3>
-  <div class="big">{agent_registry._total_requests_served if agent_registry else 0}</div>
-  <div style="color:#64748b;font-size:0.875rem;">Total Requests Served</div>
-  <div style="margin-top: 0.75rem; display: flex; gap: 1rem;">
-    <div><span style="color:#22c55e;">●</span> Live</div>
-    <div><span style="color:#94a3b8;">v{getattr(settings, 'agent_version', '?')}</span></div>
-  </div>
-</div>
-
-<div class="card">
-  <h3>💰 Treasury</h3>
-  <div class="big">{total_staked:.0f}</div>
-  <div style="color:#64748b;font-size:0.875rem;">Total HBAR Staked</div>
-  {topics_html}
-</div>
-
-<div class="card" style="grid-column: span 2;">
-  <h3>📦 Providers</h3>
-  <div class="progress-bar"><div class="progress-fill" style="width:{min(len(providers_html.split('</div>')) * 10, 100)}%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);"></div></div>
-  {providers_html}
-</div>
-
-<div class="card" style="grid-column: span 2;">
-  <h3>📡 Endpoints</h3>
-  <div class="topic">GET /api/v1/providers — List providers</div>
-  <div class="topic">POST /api/v1/requests — New data request</div>
-  <div class="topic">GET /api/v1/agent/profile — Agent info</div>
-  <div class="topic">GET /api/v1/agent/topics — HCS topics</div>
-  <div class="topic">📡 MCP: /mcp — MCP Server endpoint</div>
-</div>
-
-<div class="card">
-  <h3>🧠 Payments</h3>
-  <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-    <span class="badge badge-blue">HIP-991 HBAR</span>
-    <span class="badge badge-yellow">x402 USDC</span>
-  </div>
-  <div style="margin-top:0.75rem;color:#64748b;font-size:0.75rem;">
-    HIP-991 auto-collects fee on HCS submit<br>
-    x402 accepts USDC on Base/Polygon
-  </div>
-</div>
-"""
-    return HTMLResponse(html)
+    try:
+        data = _collect_dashboard_data(request)
+        return JSONResponse(data)
+    except Exception as e:
+        return JSONResponse({"error": str(e)})
