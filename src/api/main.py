@@ -59,6 +59,7 @@ async def lifespan(app: FastAPI):
     print(f"Providers: {[p.provider_id for p in provider_registry.list()]}")
     print(f"[HIP-991] Inbound topic: {inbound}")
     print(f"[HIP-991] Fee: {settings.hip991_fee_hbar} HBAR (auto-collected per message)")
+    print(f"[MCP]   Mounted at /mcp — use MCP Inspector to test")
 
     yield
 
@@ -89,6 +90,10 @@ def create_app() -> FastAPI:
     app.include_router(requests.router, prefix="/api/v1")
     app.include_router(providers.router, prefix="/api/v1")
     app.include_router(agent.router, prefix="/api/v1")
+
+    from mcp_server import create_mcp_server
+    mcp = create_mcp_server()
+    app.mount("/mcp", mcp.streamable_http_app())
 
     return app
 
