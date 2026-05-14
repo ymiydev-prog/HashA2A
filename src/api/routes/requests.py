@@ -36,7 +36,7 @@ async def create_request(
     if not provider:
         raise HTTPException(
             status_code=404,
-            detail=f"Provider '{body.provider_id}' not found. Available: {[p.provider_id for p in provider_registry.list()]}",
+            detail=f"Provider '{body.provider_id}' not found. Available: {[p.provider_id for p in provider_registry.list_all()]}",
         )
 
     if body.max_cost_hbar is not None and body.max_cost_hbar < provider.cost_hbar:

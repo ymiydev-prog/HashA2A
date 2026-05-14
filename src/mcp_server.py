@@ -54,7 +54,7 @@ def create_mcp_server() -> FastMCP:
 
         provider = provider_registry.get(provider_id)
         if not provider:
-            return f"Error: Provider '{provider_id}' not found. Available: {[p.provider_id for p in provider_registry.list()]}"
+            return f"Error: Provider '{provider_id}' not found. Available: {[p.provider_id for p in provider_registry.list_all()]}"
 
         request_id = hedera.generate_request_id()
         inbound_topic = loop.run_until_complete(hedera.get_or_create_inbound_topic())
@@ -114,7 +114,7 @@ def create_mcp_server() -> FastMCP:
             "tags": settings.agent_tags,
             "treasury_account": settings.treasury_account,
             "providers": [p.model_dump(mode="json") for p in provider_registry.list_capabilities()],
-            "staked_hbar": sum(p.reputation.staked_hbar for p in provider_registry.list()),
+            "staked_hbar": sum(p.reputation.staked_hbar for p in provider_registry.list_all()),
         }
         import asyncio
         loop = asyncio.new_event_loop()

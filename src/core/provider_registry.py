@@ -13,7 +13,7 @@ class ProviderRegistry:
     def get(self, provider_id: str) -> BaseDataProvider | None:
         return self._providers.get(provider_id)
 
-    def list(self) -> list[BaseDataProvider]:
+    def list_all(self) -> list[BaseDataProvider]:
         return list(self._providers.values())
 
     def list_capabilities(self) -> list[ProviderCapability]:

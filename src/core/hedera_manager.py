@@ -3,7 +3,7 @@ import json
 import hashlib
 from datetime import datetime
 
-from hedera import (
+from hiero_sdk_python import (
     AccountId,
     Client,
     PrivateKey,
@@ -11,7 +11,7 @@ from hedera import (
     TopicCreateTransaction,
     TopicMessageSubmitTransaction,
     TopicMessageQuery,
-    FixedFee,
+    CustomFixedFee,
     Hbar,
 )
 from core.config import Settings
@@ -53,8 +53,11 @@ class HederaManager:
         self._operator_key = op_key
 
     def close(self):
-        if self._client:
-            self._client.close()
+        try:
+            if self._client:
+                self._client.close()
+        except Exception:
+            pass
 
     def generate_request_id(self) -> str:
         return str(uuid.uuid4())
@@ -92,10 +95,10 @@ class HederaManager:
             .set_topic_memo(memo)
             .set_admin_key(operator_pub)
             .set_fee_schedule_key(operator_pub)
-            .add_fee_exempt_key(operator_pub)
+            .set_fee_exempt_keys([operator_pub])
             .set_custom_fees([
-                FixedFee()
-                    .set_amount(amount_tinybar)
+                CustomFixedFee()
+                    .set_amount_in_tinybars(amount_tinybar)
                     .set_fee_collector_account_id(collector)
             ])
             .freeze_with(self.client)

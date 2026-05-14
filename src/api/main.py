@@ -51,20 +51,32 @@ async def lifespan(app: FastAPI):
     payment_engine.on_payment_confirmed(on_payment)
 
     import asyncio
-    await payment_engine.start()
-    broadcast_task = asyncio.create_task(agent_registry.run_periodic_broadcast())
+    hedera_ok = False
+    try:
+        await payment_engine.start()
+        broadcast_task = asyncio.create_task(agent_registry.run_periodic_broadcast())
+        inbound = await hedera.get_or_create_inbound_topic()
+        hedera_ok = True
+    except Exception as e:
+        broadcast_task = None
+        print(f"⚠️  Hedera not configured: {e}")
+        print(f"   Create .env with credentials or run with mock data")
 
-    inbound = await hedera.get_or_create_inbound_topic()
-    print(f"HashA2A v{settings.agent_version} running on {settings.api_host}:{settings.api_port}")
-    print(f"Providers: {[p.provider_id for p in provider_registry.list()]}")
-    print(f"[HIP-991] Inbound topic: {inbound}")
-    print(f"[HIP-991] Fee: {settings.hip991_fee_hbar} HBAR (auto-collected per message)")
-    print(f"[MCP]   Mounted at /mcp — use MCP Inspector to test")
+    print(f"\nHashA2A v{settings.agent_version} running on {settings.api_host}:{settings.api_port}")
+    print(f"Providers: {[p.provider_id for p in provider_registry.list_all()]}")
+    print(f"MCP:   http://localhost:{settings.api_port}/mcp")
+    if hedera_ok:
+        print(f"HIP-991: {inbound} | {settings.hip991_fee_hbar} HBAR fee")
+    print("")
 
     yield
 
-    broadcast_task.cancel()
-    hedera.close()
+    if broadcast_task:
+        broadcast_task.cancel()
+    try:
+        hedera.close()
+    except Exception:
+        pass
 
 
 def create_app() -> FastAPI:

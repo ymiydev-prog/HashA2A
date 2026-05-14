@@ -6,7 +6,7 @@ import threading
 from typing import Callable, Awaitable
 
 import httpx
-from hedera import TopicMessageQuery
+from hiero_sdk_python import TopicMessageQuery
 
 from core.config import Settings
 from core.hedera_manager import HederaManager
@@ -73,13 +73,13 @@ class PaymentEngine:
         try:
             query.subscribe(
                 self.hedera.client,
-                self._on_subscription_error,
                 self._on_message,
+                self._on_subscription_error,
             )
         except TypeError:
             pass
 
-    def _on_subscription_error(self, error, _message=None):
+    def _on_subscription_error(self, error: Exception):
         pass
 
     def _on_message(self, message):

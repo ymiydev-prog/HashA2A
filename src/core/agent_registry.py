@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime
-from hedera import TopicId
+from hiero_sdk_python import TopicId
 
 from core.config import Settings
 from core.hedera_manager import HederaManager
