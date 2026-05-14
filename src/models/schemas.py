@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 from typing import Any
-from datetime import datetime
 from enum import Enum
 
 
@@ -9,6 +8,7 @@ class RequestStatus(str, Enum):
     PAYMENT_CONFIRMED = "payment_confirmed"
     PROCESSING = "processing"
     COMPLETED = "completed"
+    REJECTED = "rejected"
     FAILED = "failed"
     EXPIRED = "expired"
 
@@ -36,6 +36,8 @@ class DataResponse(BaseModel):
     status: RequestStatus
     data: dict[str, Any] | None = None
     analysis: str | None = None
+    quality_score: float | None = None
+    quality_reason: str | None = None
     raw_size_bytes: int | None = None
     proof_tx_id: str | None = None
     audit_topic_id: str | None = None
@@ -53,6 +55,7 @@ class ProviderCapability(BaseModel):
     total_requests: int = 0
     success_rate: float = 1.0
     avg_response_time_ms: float | None = None
+    staked_hbar: float = 0.0
 
 
 class AgentProfile(BaseModel):
@@ -106,6 +109,7 @@ class ConsensusRecord(BaseModel):
     query_hash: str
     response_hash: str
     analysis_hash: str | None = None
+    quality_score: float | None = None
     payment_amount: float
     payment_tx_id: str | None = None
     provider_trust_score: float

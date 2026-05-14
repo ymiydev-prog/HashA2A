@@ -3,7 +3,7 @@ from abc import abstractmethod
 from typing import Any
 
 from core.base_provider import BaseDataProvider
-from models.schemas import DataResponse, RequestStatus
+from models.schemas import DataResponse, RequestStatus, DataQualityReport
 from providers.schemas_betting import BettingMarket, BettingAnalysis, BettingQuery
 
 
@@ -59,6 +59,55 @@ class BettingDataProvider(BaseDataProvider):
             raw_size_bytes=len(str(markets)),
             processing_time_ms=elapsed,
             provider_trust_score=self.reputation.trust_score,
+        )
+
+    def evaluate_quality(self, response: DataResponse, threshold: float | None) -> DataQualityReport:
+        if response.data is None:
+            return DataQualityReport(request_id=response.request_id, provider_id=self.provider_id, passed=False, score=0.0, reason="No data returned")
+
+        markets = response.data.get("markets", [])
+        total = response.data.get("total_found", 0)
+
+        if total == 0:
+            return DataQualityReport(request_id=response.request_id, provider_id=self.provider_id, passed=False, score=0.0, reason="Zero markets found")
+
+        valid = sum(1 for m in markets if m.get("outcomes"))
+        ratio = valid / total if total > 0 else 0
+
+        confidence_scores = {"very_low": 0.2, "low": 0.4, "medium": 0.7, "high": 1.0}
+
+        avg_confidence = 0.5
+        if response.analysis:
+            from providers.schemas_betting import BettingAnalysis
+            lines = response.analysis.split("\n")
+            for line in lines:
+                for level, score in confidence_scores.items():
+                    if f"Confidence: {level}" in line.lower():
+                        avg_confidence = score
+                        break
+
+        score = round(0.6 * ratio + 0.4 * avg_confidence, 4)
+
+        reason = None
+        if ratio < 0.5:
+            reason = f"Only {valid}/{total} markets have valid outcome data"
+        elif avg_confidence < 0.3:
+            reason = "Markets have very low liquidity — prices may not be reliable"
+
+        passed = True
+        if threshold is not None and score < threshold:
+            passed = False
+            reason = reason or f"Quality score {score:.2f} below threshold {threshold:.2f}"
+        elif score < 0.1:
+            passed = False
+            reason = reason or f"Quality score too low: {score:.2f}"
+
+        return DataQualityReport(
+            request_id=response.request_id,
+            provider_id=self.provider_id,
+            passed=passed,
+            score=score,
+            reason=reason,
         )
 
     def analyze_markets(self, markets: list[BettingMarket]) -> list[BettingAnalysis]:

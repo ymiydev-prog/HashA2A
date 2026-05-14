@@ -63,6 +63,7 @@ async def create_request(
         "request_id": request_id,
         "provider_id": provider.provider_id,
         "provider_name": provider.name,
+        "quality_threshold": body.quality_threshold,
         "status": RequestStatus.AWAITING_PAYMENT.value,
         "payment": {
             "amount_hbar": payment.amount_hbar,
@@ -120,6 +121,17 @@ async def process_paid_request(
             "request_id": request_id,
         })
 
+        report = provider.evaluate_quality(result, None)
+        result.quality_score = report.score
+
+        if report.passed:
+            result.status = RequestStatus.COMPLETED
+            provider.reputation.successful_requests += 1
+        else:
+            result.status = RequestStatus.REJECTED
+            result.quality_reason = report.reason
+            provider.reputation.accuracy_score = max(0, provider.reputation.accuracy_score - 5)
+
         result.proof_tx_id = await consensus_logger.log_response(
             response=result,
             query={"request_id": request_id},
@@ -128,10 +140,8 @@ async def process_paid_request(
         )
 
         result.audit_topic_id = str(await hedera.get_or_create_audit_topic())
-        result.status = RequestStatus.COMPLETED
 
         provider.reputation.total_requests += 1
-        provider.reputation.successful_requests += 1
         if result.processing_time_ms:
             provider.reputation.response_time_ms = result.processing_time_ms
 

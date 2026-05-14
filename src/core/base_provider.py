@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar, Any
-from models.schemas import DataResponse, ProviderReputation
+from models.schemas import DataResponse, ProviderReputation, DataQualityReport, RequestStatus
 
 
 class BaseDataProvider(ABC):
@@ -23,6 +23,31 @@ class BaseDataProvider(ABC):
     def can_handle(self, provider_id: str) -> bool:
         return provider_id == self.provider_id
 
+    def evaluate_quality(self, response: DataResponse, threshold: float | None) -> DataQualityReport:
+        passed = True
+        score = 1.0
+        reason = None
+
+        if response.data is None or (isinstance(response.data, dict) and len(response.data) == 0):
+            passed = False
+            score = 0.0
+            reason = "No data returned"
+        elif response.raw_size_bytes is not None and response.raw_size_bytes < 10:
+            passed = False
+            score = 0.1
+            reason = "Response too small — likely empty"
+
+        if threshold is not None and score < threshold:
+            passed = False
+
+        return DataQualityReport(
+            request_id=response.request_id,
+            provider_id=response.provider_id,
+            passed=passed,
+            score=score,
+            reason=reason,
+        )
+
     @property
     def capability(self):
         from models.schemas import ProviderCapability
@@ -40,4 +65,5 @@ class BaseDataProvider(ABC):
                 else 1.0
             ),
             avg_response_time_ms=self.reputation.response_time_ms,
+            staked_hbar=self.reputation.staked_hbar,
         )

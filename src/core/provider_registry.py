@@ -19,6 +19,22 @@ class ProviderRegistry:
     def list_capabilities(self) -> list[ProviderCapability]:
         return [p.capability for p in self._providers.values()]
 
+    def stake(self, provider_id: str, amount_hbar: float) -> bool:
+        provider = self._providers.get(provider_id)
+        if not provider:
+            return False
+        provider.reputation.staked_hbar += amount_hbar
+        return True
+
+    def unstake(self, provider_id: str, amount_hbar: float) -> bool:
+        provider = self._providers.get(provider_id)
+        if not provider:
+            return False
+        if provider.reputation.staked_hbar < amount_hbar:
+            return False
+        provider.reputation.staked_hbar -= amount_hbar
+        return True
+
     def discover(self) -> list[str]:
         import importlib
         import pkgutil
