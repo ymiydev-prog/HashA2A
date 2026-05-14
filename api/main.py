@@ -1,0 +1,99 @@
+import json
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from core.config import Settings
+from core.hedera_manager import HederaManager
+from core.payment_engine import PaymentEngine
+from core.agent_registry import AgentRegistry
+from core.provider_registry import ProviderRegistry
+from core.consensus_logger import ConsensusLogger
+from api.routes import requests, providers, agent
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    settings = Settings()
+
+    hedera = HederaManager(settings)
+    provider_registry = ProviderRegistry()
+    payment_engine = PaymentEngine(settings, hedera)
+    consensus_logger = ConsensusLogger(hedera)
+    agent_registry = AgentRegistry(settings, hedera, provider_registry)
+
+    from providers.betting.polymarket import PolymarketBettingProvider
+    provider_registry.register(PolymarketBettingProvider())
+
+    from providers.betting.base import BettingDataProvider
+    from providers.betting.schemas import BettingMarket, BettingQuery
+
+    discovered = provider_registry.discover()
+    if discovered:
+        print(f"Auto-discovered providers: {discovered}")
+
+    app.state.settings = settings
+    app.state.hedera = hedera
+    app.state.provider_registry = provider_registry
+    app.state.payment_engine = payment_engine
+    app.state.consensus_logger = consensus_logger
+    app.state.agent_registry = agent_registry
+
+    async def on_payment(request_id: str):
+        await requests.process_paid_request(
+            request_id=request_id,
+            hedera=hedera,
+            payment_engine=payment_engine,
+            provider_registry=provider_registry,
+            agent_registry=agent_registry,
+            consensus_logger=consensus_logger,
+        )
+
+    payment_engine.on_payment_confirmed(on_payment)
+
+    import asyncio
+    payment_task = asyncio.create_task(payment_engine.run_forever())
+    broadcast_task = asyncio.create_task(agent_registry.run_periodic_broadcast())
+
+    print(
+        f"HashA2A v{settings.agent_version} running on {settings.api_host}:{settings.api_port}"
+    )
+    print(f"Providers: {[p.provider_id for p in provider_registry.list()]}")
+    print(f"Audit values in HCS topic: {await hedera.get_or_create_audit_topic()}")
+
+    yield
+
+    payment_task.cancel()
+    broadcast_task.cancel()
+    hedera.close()
+
+
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="HashA2A — The Agent-to-Agent Intelligence Layer",
+        description=(
+            "A modular data oracle where AI agents buy processed intelligence "
+            "via HBAR micropayments on Hedera. Plugin-based DataProvider system "
+            "with HCS audit trail and HCS-10 agent discovery."
+        ),
+        version="0.1.0",
+        lifespan=lifespan,
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    app.include_router(requests.router, prefix="/api/v1")
+    app.include_router(providers.router, prefix="/api/v1")
+    app.include_router(agent.router, prefix="/api/v1")
+
+    return app
+
+
+app = create_app()
