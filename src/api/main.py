@@ -23,7 +23,9 @@ async def lifespan(app: FastAPI):
     agent_registry = AgentRegistry(settings, hedera, provider_registry)
 
     from providers.polymarket_edge import PolymarketEdgeProvider
+    from providers.kalshi import KalshiBettingProvider
     provider_registry.register(PolymarketEdgeProvider())
+    provider_registry.register(KalshiBettingProvider())
 
     discovered = provider_registry.discover()
     if discovered:
