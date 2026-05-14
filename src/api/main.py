@@ -1,4 +1,3 @@
-import json
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -23,11 +22,8 @@ async def lifespan(app: FastAPI):
     consensus_logger = ConsensusLogger(hedera)
     agent_registry = AgentRegistry(settings, hedera, provider_registry)
 
-    from providers.betting.polymarket import PolymarketBettingProvider
-    provider_registry.register(PolymarketBettingProvider())
-
-    from providers.betting.base import BettingDataProvider
-    from providers.betting.schemas import BettingMarket, BettingQuery
+    from providers.polymarket_edge import PolymarketEdgeProvider
+    provider_registry.register(PolymarketEdgeProvider())
 
     discovered = provider_registry.discover()
     if discovered:
@@ -56,11 +52,9 @@ async def lifespan(app: FastAPI):
     payment_task = asyncio.create_task(payment_engine.run_forever())
     broadcast_task = asyncio.create_task(agent_registry.run_periodic_broadcast())
 
-    print(
-        f"HashA2A v{settings.agent_version} running on {settings.api_host}:{settings.api_port}"
-    )
+    print(f"HashA2A v{settings.agent_version} running on {settings.api_host}:{settings.api_port}")
     print(f"Providers: {[p.provider_id for p in provider_registry.list()]}")
-    print(f"Audit values in HCS topic: {await hedera.get_or_create_audit_topic()}")
+    print(f"Audit HCS topic: {await hedera.get_or_create_audit_topic()}")
 
     yield
 
@@ -72,11 +66,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(
         title="HashA2A — The Agent-to-Agent Intelligence Layer",
-        description=(
-            "A modular data oracle where AI agents buy processed intelligence "
-            "via HBAR micropayments on Hedera. Plugin-based DataProvider system "
-            "with HCS audit trail and HCS-10 agent discovery."
-        ),
+        description="A modular data oracle where AI agents buy processed intelligence via HBAR micropayments on Hedera.",
         version="0.1.0",
         lifespan=lifespan,
     )

@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 """
-HashA2A — Runner script.
-Starts the FastAPI server and initializes the Hedera agent.
+HashA2A — Root runner.
+Adds src/ to Python path and starts the FastAPI server.
 """
 
+import sys
+import os
+
+src_path = os.path.join(os.path.dirname(__file__), "src")
+sys.path.insert(0, os.path.abspath(src_path))
+
 import uvicorn
-from core.config import Settings
+from api.main import app
 
 if __name__ == "__main__":
-    settings = Settings()
-    uvicorn.run(
-        "api.main:app",
-        host=settings.api_host,
-        port=settings.api_port,
-        reload=True,
-        log_level="info",
-    )
+    uvicorn.run("api.main:app", host="0.0.0.0", port=8080, reload=True)

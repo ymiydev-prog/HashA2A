@@ -29,17 +29,18 @@ class ProviderRegistry:
             providers_pkg.__path__, prefix="providers."
         ):
             if ispkg:
-                try:
-                    mod = importlib.import_module(f"{modname}.provider")
-                    for attr in dir(mod):
-                        obj = getattr(mod, attr)
-                        if (
-                            isinstance(obj, type)
-                            and issubclass(obj, BaseDataProvider)
-                            and obj is not BaseDataProvider
-                        ):
-                            self.register(obj())
-                            discovered.append(obj.provider_id)
-                except Exception:
-                    pass
+                continue
+            try:
+                mod = importlib.import_module(modname)
+                for attr in dir(mod):
+                    obj = getattr(mod, attr)
+                    if (
+                        isinstance(obj, type)
+                        and issubclass(obj, BaseDataProvider)
+                        and obj is not BaseDataProvider
+                    ):
+                        self.register(obj())
+                        discovered.append(obj.provider_id)
+            except Exception:
+                pass
         return discovered

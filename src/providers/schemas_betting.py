@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 from typing import Any
-from datetime import datetime
 from enum import Enum
 
 
@@ -55,11 +54,3 @@ class BettingQuery(BaseModel):
     include_analysis: bool = True
     category: str | None = None
     status: str | None = None
-
-
-class BettingResponse(BaseModel):
-    platform: str
-    markets: list[BettingMarket]
-    analysis: list[BettingAnalysis] | None = None
-    total_found: int
-    processing_time_ms: float | None = None

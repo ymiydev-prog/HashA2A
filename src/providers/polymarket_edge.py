@@ -1,17 +1,12 @@
 import httpx
 
-from providers.betting.base import BettingDataProvider
-from providers.betting.schemas import (
-    BettingMarket,
-    BettingOutcome,
-    BettingQuery,
-    MarketStatus,
-)
+from providers.base_betting import BettingDataProvider
+from providers.schemas_betting import BettingMarket, BettingOutcome, BettingQuery, MarketStatus
 
 
-class PolymarketBettingProvider(BettingDataProvider):
+class PolymarketEdgeProvider(BettingDataProvider):
     provider_id = "polymarket"
-    name = "Polymarket Prediction Markets"
+    name = "Polymarket Edge"
     description = (
         "Fetches prediction market odds, volume, liquidity, and trends "
         "from Polymarket, the world's largest crypto prediction market. "
@@ -20,7 +15,6 @@ class PolymarketBettingProvider(BettingDataProvider):
     cost_hbar = 0.5
 
     GAMMA_API = "https://gamma-api.polymarket.com"
-    CLOB_API = "https://clob.polymarket.com"
 
     async def list_markets(self, query: BettingQuery) -> list[BettingMarket]:
         params: dict = {"limit": query.limit, "closed": False}
@@ -60,14 +54,11 @@ class PolymarketBettingProvider(BettingDataProvider):
                 price = float(price)
             token_id = o.get("token_id")
             outcome_volume = o.get("volume")
-            outcomes.append(
-                BettingOutcome(
-                    name=name,
-                    price=price,
-                    volume=float(outcome_volume) if outcome_volume else None,
-                    token_id=token_id,
-                )
-            )
+            outcomes.append(BettingOutcome(
+                name=name, price=price,
+                volume=float(outcome_volume) if outcome_volume else None,
+                token_id=token_id,
+            ))
 
         is_closed = data.get("closed", False)
         is_resolved = data.get("resolved", False)

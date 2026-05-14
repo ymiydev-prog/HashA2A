@@ -4,11 +4,7 @@ from typing import Any
 
 from core.base_provider import BaseDataProvider
 from models.schemas import DataResponse, RequestStatus
-from providers.betting.schemas import (
-    BettingMarket,
-    BettingAnalysis,
-    BettingQuery,
-)
+from providers.schemas_betting import BettingMarket, BettingAnalysis, BettingQuery
 
 
 class BettingDataProvider(BaseDataProvider):
@@ -18,30 +14,11 @@ class BettingDataProvider(BaseDataProvider):
         "type": "object",
         "properties": {
             "query": {"type": "string", "description": "Search term for markets"},
-            "market_ids": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Specific market IDs to fetch",
-            },
-            "limit": {
-                "type": "integer",
-                "default": 10,
-                "description": "Max markets to return",
-            },
-            "include_analysis": {
-                "type": "boolean",
-                "default": True,
-                "description": "Run analysis on fetched markets",
-            },
-            "category": {
-                "type": "string",
-                "description": "Filter by category",
-            },
-            "status": {
-                "type": "string",
-                "enum": ["open", "closed", "resolved"],
-                "description": "Filter by market status",
-            },
+            "market_ids": {"type": "array", "items": {"type": "string"}, "description": "Specific market IDs to fetch"},
+            "limit": {"type": "integer", "default": 10, "description": "Max markets to return"},
+            "include_analysis": {"type": "boolean", "default": True, "description": "Run analysis on fetched markets"},
+            "category": {"type": "string", "description": "Filter by category"},
+            "status": {"type": "string", "enum": ["open", "closed", "resolved"], "description": "Filter by market status"},
         },
     }
 
@@ -77,11 +54,7 @@ class BettingDataProvider(BaseDataProvider):
             request_id=request_id,
             provider_id=self.provider_id,
             status=RequestStatus.COMPLETED,
-            data={
-                "platform": self.provider_id,
-                "markets": [m.model_dump() for m in markets],
-                "total_found": len(markets),
-            },
+            data={"platform": self.provider_id, "markets": [m.model_dump() for m in markets], "total_found": len(markets)},
             analysis=self._format_analysis(analysis) if analysis else None,
             raw_size_bytes=len(str(markets)),
             processing_time_ms=elapsed,
@@ -95,24 +68,19 @@ class BettingDataProvider(BaseDataProvider):
             for outcome in market.outcomes:
                 if outcome.price is not None:
                     probs[outcome.name] = float(f"{outcome.price:.4f}")
-
             if not probs:
                 continue
-
             risks = self._identify_risks(market)
             confidence = self._calculate_confidence(market)
-
-            results.append(
-                BettingAnalysis(
-                    market_id=market.market_id,
-                    platform=market.platform,
-                    title=market.title,
-                    market_implied_probabilities=probs,
-                    market_confidence=confidence,
-                    risk_factors=risks,
-                    reasoning=self._generate_reasoning(market),
-                )
-            )
+            results.append(BettingAnalysis(
+                market_id=market.market_id,
+                platform=market.platform,
+                title=market.title,
+                market_implied_probabilities=probs,
+                market_confidence=confidence,
+                risk_factors=risks,
+                reasoning=self._generate_reasoning(market),
+            ))
         return results
 
     def _calculate_confidence(self, market: BettingMarket) -> str:
@@ -130,10 +98,7 @@ class BettingDataProvider(BaseDataProvider):
             parts.append(f"Volume: ${market.volume:,.0f}")
         if market.liquidity > 0:
             parts.append(f"Liquidity: ${market.liquidity:,.0f}")
-        outcomes_str = ", ".join(
-            f"{o.name} @ {o.price:.1%}" if o.price is not None else o.name
-            for o in market.outcomes
-        )
+        outcomes_str = ", ".join(f"{o.name} @ {o.price:.1%}" if o.price is not None else o.name for o in market.outcomes)
         if outcomes_str:
             parts.append(f"Odds: [{outcomes_str}]")
         if market.status.value == "resolved":
@@ -155,7 +120,6 @@ class BettingDataProvider(BaseDataProvider):
     def _format_analysis(self, analysis: list[BettingAnalysis]) -> str:
         if not analysis:
             return "No markets available for analysis."
-
         lines = [f"=== {self.name} — Market Analysis ===", ""]
         for a in analysis:
             lines.append(f"Market: {a.title}")

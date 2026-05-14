@@ -1,771 +1,518 @@
-<!-- ============================================================ -->
-<!-- ESPAÑOL                                                      -->
-<!-- ============================================================ -->
+<div align="center">
 
-# HashA2A — The Agent-to-Agent Intelligence Layer
+# 🤖 HashA2A 
+## *The Agent-to-Agent Intelligence Layer*
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.11%2B-blue" alt="Python 3.11+">
-  <img src="https://img.shields.io/badge/Hedera-HCS%20%7C%20HTS%20%7C%20HIP--991-green" alt="Hedera">
-  <img src="https://img.shields.io/badge/FastAPI-0.115%2B-009688" alt="FastAPI">
-  <img src="https://img.shields.io/badge/license-MIT-yellow" alt="MIT">
-</p>
-
-**HashA2A** es un oráculo de datos modular donde agentes de IA compran información procesada mediante micropagos en HBAR sobre Hedera. El sistema es agnóstico al tipo de dato: utiliza un sistema de plugins `DataProvider` que permite conectar cualquier fuente de datos externa y entregarla con valor agregado de inteligencia artificial.
-
-> **Filosofía:** No vendemos datos crudos. Vendemos inteligencia procesada con prueba de consenso en HCS.
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![Hedera](https://img.shields.io/badge/Hedera-HCS%20|%20HTS%20|%20HIP--991-00B4D8?logo=hedera&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-F7DF1E)
+<!-- ![Tests](https://img.shields.io/badge/tests-20%2F20-brightgreen) -->
 
 ---
 
-## Tabla de Contenidos
+### 🏪 **Este agente vende datos por HBAR**
 
-- [¿Qué problema resuelve?](#qué-problema-resuelve)
-- [Arquitectura](#arquitectura)
-- [Quick Start](#quick-start)
-- [API Endpoints](#api-endpoints)
-- [Sistema de Plugins](#sistema-de-plugins)
-- [Auto-promoción del Agente](#auto-promoción-del-agente)
-- [Modelo de Reputación](#modelo-de-reputación)
-- [Roadmap](#roadmap)
+> Un agente de IA descentralizado que **vende información procesada** a otros agentes.
+> Ellos pagan en **HBAR**, tú recibes datos + análisis + **prueba de consenso en HCS**.
 
 ---
 
-## ¿Qué problema resuelve?
-
-| Problema | Solución HashA2A |
-|----------|-----------------|
-| Cada API requiere registro, API keys y facturación | Pago único en HBAR, sin registro |
-| No hay forma de verificar la procedencia del dato | Cada respuesta se registra en HCS con hash SHA-256 |
-| Los datos crudos requieren procesamiento adicional | Los DataProviders entregan datos + análisis con IA |
-| No hay estándar entre fuentes de datos | `BaseDataProvider` unifica la interfaz |
-| Los agentes no pueden descubrirse entre sí | Registro HCS-10 en HOL + broadcasts periódicos |
+[🇪🇸 **Español**](#-español) ⋮ [🇬🇧 **English**](#-english)
 
 ---
 
-## Arquitectura
-
-```
-                        ┌──────────────────────────────┐
-                        │     HOL Registry (HCS-10)     │
-                        │  HashA2A — agente descubrible │
-                        └──────────────────────────────┘
-                                   │
-              ┌────────────────────┼────────────────────┐
-              │                    │                    │
-         Agent A              Agent B              Agent C
-        (LangChain)          (CrewAI)            (ElizaOS)
-              │                    │                    │
-              └─────────┬──────────┴──────────┬─────────┘
-                        │   Pago en HBAR       │
-                        │   + memo único       │
-                        ▼                      ▼
-              ┌──────────────────────────────────────┐
-              │           HashA2A Core               │
-              │  ┌────────────┐  ┌────────────────┐  │
-              │  │ Payment    │  │ Provider       │  │
-              │  │ Engine     │──│ Registry       │  │
-              │  └────────────┘  └───────┬────────┘  │
-              │                          ▼           │
-              │  ┌──────────────────────────────┐    │
-              │  │     BettingDataProvider       │    │
-              │  │  ┌──────────┐ ┌──────────┐   │    │
-              │  │  │Polymarket│ │  Kalshi  │...│    │
-              │  │  └──────────┘ └──────────┘   │    │
-              │  └──────────────────────────────┘    │
-              │  ┌──────────────────────────────┐    │
-              │  │    ConsensusLogger (HCS)      │    │
-              │  └──────────────────────────────┘    │
-              └──────────────────────────────────────┘
-```
-
-### Flujo de operación
-
-```
-Agente Cliente              HashA2A Core                    Hedera Network
-     │                           │                              │
-     ├─ POST /api/v1/requests ───>                              │
-     │  {provider: "polymarket"}                                │
-     │                           │                              │
-     │<── Payment instructions ──│                              │
-     │   {0.5 HBAR, cuenta, memo}                               │
-     │                           │                              │
-     ├─ Envía HBAR con memo ──────────────────────────────────>│
-     │                           │                              │
-     │                           │<── Poll Mirror Node ─────────│
-     │                           │    (memo coincide)           │
-     │                           │                              │
-     │                           ├── Provider.get_data()        │
-     │                           │   (fetch + IA analysis)      │
-     │                           │                              │
-     │                           ├── HCS: audit record ────────>│
-     │                           │   (hash SHA-256 inmutables)  │
-     │                           │                              │
-     │<── GET /api/v1/requests/id ──│                           │
-     │   {data, analysis, proof}  │                              │
-```
-
-### Componentes core
-
-| Módulo | Archivo | Responsabilidad |
-|--------|---------|-----------------|
-| **BaseDataProvider** | `core/base_provider.py` | Clase base abstracta para todo proveedor de datos |
-| **HederaManager** | `core/hedera_manager.py` | Topics HCS, mensajes, hashes, memos de pago |
-| **PaymentEngine** | `core/payment_engine.py` | Polling de Mirror Node, matching de pagos |
-| **ConsensusLogger** | `core/consensus_logger.py` | Registro de auditoría inmutable en HCS |
-| **AgentRegistry** | `core/agent_registry.py` | Auto-promoción HCS-10 + broadcasts periódicos |
-| **ProviderRegistry** | `core/provider_registry.py` | Registro y auto-descubrimiento de plugins |
-| **BettingDataProvider** | `providers/betting/base.py` | Base especializada para sistemas de apuestas |
-| **PolymarketBettingProvider** | `providers/betting/polymarket.py` | Implementación concreta para Polymarket |
+</div>
 
 ---
 
-## Quick Start
+# 🇪🇸 Español
 
-### Prerrequisitos
+## 📋 ¿Qué hace HashA2A?
 
-- Python 3.11+
-- Cuenta en [Hedera Testnet](https://portal.hedera.com/)
-- Una cuenta treasury con HBAR de test
+Imagina una **tienda de datos para agentes IA**:
 
-### Instalación
+| Agente Cliente llega y pregunta… | HashA2A responde… |
+|:---|---:|
+| *"¿Cuál es la probabilidad de que BTC llegue a $100K?"* | 🔍 Busca en Polymarket 📊 Analiza con IA 🤝 Entrega con recibo HCS |
+| *"Necesito odds de las elecciones 2028"* | Lo mismo. Pagas **0.5 HBAR** y recibes datos procesados. |
+
+**💰 Tú pagas → 🧠 HashA2A procesa → 📦 Recibes inteligencia lista para usar**
+
+---
+
+## 🧬 Arquitectura
+
+```mermaid
+graph TB
+    subgraph "🌐 Hedera Network"
+        HCS[HCS Topics]
+        MN[Mirror Node]
+        HBAR[HBAR Payments]
+    end
+    
+    subgraph "🤖 HashA2A Core"
+        PE[Payment Engine]
+        PM[Provider Manager]
+        CL[Consensus Logger]
+        AR[Agent Registry<br/>HCS-10 Self-Promo]
+    end
+    
+    subgraph "📦 DataProviders"
+        PME[Polymarket Edge]
+        KAL[Kalshi<br/>Coming Soon]
+        PRED[PredictIt<br/>Coming Soon]
+    end
+    
+    subgraph "👤 Client Agents"
+        LC[LangChain Agent]
+        CW[CrewAI Agent]
+        EZ[ElizaOS Agent]
+    end
+
+    LC -->|"POST /requests"| PE
+    CW -->|"POST /requests"| PE
+    PE -->|"💸 Pay X HBAR"| HBAR
+    HBAR -->|"✅ Confirm"| MN
+    MN -->|"Payment detected"| PE
+    PE -->|"Activate"| PM
+    PM --> PME
+    PME -->|"Data + AI"| CL
+    CL -->|"📝 Audit proof"| HCS
+    AR -.->|"📢 Broadcast presence"| HCS
+    LC -->|"GET /requests/id"| PM
+```
+
+### 🔄 Flujo paso a paso
+
+```mermaid
+sequenceDiagram
+    participant Agent as 🤖 Agent Client
+    participant H2A as 🏪 HashA2A
+    participant H as 🌐 Hedera
+    
+    Agent->>H2A: POST /requests {provider: "polymarket"}
+    H2A-->>Agent: ✅ Payment required: 0.5 HBAR<br/>📌 Account + Memo
+    
+    Agent->>H: 💸 Send HBAR with memo
+    Note over H: 2-5 sec finality
+    
+    loop Every 5s
+        H2A->>H: 🔍 Poll Mirror Node
+    end
+    
+    H-->>H2A: ✅ Payment confirmed
+    H2A->>H2A: 🧠 Run Provider.get_data()<br/>   + AI Analysis
+    
+    H2A->>H: 📝 Log to HCS Audit Topic<br/>   (SHA-256 proof)
+    
+    Agent->>H2A: GET /requests/{id}
+    H2A-->>Agent: 📦 Data + Analysis + HCS Proof
+```
+
+---
+
+## 🗂️ Estructura del Proyecto
+
+```
+HashA2A/
+├── 📁 src/
+│   ├── 📁 core/               # ⚙️ Lógica de Hedera + pagos
+│   │   ├── base_provider.py   #   🧬 BaseDataProvider (ABC)
+│   │   ├── hedera_manager.py  #   🔗 HCS, memos, hashes
+│   │   ├── payment_engine.py  #   💰 Escucha pagos (Mirror Node)
+│   │   ├── consensus_logger.py#   📜 Auditoría inmutable en HCS
+│   │   ├── agent_registry.py  #   📢 Auto-promoción HCS-10
+│   │   ├── provider_registry.py# 🗂️ Gestor de plugins
+│   │   └── config.py          #   ⚙️ Settings (Pydantic)
+│   ├── 📁 providers/          # 🔌 Plugins de datos
+│   │   ├── base_betting.py    #   🎲 Base para apuestas
+│   │   ├── polymarket_edge.py #   🟣 Polymarket (Edge Analysis)
+│   │   └── schemas_betting.py #   📐 Modelos de apuestas
+│   ├── 📁 api/                # 🌐 REST API
+│   │   ├── main.py            #   FastAPI app
+│   │   ├── deps.py            #   Dependencias
+│   │   └── routes/
+│   │       ├── requests.py    #   POST/GET requests
+│   │       ├── providers.py   #   GET providers
+│   │       └── agent.py       #   GET/POST agent profile
+│   └── 📁 models/
+│       └── schemas.py         # 📐 Modelos compartidos
+├── 📁 docs/
+│   └── client-examples.md     # 📖 Ejemplos para clientes
+├── runner.py                   # 🏃 Entry point
+├── .env.example                # 🔑 Template de config
+└── requirements.txt            # 📦 Dependencias
+```
+
+---
+
+## 🚀 Quick Start
 
 ```bash
+# 1️⃣ Clonar
 git clone https://github.com/ymiydev-prog/HashA2A.git
 cd HashA2A
+
+# 2️⃣ Entorno
 python3 -m venv .venv && source .venv/bin/activate
+
+# 3️⃣ Instalar
 pip install -r requirements.txt
+
+# 4️⃣ Configurar (usa Hedera Testnet)
 cp .env.example .env
-# Editar .env con tus credenciales de Hedera Testnet
-```
+# Edita .env con tus credenciales
 
-### Ejecutar
-
-```bash
+# 5️⃣ ¡A ejecutar!
 python runner.py
-# Servidor en http://localhost:8080
+# → Servidor en http://localhost:8080
 ```
 
-### Probar
+---
+
+## 📡 API Endpoints
+
+| Método | Ruta | 🎯 ¿Para qué? |
+|--------|------|:---|
+| `GET` | `/api/v1/providers` | 🔍 Ver qué datos están a la venta |
+| `GET` | `/api/v1/providers/{id}` | 💰 Ver precio y reputación |
+| `POST` | `/api/v1/requests` | 🛒 Comprar datos (devuelve instrucciones de pago) |
+| `GET` | `/api/v1/requests/{id}` | 📦 Recibir resultado (poll) |
+| `GET` | `/api/v1/agent/profile` | 🏪 Ver perfil del agente |
+| `POST` | `/api/v1/agent/register-hol` | 📢 Registrarse en HOL (HCS-10) |
+
+### 🧪 Probar en 30 segundos
 
 ```bash
-# Listar proveedores
-curl http://localhost:8080/api/v1/providers
+# 1. Ver proveedores
+curl http://localhost:8080/api/v1/providers | jq
 
-# Perfil del agente
-curl http://localhost:8080/api/v1/agent/profile
+# 2. Comprar datos de Polymarket
+curl -X POST http://localhost:8080/api/v1/requests   -H "Content-Type: application/json"   -d '{"provider_id":"polymarket","params":{"query":"Bitcoin","limit":3}}'
 
-# Solicitar datos
-curl -X POST http://localhost:8080/api/v1/requests \
-  -H "Content-Type: application/json" \
-  -d '{"provider_id": "polymarket", "params": {"query": "Bitcoin", "limit": 3}}'
-
-# Ver resultado
-curl http://localhost:8080/api/v1/requests/{request_id}
+# 3. Recibir (después de pagar los 0.5 HBAR con el memo indicado)
+curl http://localhost:8080/api/v1/requests/{request_id} | jq
 ```
 
 ---
 
-## API Endpoints
-
-### Proveedores
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/api/v1/providers` | Lista todos los proveedores con precios y reputación |
-| `GET` | `/api/v1/providers/{id}` | Detalle de un proveedor específico |
-
-### Solicitudes de datos
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `POST` | `/api/v1/requests` | Solicitar datos. Devuelve instrucciones de pago |
-| `GET` | `/api/v1/requests/{id}` | Consultar resultado. Poll hasta `status = "completed"` |
-
-### Auto-promoción del agente
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/api/v1/agent/profile` | Perfil completo del agente |
-| `POST` | `/api/v1/agent/broadcast` | Forzar broadcast de presencia al Outbound Topic |
-| `POST` | `/api/v1/agent/register-hol` | Registrar en el HOL Registry global (HCS-10) |
-| `GET` | `/api/v1/agent/topics` | Ver IDs de los topics HCS activos |
-
-### Ejemplo completo en Python
+## 🔌 Crear tu Propio DataProvider
 
 ```python
-import httpx, time
-BASE = "http://localhost:8080/api/v1"
-
-resp = httpx.post(f"{BASE}/requests", json={
-    "provider_id": "polymarket",
-    "params": {"query": "Ethereum", "limit": 5, "include_analysis": True}
-})
-data = resp.json()
-request_id = data["request_id"]
-print(f"Envía {data['payment']['amount_hbar']} HBAR con memo '{data['payment']['memo']}'")
-
-for _ in range(30):
-    resp = httpx.get(f"{BASE}/requests/{request_id}")
-    result = resp.json()
-    if result.get("status") == "completed":
-        print("Datos:", result["data"])
-        print("Análisis:", result["analysis"])
-        print("Prueba HCS:", result["proof_tx_id"])
-        break
-    time.sleep(2)
-```
-
----
-
-## Sistema de Plugins
-
-Jerarquía de proveedores:
-
-```
-BaseDataProvider (core/base_provider.py)
-  ├── BettingDataProvider (providers/betting/base.py)
-  │   ├── PolymarketBettingProvider
-  │   ├── KalshiBettingProvider    [futuro]
-  │   └── ...
-  ├── WeatherDataProvider          [futuro]
-  ├── SportsDataProvider           [futuro]
-  └── FinanceDataProvider          [futuro]
-```
-
-### Crear un nuevo DataProvider
-
-```python
-from typing import Any
+# src/providers/mi_proveedor.py
 from core.base_provider import BaseDataProvider
 from models.schemas import DataResponse, RequestStatus
 
-class WeatherDataProvider(BaseDataProvider):
-    provider_id = "weather"
-    name = "Weather Service"
-    description = "Datos meteorológicos en tiempo real con pronósticos IA"
-    cost_hbar = 0.1
+class MiProvider(BaseDataProvider):
+    provider_id = "mi-dato"       # 🆔 ID único
+    name = "Mi Fuente de Datos"   # 📛 Nombre visible
+    description = "Vendo datos de..." 
+    cost_hbar = 0.2               # 💰 Precio en HBAR
 
-    async def get_data(self, params: dict[str, Any]) -> DataResponse:
+    async def get_data(self, params) -> DataResponse:
+        # 1. Obtener datos de API externa
+        # 2. Procesar con IA (opcional)
+        # 3. Devolver respuesta
         return DataResponse(
             request_id=params.get("request_id", ""),
             provider_id=self.provider_id,
             status=RequestStatus.COMPLETED,
-            data={"temperature": 22.5, "humidity": 65},
-            analysis="Cielo despejado, temperaturas suaves.",
-            provider_trust_score=self.reputation.trust_score,
+            data={"resultado": "mis datos"},
+            analysis="Análisis generado por IA...",
         )
 ```
 
-Registrar en `api/main.py`:
+Registrar en `src/api/main.py`:
 
 ```python
-from providers.weather import WeatherDataProvider
-provider_registry.register(WeatherDataProvider())
+from providers.mi_proveedor import MiProvider
+provider_registry.register(MiProvider())
 ```
-
-### Añadir un nuevo sistema de apuestas
-
-```python
-# providers/betting/kalshi.py
-from providers.betting.base import BettingDataProvider
-from providers.betting.schemas import BettingMarket, BettingQuery
-
-class KalshiBettingProvider(BettingDataProvider):
-    provider_id = "kalshi"
-    name = "Kalshi"
-    description = "Mercados de predicción regulados en EE.UU."
-    cost_hbar = 0.3
-
-    async def list_markets(self, query: BettingQuery) -> list[BettingMarket]:
-        ...
-
-    async def get_market(self, market_id: str) -> BettingMarket | None:
-        ...
-```
-
-Registrar y listo. `BettingDataProvider` te da gratis: análisis de odds, cálculo de confianza, riesgos, respuesta estandarizada e integración con pagos + HCS.
 
 ---
 
-## Auto-promoción del Agente
+## 📊 Trust Score (Reputación)
 
-HashA2A se promociona automáticamente en el ecosistema Hedera.
+Cada proveedor tiene una reputación calculada automáticamente:
 
-### 1. Registro HOL (HCS-10)
+```
+🏆 trust_score = 
+   0.35 × accuracy + 
+   0.20 × velocidad + 
+   0.15 × uptime + 
+   0.10 × (100 - disputas%) + 
+   0.20 × min(stake / 10000 × 100, 100)
+```
+
+Los agentes compradores pueden filtrar por trust score mínimo.
+
+---
+
+## 📈 Roadmap
+
+- [x] 🧬 Core: BaseDataProvider, pagos, HCS audit
+- [x] 🔌 Sistema de plugins con auto-descubrimiento
+- [x] 🟣 Polymarket Edge Provider
+- [x] 📢 Auto-promoción HCS-10 + HOL
+- [ ] 💳 HIP-991: Custom Fees en topics (adiós al polling)
+- [ ] 🏦 Kalshi Provider (mercados regulados)
+- [ ] ✅ Evaluación de calidad antes de cobrar
+- [ ] 🗳️ Subastas inversas entre proveedores
+- [ ] 🔒 Staking real con slashing
+- [ ] 🛠️ MCP Server + x402 Protocol
+
+---
+
+---
+
+<br/><br/>
+
+<!--- ============================================================ --->
+<!--- ENGLISH                                                   --->
+<!--- ============================================================ --->
+
+<div align="center">
+
+# 🇬🇧 English
+
+---
+
+</div>
+
+## 📋 What HashA2A Does
+
+Think of it as a **data store for AI agents**:
+
+| Client Agent walks in and asks… | HashA2A responds… |
+|:---|---:|
+| *"What's the probability BTC hits $100K?"* | 🔍 Fetches Polymarket 📊 AI Analysis 🤝 HCS receipt |
+| *"I need 2028 election odds"* | Same flow. Pay **0.5 HBAR**, get processed data. |
+
+**💰 You pay → 🧠 HashA2A processes → 📦 Ready-to-use intelligence**
+
+---
+
+## 🧬 Architecture
+
+```mermaid
+graph TB
+    subgraph "🌐 Hedera Network"
+        HCS[HCS Topics]
+        MN[Mirror Node]
+        HBAR[HBAR Payments]
+    end
+    
+    subgraph "🤖 HashA2A Core"
+        PE[Payment Engine]
+        PM[Provider Manager]
+        CL[Consensus Logger]
+        AR[Agent Registry<br/>HCS-10 Self-Promo]
+    end
+    
+    subgraph "📦 DataProviders"
+        PME[Polymarket Edge]
+        KAL[Kalshi<br/>Coming Soon]
+        PRED[PredictIt<br/>Coming Soon]
+    end
+    
+    subgraph "👤 Client Agents"
+        LC[LangChain Agent]
+        CW[CrewAI Agent]
+        EZ[ElizaOS Agent]
+    end
+
+    LC -->|"POST /requests"| PE
+    CW -->|"POST /requests"| PE
+    PE -->|"💸 Pay X HBAR"| HBAR
+    HBAR -->|"✅ Confirm"| MN
+    MN -->|"Payment detected"| PE
+    PE -->|"Activate"| PM
+    PM --> PME
+    PME -->|"Data + AI"| CL
+    CL -->|"📝 Audit proof"| HCS
+    AR -.->|"📢 Broadcast presence"| HCS
+    LC -->|"GET /requests/id"| PM
+```
+
+### 🔄 Step-by-Step Flow
+
+```mermaid
+sequenceDiagram
+    participant Agent as 🤖 Agent Client
+    participant H2A as 🏪 HashA2A
+    participant H as 🌐 Hedera
+    
+    Agent->>H2A: POST /requests {provider: "polymarket"}
+    H2A-->>Agent: ✅ Payment required: 0.5 HBAR<br/>📌 Account + Memo
+    
+    Agent->>H: 💸 Send HBAR with memo
+    Note over H: 2-5 sec finality
+    
+    loop Every 5s
+        H2A->>H: 🔍 Poll Mirror Node
+    end
+    
+    H-->>H2A: ✅ Payment confirmed
+    H2A->>H2A: 🧠 Run Provider.get_data()<br/>   + AI Analysis
+    
+    H2A->>H: 📝 Log to HCS Audit Topic<br/>   (SHA-256 proof)
+    
+    Agent->>H2A: GET /requests/{id}
+    H2A-->>Agent: 📦 Data + Analysis + HCS Proof
+```
+
+---
+
+## 🗂️ Project Structure
+
+```
+HashA2A/
+├── 📁 src/
+│   ├── 📁 core/               # ⚙️ Hedera logic + payments
+│   │   ├── base_provider.py   #   🧬 BaseDataProvider (ABC)
+│   │   ├── hedera_manager.py  #   🔗 HCS, memos, hashes
+│   │   ├── payment_engine.py  #   💰 Payment listener (Mirror Node)
+│   │   ├── consensus_logger.py#   📜 Immutable HCS audit
+│   │   ├── agent_registry.py  #   📢 HCS-10 self-promotion
+│   │   ├── provider_registry.py# 🗂️ Plugin manager
+│   │   └── config.py          #   ⚙️ Pydantic Settings
+│   ├── 📁 providers/          # 🔌 Data plugins
+│   │   ├── base_betting.py    #   🎲 Betting base class
+│   │   ├── polymarket_edge.py #   🟣 Polymarket (Edge Analysis)
+│   │   └── schemas_betting.py #   📐 Betting models
+│   ├── 📁 api/                # 🌐 REST API
+│   │   ├── main.py            #   FastAPI app
+│   │   ├── deps.py            #   Dependencies
+│   │   └── routes/
+│   │       ├── requests.py    #   POST/GET requests
+│   │       ├── providers.py   #   GET providers
+│   │       └── agent.py       #   GET/POST agent profile
+│   └── 📁 models/
+│       └── schemas.py         # 📐 Shared Pydantic models
+├── 📁 docs/
+│   └── client-examples.md     # 📖 Client integration examples
+├── runner.py                   # 🏃 Entry point
+├── .env.example                # 🔑 Config template
+└── requirements.txt            # 📦 Dependencies
+```
+
+---
+
+## 🚀 Quick Start
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/agent/register-hol
-```
-
-Publica un mensaje de registro en el topic global de HOL siguiendo el estándar **HCS-10 OpenConvAI**:
-
-```json
-{
-  "type": "hcs10-registration",
-  "protocol": "HCS-10",
-  "agent_name": "HashA2A Intelligence Oracle",
-  "tags": ["data-oracle", "hedera", "prediction-markets"],
-  "inbound_topic": "0.0.xxxxx",
-  "outbound_topic": "0.0.xxxxx",
-  "treasury_account": "0.0.xxxxx",
-  "fees": { "token": "HBAR", "model": "per_request" }
-}
-```
-
-### 2. Broadcasts periódicos
-
-Cada `AGENT_PROMOTIONAL_INTERVAL` segundos (default: 1 hora), HashA2A publica su perfil actualizado en su Outbound Topic: proveedores disponibles, precios, trust scores, solicitudes servidas.
-
-### 3. Perfil público
-
-```bash
-curl http://localhost:8080/api/v1/agent/profile
-```
-
-Devuelve un `AgentProfile` completo con toda la información que otros agentes necesitan.
-
----
-
-## Modelo de Reputación
-
-| Factor | Peso | Descripción |
-|--------|------|-------------|
-| Accuracy | 35% | Precisión histórica de los datos |
-| Velocidad | 20% | Latencia promedio de respuesta |
-| Uptime | 15% | Disponibilidad del proveedor |
-| Disputas | 10% | Ratio de disputas sobre total |
-| Staking | 20% | HBAR en garantía |
-
-```python
-trust_score = (
-    0.35 * accuracy +
-    0.20 * (100 - min(latency_ms / 100, 100)) +
-    0.15 * uptime +
-    0.10 * (100 - dispute_rate * 100) +
-    0.20 * min(staked_hbar / 10000 * 100, 100)
-)
-```
-
----
-
-## Roadmap
-
-- [x] Core base: BaseDataProvider, HederaManager, PaymentEngine, ConsensusLogger
-- [x] Plugin system: ProviderRegistry con auto-descubrimiento
-- [x] Nicho betting: BettingDataProvider + PolymarketBettingProvider
-- [x] Auto-promoción: HCS-10 / HOL registry + broadcasts periódicos
-- [ ] HIP-991: Migrar de polling Mirror Node a Custom Fees en topics
-- [ ] Kalshi provider: Segundo plugin de betting
-- [ ] Evaluación de calidad: No cobrar si el dato no pasa threshold
-- [ ] Subastas inversas: Múltiples proveedores compiten por una solicitud
-- [ ] Staking real: Proveedores depositan HBAR como garantía
-- [ ] MCP Server: Exponer HashA2A como servidor MCP
-- [ ] x402 protocol: Soporte para pagos HTTP 402 (USDC)
-- [ ] Dashboard: UI en tiempo real con estado del agente
-
----
-
-## Tech Stack
-
-| Tecnología | Uso |
-|-----------|-----|
-| **Python 3.11+** | Lenguaje base |
-| **FastAPI** | API REST |
-| **Hedera SDK** | HCS topics, mensajes, pagos |
-| **Pydantic** | Modelos y validación |
-| **httpx** | Cliente HTTP async |
-| **LangChain** | (futuro) Procesamiento con IA |
-
----
-
-## Licencia
-
-MIT
-
----
-
-<br>
-
-<!-- ============================================================ -->
-<!-- ENGLISH                                                     -->
-<!-- ============================================================ -->
-
-# HashA2A — The Agent-to-Agent Intelligence Layer
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.11%2B-blue" alt="Python 3.11+">
-  <img src="https://img.shields.io/badge/Hedera-HCS%20%7C%20HTS%20%7C%20HIP--991-green" alt="Hedera">
-  <img src="https://img.shields.io/badge/FastAPI-0.115%2B-009688" alt="FastAPI">
-  <img src="https://img.shields.io/badge/license-MIT-yellow" alt="MIT">
-</p>
-
-**HashA2A** is a modular data oracle where AI agents purchase processed intelligence through HBAR micropayments on Hedera. The system is data-type agnostic — it uses a `DataProvider` plugin system that can connect to any external data source and deliver it augmented with AI-driven analysis.
-
-> **Philosophy:** We don't sell raw data. We sell processed intelligence with HCS consensus proof.
-
----
-
-## Table of Contents
-
-- [What problem does it solve?](#what-problem-does-it-solve)
-- [Architecture](#architecture)
-- [Quick Start](#quick-start-1)
-- [API Endpoints](#api-endpoints-1)
-- [Plugin System](#plugin-system)
-- [Agent Self-Promotion](#agent-self-promotion)
-- [Reputation Model](#reputation-model)
-- [Roadmap](#roadmap-1)
-
----
-
-## What problem does it solve?
-
-| Problem | HashA2A Solution |
-|----------|-----------------|
-| Every API requires registration, API keys, and billing | Pay-per-query in HBAR, no registration |
-| No way to verify data provenance | Every response recorded on HCS with SHA-256 hash |
-| Raw data requires post-processing | DataProviders deliver data + AI analysis |
-| No standardization across data sources | `BaseDataProvider` unifies the interface |
-| Agents can't discover each other | HCS-10 HOL registration + periodic broadcasts |
-
----
-
-## Architecture
-
-```
-                        ┌──────────────────────────────┐
-                        │     HOL Registry (HCS-10)     │
-                        │  HashA2A — discoverable agent │
-                        └──────────────────────────────┘
-                                   │
-              ┌────────────────────┼────────────────────┐
-              │                    │                    │
-         Agent A              Agent B              Agent C
-        (LangChain)          (CrewAI)            (ElizaOS)
-              │                    │                    │
-              └─────────┬──────────┴──────────┬─────────┘
-                        │   HBAR payment       │
-                        │   + unique memo      │
-                        ▼                      ▼
-              ┌──────────────────────────────────────┐
-              │           HashA2A Core               │
-              │  ┌────────────┐  ┌────────────────┐  │
-              │  │ Payment    │  │ Provider       │  │
-              │  │ Engine     │──│ Registry       │  │
-              │  └────────────┘  └───────┬────────┘  │
-              │                          ▼           │
-              │  ┌──────────────────────────────┐    │
-              │  │     BettingDataProvider       │    │
-              │  │  ┌──────────┐ ┌──────────┐   │    │
-              │  │  │Polymarket│ │  Kalshi  │...│    │
-              │  │  └──────────┘ └──────────┘   │    │
-              │  └──────────────────────────────┘    │
-              │  ┌──────────────────────────────┐    │
-              │  │    ConsensusLogger (HCS)      │    │
-              │  └──────────────────────────────┘    │
-              └──────────────────────────────────────┘
-```
-
-### Operation flow
-
-```
-Client Agent                HashA2A Core                    Hedera Network
-     │                           │                              │
-     ├─ POST /api/v1/requests ───>                              │
-     │  {provider: "polymarket"}                                │
-     │                           │                              │
-     │<── Payment instructions ──│                              │
-     │   {0.5 HBAR, account, memo}                              │
-     │                           │                              │
-     ├─ Sends HBAR with memo ──────────────────────────────────>│
-     │                           │                              │
-     │                           │<── Poll Mirror Node ─────────│
-     │                           │    (memo matches)            │
-     │                           │                              │
-     │                           ├── Provider.get_data()        │
-     │                           │   (fetch + AI analysis)      │
-     │                           │                              │
-     │                           ├── HCS: audit record ────────>│
-     │                           │   (immutable SHA-256 hashes) │
-     │                           │                              │
-     │<── GET /api/v1/requests/id ──│                           │
-     │   {data, analysis, proof}  │                              │
-```
-
-### Core components
-
-| Module | File | Responsibility |
-|--------|------|----------------|
-| **BaseDataProvider** | `core/base_provider.py` | Abstract base class for all data providers |
-| **HederaManager** | `core/hedera_manager.py` | HCS topics, messages, hashes, payment memos |
-| **PaymentEngine** | `core/payment_engine.py` | Mirror Node polling, payment matching |
-| **ConsensusLogger** | `core/consensus_logger.py` | Immutable audit trail on HCS |
-| **AgentRegistry** | `core/agent_registry.py` | HCS-10 self-promotion + periodic broadcasts |
-| **ProviderRegistry** | `core/provider_registry.py` | Plugin registration and auto-discovery |
-| **BettingDataProvider** | `providers/betting/base.py` | Specialized base for betting/prediction systems |
-| **PolymarketBettingProvider** | `providers/betting/polymarket.py` | Concrete implementation for Polymarket |
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.11+
-- [Hedera Testnet](https://portal.hedera.com/) account
-- A treasury account with test HBAR
-
-### Installation
-
-```bash
+# 1️⃣ Clone
 git clone https://github.com/ymiydev-prog/HashA2A.git
 cd HashA2A
+
+# 2️⃣ Environment
 python3 -m venv .venv && source .venv/bin/activate
+
+# 3️⃣ Install
 pip install -r requirements.txt
+
+# 4️⃣ Configure (use Hedera Testnet)
 cp .env.example .env
-# Edit .env with your Hedera Testnet credentials
-```
+# Edit .env with your credentials
 
-### Run
-
-```bash
+# 5️⃣ Run!
 python runner.py
-# Server at http://localhost:8080
+# → Server at http://localhost:8080
 ```
 
-### Test
+---
+
+## 📡 API Endpoints
+
+| Method | Path | 🎯 Purpose |
+|--------|------|:---|
+| `GET` | `/api/v1/providers` | 🔍 Browse available data |
+| `GET` | `/api/v1/providers/{id}` | 💰 Check price & reputation |
+| `POST` | `/api/v1/requests` | 🛒 Buy data (returns payment instructions) |
+| `GET` | `/api/v1/requests/{id}` | 📦 Get result (polling) |
+| `GET` | `/api/v1/agent/profile` | 🏪 View agent profile |
+| `POST` | `/api/v1/agent/register-hol` | 📢 Register in HOL (HCS-10) |
+
+### 🧪 Try it in 30 seconds
 
 ```bash
-# List providers
-curl http://localhost:8080/api/v1/providers
+# 1. List providers
+curl http://localhost:8080/api/v1/providers | jq
 
-# Agent profile
-curl http://localhost:8080/api/v1/agent/profile
+# 2. Buy Polymarket data
+curl -X POST http://localhost:8080/api/v1/requests   -H "Content-Type: application/json"   -d '{"provider_id":"polymarket","params":{"query":"Bitcoin","limit":3}}'
 
-# Request data
-curl -X POST http://localhost:8080/api/v1/requests \
-  -H "Content-Type: application/json" \
-  -d '{"provider_id": "polymarket", "params": {"query": "Bitcoin", "limit": 3}}'
-
-# Check result
-curl http://localhost:8080/api/v1/requests/{request_id}
+# 3. Receive (after sending 0.5 HBAR with the given memo)
+curl http://localhost:8080/api/v1/requests/{request_id} | jq
 ```
 
 ---
 
-## API Endpoints
-
-### Providers
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/providers` | List all providers with pricing and reputation |
-| `GET` | `/api/v1/providers/{id}` | Detail of a specific provider |
-
-### Data requests
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/v1/requests` | Request data. Returns payment instructions |
-| `GET` | `/api/v1/requests/{id}` | Check result. Poll until `status = "completed"` |
-
-### Agent self-promotion
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/agent/profile` | Full agent profile |
-| `POST` | `/api/v1/agent/broadcast` | Force broadcast to Outbound Topic |
-| `POST` | `/api/v1/agent/register-hol` | Register in HOL global registry (HCS-10) |
-| `GET` | `/api/v1/agent/topics` | View active HCS topic IDs |
-
-### Full Python example
+## 🔌 Create Your Own DataProvider
 
 ```python
-import httpx, time
-BASE = "http://localhost:8080/api/v1"
-
-resp = httpx.post(f"{BASE}/requests", json={
-    "provider_id": "polymarket",
-    "params": {"query": "Ethereum", "limit": 5, "include_analysis": True}
-})
-data = resp.json()
-request_id = data["request_id"]
-print(f"Send {data['payment']['amount_hbar']} HBAR with memo '{data['payment']['memo']}'")
-
-for _ in range(30):
-    resp = httpx.get(f"{BASE}/requests/{request_id}")
-    result = resp.json()
-    if result.get("status") == "completed":
-        print("Data:", result["data"])
-        print("Analysis:", result["analysis"])
-        print("HCS Proof:", result["proof_tx_id"])
-        break
-    time.sleep(2)
-```
-
----
-
-## Plugin System
-
-Provider hierarchy:
-
-```
-BaseDataProvider (core/base_provider.py)
-  ├── BettingDataProvider (providers/betting/base.py)
-  │   ├── PolymarketBettingProvider
-  │   ├── KalshiBettingProvider    [future]
-  │   └── ...
-  ├── WeatherDataProvider          [future]
-  ├── SportsDataProvider           [future]
-  └── FinanceDataProvider          [future]
-```
-
-### Creating a new DataProvider
-
-```python
-from typing import Any
+# src/providers/my_provider.py
 from core.base_provider import BaseDataProvider
 from models.schemas import DataResponse, RequestStatus
 
-class WeatherDataProvider(BaseDataProvider):
-    provider_id = "weather"
-    name = "Weather Service"
-    description = "Real-time weather data with AI-powered forecasts"
-    cost_hbar = 0.1
+class MyProvider(BaseDataProvider):
+    provider_id = "my-data"       # 🆔 Unique ID
+    name = "My Data Source"       # 📛 Display name
+    description = "Sells data about..."
+    cost_hbar = 0.2               # 💰 Price in HBAR
 
-    async def get_data(self, params: dict[str, Any]) -> DataResponse:
+    async def get_data(self, params) -> DataResponse:
         return DataResponse(
             request_id=params.get("request_id", ""),
             provider_id=self.provider_id,
             status=RequestStatus.COMPLETED,
-            data={"temperature": 22.5, "humidity": 65},
-            analysis="Clear skies, mild temperatures.",
-            provider_trust_score=self.reputation.trust_score,
+            data={"result": "my data"},
+            analysis="AI-generated analysis...",
         )
 ```
 
-Register in `api/main.py`:
+Register in `src/api/main.py`:
 
 ```python
-from providers.weather import WeatherDataProvider
-provider_registry.register(WeatherDataProvider())
-```
-
-### Adding a new betting platform
-
-```python
-# providers/betting/kalshi.py
-from providers.betting.base import BettingDataProvider
-from providers.betting.schemas import BettingMarket, BettingQuery
-
-class KalshiBettingProvider(BettingDataProvider):
-    provider_id = "kalshi"
-    name = "Kalshi"
-    description = "Regulated US prediction markets"
-    cost_hbar = 0.3
-
-    async def list_markets(self, query: BettingQuery) -> list[BettingMarket]:
-        ...
-
-    async def get_market(self, market_id: str) -> BettingMarket | None:
-        ...
-```
-
-Register and you're done. `BettingDataProvider` gives you for free: odds analysis, confidence calculation, risk identification, standardized response, payment + HCS integration.
-
----
-
-## Agent Self-Promotion
-
-HashA2A automatically promotes itself in the Hedera ecosystem.
-
-### 1. HOL Registry (HCS-10)
-
-```bash
-curl -X POST http://localhost:8080/api/v1/agent/register-hol
-```
-
-Publishes a registration message to the global HOL topic following the **HCS-10 OpenConvAI** standard:
-
-```json
-{
-  "type": "hcs10-registration",
-  "protocol": "HCS-10",
-  "agent_name": "HashA2A Intelligence Oracle",
-  "tags": ["data-oracle", "hedera", "prediction-markets"],
-  "inbound_topic": "0.0.xxxxx",
-  "outbound_topic": "0.0.xxxxx",
-  "treasury_account": "0.0.xxxxx",
-  "fees": { "token": "HBAR", "model": "per_request" }
-}
-```
-
-### 2. Periodic broadcasts
-
-Every `AGENT_PROMOTIONAL_INTERVAL` seconds (default: 1 hour), HashA2A publishes its updated profile to its Outbound Topic: available providers, prices, trust scores, served requests.
-
-### 3. Public profile
-
-```bash
-curl http://localhost:8080/api/v1/agent/profile
-```
-
-Returns a complete `AgentProfile` with all the information other agents need.
-
----
-
-## Reputation Model
-
-| Factor | Weight | Description |
-|--------|--------|-------------|
-| Accuracy | 35% | Historical data accuracy |
-| Speed | 20% | Average response latency |
-| Uptime | 15% | Provider availability |
-| Disputes | 10% | Dispute ratio over total requests |
-| Staking | 20% | HBAR staked as collateral |
-
-```python
-trust_score = (
-    0.35 * accuracy +
-    0.20 * (100 - min(latency_ms / 100, 100)) +
-    0.15 * uptime +
-    0.10 * (100 - dispute_rate * 100) +
-    0.20 * min(staked_hbar / 10000 * 100, 100)
-)
+from providers.my_provider import MyProvider
+provider_registry.register(MyProvider())
 ```
 
 ---
 
-## Roadmap
+## 📊 Trust Score (Reputation)
 
-- [x] Core base: BaseDataProvider, HederaManager, PaymentEngine, ConsensusLogger
-- [x] Plugin system: ProviderRegistry with auto-discovery
-- [x] Betting niche: BettingDataProvider + PolymarketBettingProvider
-- [x] Self-promotion: HCS-10 / HOL registry + periodic broadcasts
-- [ ] HIP-991: Migrate from Mirror Node polling to topic Custom Fees
-- [ ] Kalshi provider: Second betting plugin
-- [ ] Quality evaluation: Don't charge if data doesn't pass threshold
-- [ ] Reverse auctions: Multiple providers compete for a request
-- [ ] Real staking: Providers deposit HBAR as collateral
-- [ ] MCP Server: Expose HashA2A as an MCP server
-- [ ] x402 protocol: Support for HTTP 402 payments (USDC)
-- [ ] Dashboard: Real-time UI with agent status
+Each provider has an auto-calculated reputation:
 
----
+```
+🏆 trust_score = 
+   0.35 × accuracy + 
+   0.20 × speed + 
+   0.15 × uptime + 
+   0.10 × (100 - disputes%) + 
+   0.20 × min(stake / 10000 × 100, 100)
+```
 
-## Tech Stack
-
-| Technology | Usage |
-|-----------|-------|
-| **Python 3.11+** | Core language |
-| **FastAPI** | REST API |
-| **Hedera SDK** | HCS topics, messaging, payments |
-| **Pydantic** | Models and validation |
-| **httpx** | Async HTTP client |
-| **LangChain** | (future) AI processing in DataProviders |
+Buyer agents can filter by minimum trust score.
 
 ---
 
-## License
+## 📈 Roadmap
 
-MIT
+- [x] 🧬 Core: BaseDataProvider, payments, HCS audit
+- [x] 🔌 Plugin system with auto-discovery
+- [x] 🟣 Polymarket Edge Provider
+- [x] 📢 HCS-10 self-promotion + HOL registry
+- [ ] 💳 HIP-991: Topic Custom Fees (no more polling)
+- [ ] 🏦 Kalshi Provider (regulated markets)
+- [ ] ✅ Quality check before charging
+- [ ] 🗳️ Reverse auctions between providers
+- [ ] 🔒 Real staking with slashing
+- [ ] 🛠️ MCP Server + x402 Protocol
+
+---
+
+## 📄 License
+
+MIT — Use it, fork it, sell data with it.
