@@ -85,11 +85,14 @@ class HederaManager:
             self.settings.hip991_fee_collector or self.settings.treasury_account
         )
         amount_tinybar = int(fee_hbar * 100_000_000)
+        operator_pub = self.operator_key.public_key()
 
         tx = (
             TopicCreateTransaction()
             .set_topic_memo(memo)
-            .set_admin_key(self.operator_key.public_key())
+            .set_admin_key(operator_pub)
+            .set_fee_schedule_key(operator_pub)
+            .add_fee_exempt_key(operator_pub)
             .set_custom_fees([
                 FixedFee()
                     .set_amount(amount_tinybar)
