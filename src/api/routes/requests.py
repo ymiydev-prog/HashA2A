@@ -46,14 +46,14 @@ async def create_request(
         )
 
     request_id = hedera.generate_request_id()
-    memo = hedera.generate_payment_memo(request_id, provider.provider_id)
+    inbound_topic = await hedera.get_or_create_inbound_topic()
 
     payment = PaymentRequest(
         request_id=request_id,
         provider_id=provider.provider_id,
         amount_hbar=provider.cost_hbar,
         destination_account=hedera.settings.treasury_account,
-        memo=memo,
+        memo=f"HASHA2A:{request_id}:{provider.provider_id}",
         expires_at=int(time.time()) + hedera.settings.payment_ttl_seconds,
     )
 
@@ -66,13 +66,14 @@ async def create_request(
         "status": RequestStatus.AWAITING_PAYMENT.value,
         "payment": {
             "amount_hbar": payment.amount_hbar,
-            "destination_account": payment.destination_account,
-            "memo": payment.memo,
-            "expires_at": payment.expires_at,
+            "hip991": True,
+            "inbound_topic_id": str(inbound_topic),
         },
         "instructions": (
-            f"Send exactly {payment.amount_hbar} HBAR to {payment.destination_account} "
-            f"with memo '{payment.memo}' to unlock the data."
+            f"1. Submit a JSON message to HCS topic {inbound_topic} with: "
+            f'{{"request_id": "{request_id}", "provider": "{provider.provider_id}", "params": {body.params}}} '
+            f"2. HIP-991 will auto-collect {provider.cost_hbar} HBAR from your account "
+            f"3. Poll GET /api/v1/requests/{request_id} for the result"
         ),
     }
 
@@ -81,9 +82,6 @@ async def create_request(
 async def get_request_result(
     request_id: str,
     payment_engine: PaymentEngine = Depends(get_payment_engine),
-    provider_registry: ProviderRegistry = Depends(get_provider_registry),
-    agent_registry: AgentRegistry = Depends(get_agent_registry),
-    consensus_logger: ConsensusLogger = Depends(get_consensus_logger),
 ):
     completed = _inflight.get(request_id)
     if completed:
@@ -96,7 +94,6 @@ async def get_request_result(
     return {
         "request_id": request_id,
         "status": pending.status.value,
-        "payment_status": pending.status.value,
     }
 
 

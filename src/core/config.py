@@ -12,7 +12,9 @@ class Settings(BaseSettings):
     mirror_node_url: str = "https://testnet.mirrornode.hedera.com"
     hol_registry_topic: str = "0.0.29640405"
 
-    payment_polling_interval: float = 5.0
+    hip991_fee_hbar: float = 0.5
+    hip991_fee_collector: str = ""
+
     payment_ttl_seconds: int = 300
     request_expiry_seconds: int = 3600
 

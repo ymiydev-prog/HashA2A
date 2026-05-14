@@ -49,16 +49,17 @@ async def lifespan(app: FastAPI):
     payment_engine.on_payment_confirmed(on_payment)
 
     import asyncio
-    payment_task = asyncio.create_task(payment_engine.run_forever())
+    await payment_engine.start()
     broadcast_task = asyncio.create_task(agent_registry.run_periodic_broadcast())
 
+    inbound = await hedera.get_or_create_inbound_topic()
     print(f"HashA2A v{settings.agent_version} running on {settings.api_host}:{settings.api_port}")
     print(f"Providers: {[p.provider_id for p in provider_registry.list()]}")
-    print(f"Audit HCS topic: {await hedera.get_or_create_audit_topic()}")
+    print(f"[HIP-991] Inbound topic: {inbound}")
+    print(f"[HIP-991] Fee: {settings.hip991_fee_hbar} HBAR (auto-collected per message)")
 
     yield
 
-    payment_task.cancel()
     broadcast_task.cancel()
     hedera.close()
 
@@ -66,8 +67,12 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(
         title="HashA2A — The Agent-to-Agent Intelligence Layer",
-        description="A modular data oracle where AI agents buy processed intelligence via HBAR micropayments on Hedera.",
-        version="0.1.0",
+        description=(
+            "A modular data oracle where AI agents buy processed intelligence "
+            "via HBAR micropayments on Hedera. "
+            "Uses HIP-991 Custom Fees for automatic payment collection."
+        ),
+        version="0.2.0",
         lifespan=lifespan,
     )
 

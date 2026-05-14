@@ -1,9 +1,11 @@
 import asyncio
-import base64
+import json
 import time
+import threading
 from typing import Callable, Awaitable
 
-import httpx
+from hedera import TopicMessageQuery
+
 from core.config import Settings
 from core.hedera_manager import HederaManager
 from models.schemas import PaymentRequest, RequestStatus
@@ -13,15 +15,16 @@ class PaymentEngine:
     def __init__(self, settings: Settings, hedera_manager: HederaManager):
         self.settings = settings
         self.hedera = hedera_manager
-        self.mirror_node_url = settings.mirror_node_url.rstrip("/")
         self._pending: dict[str, PaymentRequest] = {}
-        self._last_seen_timestamp: str | None = None
         self._on_payment_callback: Callable[[str], Awaitable[None]] | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._subscription = None
 
     def on_payment_confirmed(self, callback: Callable[[str], Awaitable[None]]):
         self._on_payment_callback = callback
 
     def register_request(self, request: PaymentRequest):
+        request.status = RequestStatus.AWAITING_PAYMENT
         self._pending[request.request_id] = request
 
     def deregister_request(self, request_id: str):
@@ -37,76 +40,75 @@ class PaymentEngine:
             if req.expires_at < now
         ]
         for rid in expired:
-            req = self._pending[rid]
-            req.status = RequestStatus.EXPIRED
+            self._pending[rid].status = RequestStatus.EXPIRED
             self._pending.pop(rid)
 
-    async def fetch_transactions(self) -> list[dict]:
-        account = self.settings.treasury_account
-        url = (
-            f"{self.mirror_node_url}/api/v1/transactions"
-            f"?account.id={account}"
-            f"&transactiontype=CRYPTOTRANSFER"
-            f"&order=desc&limit=50"
+    async def start(self):
+        """
+        Subscribe to the inbound HCS topic.
+        When an agent submits a message, HIP-991 auto-collects the fee.
+        We receive the message and match it to a pending request.
+        """
+        self._loop = asyncio.get_running_loop()
+        topic_id = await self.hedera.get_or_create_inbound_topic()
+
+        thread = threading.Thread(
+            target=self._run_subscription,
+            args=(topic_id,),
+            daemon=True,
         )
-        if self._last_seen_timestamp:
-            url += f"&timestamp=gt:{self._last_seen_timestamp}"
+        thread.start()
 
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.get(url)
-            resp.raise_for_status()
-            return resp.json().get("transactions", [])
+    def _run_subscription(self, topic_id):
+        """Runs in background thread — listens for incoming HCS messages."""
+        query = TopicMessageQuery().set_topic_id(topic_id)
 
-    def check_transaction_match(
-        self, tx: dict, pending: PaymentRequest
-    ) -> bool:
-        memo_b64 = tx.get("memo_base64", "")
-        if not memo_b64:
-            return False
+        query.subscribe(
+            self.hedera.client,
+            self._on_subscription_error,
+            self._on_message,
+        )
 
+    def _on_subscription_error(self, error):
+        print(f"[HIP-991] Subscription error: {error}")
+
+    def _on_message(self, message):
+        """Called when an agent submits to the inbound topic (fee collected by HIP-991)."""
         try:
-            memo = base64.b64decode(memo_b64).decode("utf-8")
+            payload_str = message.contents.decode("utf-8")
+            payload = json.loads(payload_str)
         except Exception:
-            return False
+            return
 
-        parsed = self.hedera.parse_payment_memo(memo)
-        if parsed is None or parsed["request_id"] != pending.request_id:
-            return False
+        request_id = payload.get("request_id", "")
 
-        transfers = tx.get("transfers", [])
-        for transfer in transfers:
-            if transfer.get("account") == self.settings.treasury_account:
-                amount_hbar = abs(transfer.get("amount", 0)) / 100_000_000
-                if abs(amount_hbar - pending.amount_hbar) < 0.001:
-                    return True
-        return False
+        if not request_id:
+            return
 
-    async def check_payments(self) -> list[str]:
-        self.expire_stale_requests()
-        if not self._pending:
-            return []
+        if self._loop and self._on_payment_callback:
+            asyncio.run_coroutine_threadsafe(
+                self._confirm_and_activate(request_id, payload),
+                self._loop,
+            )
 
-        transactions = await self.fetch_transactions()
+    async def _confirm_and_activate(self, request_id: str, payload: dict):
+        """
+        HIP-991 ya cobró el fee automáticamente.
+        Solo actualizamos estado y activamos el provider.
+        """
+        pending = self._pending.get(request_id)
+        if pending is None:
+            return
 
-        if transactions:
-            self._last_seen_timestamp = transactions[0].get("consensus_timestamp")
+        pending.status = RequestStatus.PAYMENT_CONFIRMED
+        print(f"[HIP-991] ✅ Fee collected for {request_id} — activating provider")
 
-        confirmed: list[str] = []
-        for tx in transactions:
-            for rid, pending in list(self._pending.items()):
-                if pending.status == RequestStatus.AWAITING_PAYMENT:
-                    if self.check_transaction_match(tx, pending):
-                        pending.status = RequestStatus.PAYMENT_CONFIRMED
-                        confirmed.append(rid)
-        return confirmed
+        if self._on_payment_callback:
+            await self._on_payment_callback(request_id)
+
+    def stop(self):
+        self._subscription = None
 
     async def run_forever(self):
-        while True:
-            try:
-                confirmed = await self.check_payments()
-                for request_id in confirmed:
-                    if self._on_payment_callback:
-                        await self._on_payment_callback(request_id)
-            except Exception:
-                pass
-            await asyncio.sleep(self.settings.payment_polling_interval)
+        """Kept for backward compatibility — not used in HIP-991 mode."""
+        await asyncio.Future()

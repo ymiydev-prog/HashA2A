@@ -10,6 +10,9 @@ from hedera import (
     TopicId,
     TopicCreateTransaction,
     TopicMessageSubmitTransaction,
+    TopicMessageQuery,
+    FixedFee,
+    Hbar,
 )
 from core.config import Settings
 
@@ -77,6 +80,28 @@ class HederaManager:
         receipt = await response.get_receipt_async(self.client)
         return receipt.topic_id
 
+    async def create_topic_with_fees(self, memo: str, fee_hbar: float) -> TopicId:
+        collector = AccountId.from_string(
+            self.settings.hip991_fee_collector or self.settings.treasury_account
+        )
+        amount_tinybar = int(fee_hbar * 100_000_000)
+
+        tx = (
+            TopicCreateTransaction()
+            .set_topic_memo(memo)
+            .set_admin_key(self.operator_key.public_key())
+            .set_custom_fees([
+                FixedFee()
+                    .set_amount(amount_tinybar)
+                    .set_fee_collector_account_id(collector)
+            ])
+            .freeze_with(self.client)
+            .sign(self.operator_key)
+        )
+        response = await tx.execute_async(self.client)
+        receipt = await response.get_receipt_async(self.client)
+        return receipt.topic_id
+
     async def get_or_create_audit_topic(self) -> TopicId:
         if self.audit_topic_id is not None:
             return self.audit_topic_id
@@ -88,8 +113,9 @@ class HederaManager:
     async def get_or_create_inbound_topic(self) -> TopicId:
         if self.inbound_topic_id is not None:
             return self.inbound_topic_id
-        self.inbound_topic_id = await self.create_topic(
-            f"HashA2A Inbound - {self.settings.agent_name}"
+        self.inbound_topic_id = await self.create_topic_with_fees(
+            f"HashA2A Inbound - {self.settings.agent_name}",
+            self.settings.hip991_fee_hbar,
         )
         return self.inbound_topic_id
 

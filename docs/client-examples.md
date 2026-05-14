@@ -4,78 +4,127 @@
 
 ---
 
+## 💳 HIP-991 Flow (payment via HCS topic)
+
+> **Nuevo:** HashA2A usa **HIP-991 Custom Fees** en su Inbound Topic.
+> Cuando un agente envía un mensaje al topic, **el fee se cobra automáticamente** de su cuenta.
+> No más transfers manuales de HBAR — el pago es implícito en el mensaje.
+
+```mermaid
+sequenceDiagram
+    Agent->>HashA2A: POST /requests → obtiene request_id + topic_id
+    Agent->>Hedera: TopicMessageSubmitTransaction<br/>con {request_id, provider, params}
+    Note over Hedera: HIP-991: cobra X HBAR automáticamente
+    Hedera-->>HashA2A: Subscription callback: mensaje recibido
+    HashA2A->>HashA2A: Provider.get_data() + AI
+    HashA2A->>Agent: GET /requests/{id} → data + HCS proof
+```
+
+---
+
 ## 📦 cURL
 
 ```bash
 # 1️⃣ List available providers
 curl -s http://localhost:8080/api/v1/providers | jq
 
-# 2️⃣ Request market data
-curl -s -X POST http://localhost:8080/api/v1/requests \
+# 2️⃣ Request data → recibes request_id + inbound_topic_id
+REQUEST=$(curl -s -X POST http://localhost:8080/api/v1/requests \
   -H "Content-Type: application/json" \
-  -d '{"provider_id": "polymarket", "params": {"query": "Bitcoin", "limit": 3}}'
+  -d '{"provider_id": "polymarket", "params": {"query": "Bitcoin", "limit": 3}}')
+echo "$REQUEST" | jq
 
-# Response includes payment instructions:
+# Respuesta:
 # {
 #   "request_id": "abc-123",
 #   "payment": {
-#     "amount_hbar": 0.5,
-#     "destination_account": "0.0.1234567",
-#     "memo": "HASHA2A:abc-123:polymarket"
+#     "hip991": true,
+#     "inbound_topic_id": "0.0.12345",
+#     "amount_hbar": 0.5
 #   }
 # }
 
-# 3️⃣ Poll for result (after sending HBAR)
+# 3️⃣ El agente envía el mensaje al topic HCS (no raw HBAR transfer)
+#    ⚠️ Esto se hace con Hedera SDK, no cURL:
+#    TopicMessageSubmitTransaction()
+#      .set_topic_id("0.0.12345")
+#      .set_message('{"request_id":"abc-123","provider":"polymarket","params":{...}}')
+#    El fee de 0.5 HBAR se cobra automáticamente vía HIP-991
+
+# 4️⃣ Poll for result
 curl -s http://localhost:8080/api/v1/requests/abc-123 | jq
 
-# 4️⃣ View agent profile
+# 5️⃣ View agent profile
 curl -s http://localhost:8080/api/v1/agent/profile | jq
 ```
 
 ---
 
-## 🐍 Python (httpx)
+## 🐍 Python con Hedera SDK (HIP-991)
 
 ```python
 import httpx
-import time
 import json
+import asyncio
+import time
+from hedera import Client, PrivateKey, AccountId, TopicMessageSubmitTransaction
 
 BASE = "http://localhost:8080/api/v1"
 
-def request_data(provider: str, params: dict) -> dict:
-    """Request data from HashA2A. Returns payment instructions."""
+async def buy_data(provider: str, params: dict) -> dict:
+    """Solicita datos y paga vía HIP-991 en un solo paso."""
+
+    # 1. Obtener request_id + inbound_topic
     resp = httpx.post(f"{BASE}/requests", json={
-        "provider_id": provider,
+        "provider_id": provider, "params": params,
+    })
+    data = resp.json()
+    request_id = data["request_id"]
+    topic_id = data["payment"]["inbound_topic_id"]
+    fee_hbar = data["payment"]["amount_hbar"]
+
+    print(f"📋 Request: {request_id}")
+    print(f"📬 Topic: {topic_id}")
+    print(f"💰 Fee: {fee_hbar} HBAR (HIP-991 — auto-collected)")
+
+    # 2. Conectar a Hedera
+    client = Client.for_testnet()
+    client.set_operator(
+        AccountId.from_string("0.0.MI_AGENTE"),
+        PrivateKey.from_string("MI_PRIVATE_KEY"),
+    )
+
+    # 3. Enviar mensaje al Inbound Topic
+    #    HIP-991 cobra el fee automáticamente al enviar
+    payload = json.dumps({
+        "request_id": request_id,
+        "provider": provider,
         "params": params,
     })
-    return resp.json()
+    tx = TopicMessageSubmitTransaction() \
+        .set_topic_id(topic_id) \
+        .set_message(payload) \
+        .freeze_with(client) \
+        .sign(PrivateKey.from_string("MI_PRIVATE_KEY"))
 
-def wait_for_result(request_id: str, timeout: int = 120) -> dict:
-    """Poll until the request completes or times out."""
-    deadline = time.time() + timeout
-    while time.time() < deadline:
+    response = await tx.execute_async(client)
+    receipt = await response.get_receipt_async(client)
+    print(f"✅ Mensaje enviado. TX: {receipt.transaction_id}")
+
+    # 4. Poll resultado
+    for _ in range(30):
+        await asyncio.sleep(2)
         resp = httpx.get(f"{BASE}/requests/{request_id}")
         result = resp.json()
         if result.get("status") == "completed":
+            print(f"📊 Markets: {result['data']['total_found']}")
+            print(f"🧠 Analysis:\n{result['analysis']}")
+            print(f"🔗 HCS Proof: {result['proof_tx_id']}")
             return result
-        time.sleep(3)
-    raise TimeoutError("Request did not complete in time")
 
-# ---- Usage ----
-payment = request_data("polymarket", {"query": "Ethereum", "limit": 5, "include_analysis": True})
+    raise TimeoutError("Request timed out")
 
-print(f"📤 Send {payment['payment']['amount_hbar']} HBAR")
-print(f"   To: {payment['payment']['destination_account']}")
-print(f"   Memo: {payment['payment']['memo']}")
-
-# After sending HBAR with the memo...
-result = wait_for_result(payment["request_id"])
-
-print(f"\n✅ Status: {result['status']}")
-print(f"📊 Markets found: {result['data']['total_found']}")
-print(f"🧠 Analysis:\n{result['analysis']}")
-print(f"🔗 HCS Proof: {result['proof_tx_id']}")
+asyncio.run(buy_data("polymarket", {"query": "Ethereum", "limit": 5}))
 ```
 
 ---
