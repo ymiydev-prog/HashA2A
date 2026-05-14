@@ -9,7 +9,7 @@ from core.payment_engine import PaymentEngine
 from core.agent_registry import AgentRegistry
 from core.provider_registry import ProviderRegistry
 from core.consensus_logger import ConsensusLogger
-from api.routes import requests, providers, agent
+from api.routes import requests, providers, agent, dashboard
 
 
 @asynccontextmanager
@@ -65,6 +65,7 @@ async def lifespan(app: FastAPI):
     print(f"\nHashA2A v{settings.agent_version} running on {settings.api_host}:{settings.api_port}")
     print(f"Providers: {[p.provider_id for p in provider_registry.list_all()]}")
     print(f"MCP:   http://localhost:{settings.api_port}/mcp")
+    print(f"Dashboard: http://localhost:{settings.api_port}/dashboard")
     if hedera_ok:
         print(f"HIP-991: {inbound} | {settings.hip991_fee_hbar} HBAR fee")
     print("")
@@ -102,6 +103,7 @@ def create_app() -> FastAPI:
     app.include_router(requests.router, prefix="/api/v1")
     app.include_router(providers.router, prefix="/api/v1")
     app.include_router(agent.router, prefix="/api/v1")
+    app.include_router(dashboard.router)
 
     from mcp_server import create_mcp_server
     mcp = create_mcp_server()
