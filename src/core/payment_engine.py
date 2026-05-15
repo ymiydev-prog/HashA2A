@@ -69,7 +69,7 @@ class PaymentEngine:
         print(f"[PaymentEngine] 🔄 Mirror Node polling fallback active")
 
     def _run_subscription(self, topic_id):
-        query = TopicMessageQuery().set_topic_id(topic_id)
+        query = TopicMessageQuery().set_topic_id(str(topic_id))
         try:
             query.subscribe(
                 self.hedera.client,

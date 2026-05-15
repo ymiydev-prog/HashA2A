@@ -71,6 +71,40 @@ class AgentProfile(BaseModel):
     uptime_pct: float = 100.0
     total_requests_served: int = 0
     last_broadcast: str | None = None
+    started_at: str | None = None
+    avg_response_time_ms: float | None = None
+    active_connections: int = 0
+
+
+class AgentHealthCheck(BaseModel):
+    status: str = "healthy"
+    uptime_seconds: float = 0
+    started_at: str
+    version: str
+    providers_count: int
+    total_requests_served: int
+    avg_response_time_ms: float | None = None
+    last_request_at: str | None = None
+    hedera_connected: bool = False
+    mirror_node_reachable: bool = False
+    agents_discovered: int = 0
+    online_agents: int = 0
+
+
+class AgentDiscoveryEntry(BaseModel):
+    agent_name: str
+    agent_id: str
+    description: str
+    tags: list[str]
+    inbound_topic: str | None = None
+    outbound_topic: str | None = None
+    treasury_account: str
+    supported_chains: list[str]
+    fees: dict[str, Any]
+    trust_score: float = 50.0
+    total_requests: int = 0
+    last_seen: str
+    registered_at: str | None = None
 
 
 class DataQualityReport(BaseModel):

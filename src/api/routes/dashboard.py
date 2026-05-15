@@ -50,6 +50,11 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
+  animation: headerGlow 3s ease-in-out infinite alternate;
+}
+@keyframes headerGlow {
+  0% { box-shadow: 0 0 8px rgba(59,130,246,0.1); }
+  100% { box-shadow: 0 0 20px rgba(139,92,246,0.3); }
 }
 .header h1 { font-size: 22px; font-weight: 700; }
 .header h1 span { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -59,14 +64,44 @@ body {
   padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600;
 }
 .badge-live { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+.badge-live::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 .badge-version { background: rgba(59,130,246,0.1); color: var(--accent-1); border: 1px solid rgba(59,130,246,0.2); }
+
+/* 3-Column Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  gap: var(--gap);
+}
+@media (max-width: 1200px) { .layout { grid-template-columns: 1fr; } }
+
+/* Sidebar Left */
+.sidebar-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+/* Main Content */
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+/* Sidebar Right */
+.sidebar-right {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
 
 /* KPI Row */
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--gap);
-  margin-bottom: var(--gap);
 }
 .kpi-card {
   background: var(--bg-card);
@@ -90,14 +125,7 @@ body {
 .kpi-value { font-size: 30px; font-weight: 700; margin-bottom: 2px; }
 .kpi-sub { font-size: 13px; color: var(--text-muted); }
 
-/* Chart Row */
-.chart-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: var(--gap);
-  margin-bottom: var(--gap);
-}
-@media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
+/* Chart Cards */
 .chart-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -113,7 +141,6 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px 24px;
-  margin-bottom: var(--gap);
 }
 .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
 .table-header h3 { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
@@ -137,6 +164,74 @@ body {
 .score-bar { height: 4px; border-radius: 2px; margin-top: 4px; }
 .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
 
+/* Provider List (Sidebar) */
+.provider-list {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.provider-list h3 { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; }
+.provider-item {
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: var(--bg-primary);
+  border: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+.provider-item:hover { border-color: var(--accent-1); }
+.provider-item .name { font-size: 13px; font-weight: 600; }
+.provider-item .meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: flex; justify-content: space-between; }
+.provider-item .mini-bar { height: 3px; border-radius: 2px; margin-top: 6px; background: var(--border); }
+.provider-item .mini-bar-fill { height: 100%; border-radius: 2px; }
+
+/* Topic Feed (Sidebar Right) */
+.topic-feed {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.topic-feed h3 { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; }
+.topic-item {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(30,42,69,0.5);
+  font-size: 12px;
+}
+.topic-item:last-child { border-bottom: none; }
+.topic-item .time { color: var(--text-muted); font-size: 10px; }
+.topic-item .title { color: var(--text-primary); margin-top: 2px; }
+
+/* Agent List (Sidebar Right) */
+.agent-list {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.agent-list h3 { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; }
+.agent-item {
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: var(--bg-primary);
+  border: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+.agent-item:hover { border-color: var(--accent-2); }
+.agent-item .name { font-size: 13px; font-weight: 600; }
+.agent-item .name .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.agent-item .name .dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.agent-item .name .dot.offline { background: var(--red); }
+.agent-item .name .dot.unknown { background: var(--yellow); }
+.agent-item .meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.agent-item .tags { font-size: 10px; color: var(--accent-3); margin-top: 4px; }
+
 /* Footer */
 .footer { text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px; }
 
@@ -154,7 +249,7 @@ body {
       <div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">Agent-to-Agent Intelligence Layer</div>
     </div>
     <div class="header-right">
-      <span class="badge badge-live">● Live</span>
+      <span class="badge badge-live">Live</span>
       <span class="badge badge-version">v<span id="agent-version">—</span></span>
     </div>
   </div>
@@ -192,79 +287,105 @@ function renderDashboard(data) {
   const avgTrust = providers.length ? providers.reduce((s, p) => s + (p.trust_score || 0), 0) / providers.length : 0;
 
   container.innerHTML = `
-    <div class="kpi-row">
-      <div class="kpi-card blue">
-        <div class="kpi-label">Requests Served</div>
-        <div class="kpi-value">${fmt(totalReqs)}</div>
-        <div class="kpi-sub">${providers.length} active providers</div>
-      </div>
-      <div class="kpi-card purple">
-        <div class="kpi-label">Avg Trust Score</div>
-        <div class="kpi-value">${avgTrust.toFixed(0)}</div>
-        <div class="kpi-sub">weighted reputation</div>
-      </div>
-      <div class="kpi-card cyan">
-        <div class="kpi-label">HBAR Staked</div>
-        <div class="kpi-value">${fmt(totalStaked)}</div>
-        <div class="kpi-sub">ℏ across all providers</div>
-      </div>
-      <div class="kpi-card green">
-        <div class="kpi-label">Payments</div>
-        <div class="kpi-value" style="font-size:22px;">HIP-991 + x402</div>
-        <div class="kpi-sub">HBAR · USDC (Base)</div>
-      </div>
-    </div>
-
-    <div class="chart-row">
-      <div class="chart-card">
-        <h3>Provider Trust Scores</h3>
-        <canvas id="trust-chart"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>Cost per Query (HBAR)</h3>
-        <canvas id="cost-chart"></canvas>
-      </div>
-    </div>
-
-    <div class="table-card">
-      <div class="table-header">
-        <h3>📦 Providers</h3>
-        <div class="table-filters">
-          <select id="filter-min-trust" onchange="applyTableFilter()">
-            <option value="0">Min Trust: Any</option>
-            <option value="70">Min Trust: ≥70</option>
-            <option value="50">Min Trust: ≥50</option>
-            <option value="30">Min Trust: ≥30</option>
-          </select>
-          <select id="filter-cost" onchange="applyTableFilter()">
-            <option value="all">Any Price</option>
-            <option value="low">≤ 0.3 HBAR</option>
-            <option value="mid">≤ 0.5 HBAR</option>
-            <option value="high">> 0.5 HBAR</option>
-          </select>
+    <div class="layout">
+      <div class="sidebar-left">
+        <div class="kpi-card blue">
+          <div class="kpi-label">Requests Served</div>
+          <div class="kpi-value">${fmt(totalReqs)}</div>
+          <div class="kpi-sub">${providers.length} active providers</div>
+        </div>
+        <div class="kpi-card purple">
+          <div class="kpi-label">Avg Trust Score</div>
+          <div class="kpi-value">${avgTrust.toFixed(0)}</div>
+          <div class="kpi-sub">weighted reputation</div>
+        </div>
+        <div class="kpi-card cyan">
+          <div class="kpi-label">HBAR Staked</div>
+          <div class="kpi-value">${fmt(totalStaked)}</div>
+          <div class="kpi-sub">ℏ across all providers</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-label">Payments</div>
+          <div class="kpi-value" style="font-size:22px;">HIP-991 + x402</div>
+          <div class="kpi-sub">HBAR · USDC (Base)</div>
         </div>
       </div>
-      <div style="overflow-x:auto;">
-        <table class="prov-table" id="prov-table">
-          <thead>
-            <tr>
-              <th onclick="sortTable('name')">Provider</th>
-              <th onclick="sortTable('trust_score')">Trust Score</th>
-              <th onclick="sortTable('cost_hbar')">Cost (HBAR)</th>
-              <th onclick="sortTable('staked_hbar')">Staked</th>
-              <th onclick="sortTable('success_rate')">Success</th>
-            </tr>
-          </thead>
-          <tbody id="table-body"></tbody>
-        </table>
+
+      <div class="main">
+        <div class="chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);">
+          <div class="chart-card">
+            <h3>Provider Trust Scores</h3>
+            <canvas id="trust-chart"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Cost per Query (HBAR)</h3>
+            <canvas id="cost-chart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>Provider Performance Radar</h3>
+          <canvas id="radar-chart" style="max-height:300px;"></canvas>
+        </div>
+        <div class="table-card">
+          <div class="table-header">
+            <h3>📦 Providers</h3>
+            <div class="table-filters">
+              <select id="filter-min-trust" onchange="applyTableFilter()">
+                <option value="0">Min Trust: Any</option>
+                <option value="70">Min Trust: ≥70</option>
+                <option value="50">Min Trust: ≥50</option>
+                <option value="30">Min Trust: ≥30</option>
+              </select>
+              <select id="filter-cost" onchange="applyTableFilter()">
+                <option value="all">Any Price</option>
+                <option value="low">≤ 0.3 HBAR</option>
+                <option value="mid">≤ 0.5 HBAR</option>
+                <option value="high">> 0.5 HBAR</option>
+              </select>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="prov-table" id="prov-table">
+              <thead>
+                <tr>
+                  <th onclick="sortTable('name')">Provider</th>
+                  <th onclick="sortTable('trust_score')">Trust Score</th>
+                  <th onclick="sortTable('cost_hbar')">Cost (HBAR)</th>
+                  <th onclick="sortTable('staked_hbar')">Staked</th>
+                  <th onclick="sortTable('success_rate')">Success</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-right">
+        <div class="provider-list">
+          <h3>🔌 Quick Access</h3>
+          <div id="quick-providers"></div>
+        </div>
+        <div class="agent-list">
+          <h3>🤖 Discovered Agents <span id="agent-count" style="color:var(--green);font-size:12px;"></span></h3>
+          <div id="agent-items"><div style="color:var(--text-muted);font-size:12px;">Scanning HCS topics…</div></div>
+        </div>
+        <div class="topic-feed">
+          <h3>📡 Live Topic Feed</h3>
+          <div id="topic-items"><div style="color:var(--text-muted);font-size:12px;">Waiting for HCS messages…</div></div>
+        </div>
       </div>
     </div>
   `;
 
   window._allProviders = providers;
+  window._agents = data.agents || [];
   applyTableFilter();
   renderTrustChart(providers);
   renderCostChart(providers);
+  renderRadarChart(providers);
+  renderQuickProviders(providers);
+  renderAgents(window._agents);
 }
 
 function renderTrustChart(providers) {
@@ -323,11 +444,98 @@ function renderCostChart(providers) {
       responsive: true, maintainAspectRatio: false,
       cutout: '60%',
       plugins: {
-        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, color: '#7b8cae' } },
+        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 8, color: '#7b8cae', font: { size: 10 } } },
         tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed} HBAR` } }
       }
     }
   });
+}
+
+function renderRadarChart(providers) {
+  const canvas = document.getElementById('radar-chart');
+  if (!canvas) return;
+  if (charts.radar) charts.radar.destroy();
+
+  const labels = providers.map(p => p.name.split(' ')[0]);
+  const trustScores = providers.map(p => (p.trust_score || 0) / 100);
+  const successRates = providers.map(p => p.success_rate || 0);
+  const stakedNorm = providers.map(p => Math.min((p.staked_hbar || 0) / 1000, 1));
+
+  charts.radar = new Chart(canvas, {
+    type: 'radar',
+    data: {
+      labels: ['Trust', 'Success Rate', 'Stake Ratio'],
+      datasets: providers.slice(0, 4).map((p, i) => ({
+        label: p.name.split(' ')[0],
+        data: [
+          (p.trust_score || 0) / 100,
+          p.success_rate || 0,
+          Math.min((p.staked_hbar || 0) / 1000, 1),
+        ],
+        borderColor: ['#3b82f6', '#8b5cf6', '#06b6d4', '#22c55e'][i],
+        backgroundColor: ['#3b82f633', '#8b5cf633', '#06b6d433', '#22c55e33'][i],
+        borderWidth: 2,
+        pointRadius: 3,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { r: { beginAtZero: true, max: 1, grid: { color: '#1e2a4544' } } },
+      plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 8, color: '#7b8cae', font: { size: 10 } } } }
+    }
+  });
+}
+
+function renderQuickProviders(providers) {
+  const container = document.getElementById('quick-providers');
+  if (!container) return;
+
+  container.innerHTML = providers.map(p => {
+    const ts = p.trust_score || 0;
+    const color = ts >= 70 ? '#22c55e' : ts >= 50 ? '#eab308' : '#ef4444';
+    return `<div class="provider-item">
+      <div class="name">${p.name}</div>
+      <div class="meta">
+        <span>${p.cost_hbar} ℏ</span>
+        <span style="color:${color}">${ts.toFixed(0)}</span>
+      </div>
+      <div class="mini-bar"><div class="mini-bar-fill" style="width:${ts}%;background:${color};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderAgents(agents) {
+  const container = document.getElementById('agent-items');
+  const countEl = document.getElementById('agent-count');
+  if (!container) return;
+
+  if (countEl) {
+    const online = agents.filter(a => a.presence === 'online').length;
+    countEl.textContent = `(${online}/${agents.length} online)`;
+  }
+
+  if (!agents.length) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No agents discovered yet. Listening on HCS topics…</div>';
+    return;
+  }
+
+  container.innerHTML = agents.map(a => {
+    const dotClass = a.presence === 'online' ? 'online' : a.presence === 'offline' ? 'offline' : 'unknown';
+    const tags = (a.tags || []).slice(0, 3).map(t => `<span style="margin-right:4px;">#${t}</span>`).join('');
+    return `<div class="agent-item">
+      <div class="name"><span class="dot ${dotClass}"></span>${a.agent_name}</div>
+      <div class="meta">${a.description ? a.description.substring(0, 50) + '…' : 'No description'} · ${a.total_requests || 0} requests</div>
+      ${tags ? `<div class="tags">${tags}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function updateAgentPresence(agentId, presence) {
+  const idx = window._agents.findIndex(a => a.agent_id === agentId);
+  if (idx >= 0) {
+    window._agents[idx].presence = presence;
+    renderAgents(window._agents);
+  }
 }
 
 let _sortCol = 'trust_score', _sortDir = 'desc';
@@ -403,8 +611,63 @@ async function fetchData() {
   }
 }
 
+function connectWebSocket() {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(`${protocol}//${window.location.host}/ws/dashboard`);
+
+  ws.onopen = () => {
+    console.log('WebSocket connected');
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'agent_heartbeat') {
+        updateAgentPresence(msg.data.agent_id, 'online');
+      } else if (msg.type === 'agent_discovered') {
+        if (!window._agents) window._agents = [];
+        const existing = window._agents.find(a => a.agent_id === msg.data.agent_id);
+        if (!existing) {
+          window._agents.push({
+            agent_id: msg.data.agent_id,
+            agent_name: msg.data.agent_name,
+            description: msg.data.description,
+            tags: msg.data.tags,
+            presence: 'online',
+            trust_score: 50,
+            total_requests: 0,
+            last_seen: new Date().toISOString(),
+            heartbeat_count: 1,
+          });
+          renderAgents(window._agents);
+        }
+      } else if (msg.type === 'agent_directory_update') {
+        console.log('Agent directory update:', msg.data);
+      }
+    } catch (e) {
+      console.error('WebSocket message error:', e);
+    }
+  };
+
+  ws.onclose = () => {
+    console.log('WebSocket disconnected, reconnecting in 5s…');
+    setTimeout(connectWebSocket, 5000);
+  };
+
+  ws.onerror = (e) => {
+    console.error('WebSocket error:', e);
+  };
+
+  setInterval(() => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send('ping');
+    }
+  }, 30000);
+}
+
 fetchData();
 setInterval(fetchData, 10000);
+connectWebSocket();
 </script>
 </body>
 </html>"""
@@ -429,10 +692,32 @@ def _collect_dashboard_data(request: Request) -> dict:
                 "total_requests": r.total_requests,
             })
 
+    agents = []
+    if agent_registry:
+        discovered = agent_registry.get_discovered_agents()
+        for a in discovered:
+            agents.append({
+                "agent_id": a.agent_id,
+                "agent_name": a.agent_name,
+                "description": a.description,
+                "tags": a.tags,
+                "presence": a.presence,
+                "trust_score": a.trust_score,
+                "total_requests": a.total_requests,
+                "last_seen": a.last_seen,
+                "heartbeat_count": a.heartbeat_count,
+            })
+
     return {
         "version": getattr(settings, "agent_version", "?"),
         "total_requests": getattr(agent_registry, "_total_requests_served", 0) if agent_registry else 0,
         "providers": providers,
+        "agents": agents,
+        "agent_stats": {
+            "total_agents": len(agents),
+            "online_agents": sum(1 for a in agents if a["presence"] == "online"),
+            "offline_agents": sum(1 for a in agents if a["presence"] == "offline"),
+        },
     }
 
 

@@ -1,7 +1,10 @@
+import json
+import contextlib
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from core.config import Settings
 from core.hedera_manager import HederaManager
@@ -9,7 +12,8 @@ from core.payment_engine import PaymentEngine
 from core.agent_registry import AgentRegistry
 from core.provider_registry import ProviderRegistry
 from core.consensus_logger import ConsensusLogger
-from api.routes import requests, providers, agent, dashboard
+from core.auction import AuctionManager
+from api.routes import requests, providers, agent, dashboard, auctions, staking, websocket
 
 
 @asynccontextmanager
@@ -21,11 +25,16 @@ async def lifespan(app: FastAPI):
     payment_engine = PaymentEngine(settings, hedera)
     consensus_logger = ConsensusLogger(hedera)
     agent_registry = AgentRegistry(settings, hedera, provider_registry)
+    auction_manager = AuctionManager()
 
     from providers.polymarket_edge import PolymarketEdgeProvider
     from providers.kalshi import KalshiBettingProvider
+    from providers.predictit import PredictItProvider
+    from providers.manifold import ManifoldMarketsProvider
     provider_registry.register(PolymarketEdgeProvider())
     provider_registry.register(KalshiBettingProvider())
+    provider_registry.register(PredictItProvider())
+    provider_registry.register(ManifoldMarketsProvider())
 
     discovered = provider_registry.discover()
     if discovered:
@@ -37,6 +46,7 @@ async def lifespan(app: FastAPI):
     app.state.payment_engine = payment_engine
     app.state.consensus_logger = consensus_logger
     app.state.agent_registry = agent_registry
+    app.state.auction_manager = auction_manager
 
     async def on_payment(request_id: str):
         await requests.process_paid_request(
@@ -62,15 +72,35 @@ async def lifespan(app: FastAPI):
         print(f"⚠️  Hedera not configured: {e}")
         print(f"   Create .env with credentials or run with mock data")
 
-    print(f"\nHashA2A v{settings.agent_version} running on {settings.api_host}:{settings.api_port}")
-    print(f"Providers: {[p.provider_id for p in provider_registry.list_all()]}")
-    print(f"MCP:   http://localhost:{settings.api_port}/mcp")
-    print(f"Dashboard: http://localhost:{settings.api_port}/dashboard")
-    if hedera_ok:
-        print(f"HIP-991: {inbound} | {settings.hip991_fee_hbar} HBAR fee")
-    print("")
+    # Initialize MCP session manager
+    from mcp_server import create_mcp_server
+    mcp = create_mcp_server()
+    mcp.settings.streamable_http_path = "/"
+    mcp_app = mcp.streamable_http_app()
+    app.state.mcp_app = mcp_app
 
-    yield
+    mcp_session_mgr = mcp._session_manager
+    if mcp_session_mgr:
+        async with mcp_session_mgr.run():
+            print(f"\nHashA2A v{settings.agent_version} running on {settings.api_host}:{settings.api_port}")
+            print(f"Providers: {[p.provider_id for p in provider_registry.list_all()]}")
+            print(f"MCP:   http://localhost:{settings.api_port}/mcp")
+            print(f"Dashboard: http://localhost:{settings.api_port}/dashboard")
+            if hedera_ok:
+                print(f"HIP-991: {inbound} | {settings.hip991_fee_hbar} HBAR fee")
+            print("")
+
+            yield
+    else:
+        print(f"\nHashA2A v{settings.agent_version} running on {settings.api_host}:{settings.api_port}")
+        print(f"Providers: {[p.provider_id for p in provider_registry.list_all()]}")
+        print(f"MCP:   http://localhost:{settings.api_port}/mcp")
+        print(f"Dashboard: http://localhost:{settings.api_port}/dashboard")
+        if hedera_ok:
+            print(f"HIP-991: {inbound} | {settings.hip991_fee_hbar} HBAR fee")
+        print("")
+
+        yield
 
     if broadcast_task:
         broadcast_task.cancel()
@@ -103,11 +133,35 @@ def create_app() -> FastAPI:
     app.include_router(requests.router, prefix="/api/v1")
     app.include_router(providers.router, prefix="/api/v1")
     app.include_router(agent.router, prefix="/api/v1")
+    app.include_router(auctions.router, prefix="/api/v1")
+    app.include_router(staking.router, prefix="/api/v1")
+    app.include_router(websocket.router)
     app.include_router(dashboard.router)
 
-    from mcp_server import create_mcp_server
-    mcp = create_mcp_server()
-    app.mount("/mcp", mcp.streamable_http_app())
+    async def mcp_asgi(scope, receive, send):
+        if scope["type"] != "http":
+            return
+
+        if scope["method"] == "GET":
+            resp = JSONResponse({
+                "name": "HashA2A MCP Server",
+                "protocol": "MCP Streamable HTTP",
+                "version": "0.2.0",
+                "tools": ["list_providers", "get_market_data", "check_request", "get_agent_profile"],
+                "usage": "Send POST requests with JSON-RPC 2.0 messages to this endpoint",
+                "example": {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "tools/list",
+                    "params": {},
+                },
+            })
+            await resp(scope, receive, send)
+        else:
+            mcp_app = app.state.mcp_app
+            await mcp_app(scope, receive, send)
+
+    app.mount("/mcp/", mcp_asgi)
 
     return app
 

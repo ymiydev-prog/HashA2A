@@ -6,6 +6,7 @@ from core.payment_engine import PaymentEngine
 from core.provider_registry import ProviderRegistry
 from core.agent_registry import AgentRegistry
 from core.consensus_logger import ConsensusLogger
+from core.ai_analyzer import AIAnalyzer
 from api.deps import (
     get_hedera_manager,
     get_payment_engine,
@@ -123,6 +124,11 @@ async def process_paid_request(
 
         report = provider.evaluate_quality(result, None)
         result.quality_score = report.score
+
+        analyzer = AIAnalyzer(hedera.settings)
+        ai_analysis = analyzer.analyze(result.provider_id, result.data)
+        if ai_analysis:
+            result.analysis = ai_analysis
 
         if report.passed:
             result.status = RequestStatus.COMPLETED

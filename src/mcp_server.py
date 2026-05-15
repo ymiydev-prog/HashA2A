@@ -20,8 +20,12 @@ def create_mcp_server() -> FastMCP:
 
     from providers.polymarket_edge import PolymarketEdgeProvider
     from providers.kalshi import KalshiBettingProvider
+    from providers.predictit import PredictItProvider
+    from providers.manifold import ManifoldMarketsProvider
     provider_registry.register(PolymarketEdgeProvider())
     provider_registry.register(KalshiBettingProvider())
+    provider_registry.register(PredictItProvider())
+    provider_registry.register(ManifoldMarketsProvider())
     provider_registry.discover()
 
     mcp = FastMCP(
@@ -126,5 +130,25 @@ def create_mcp_server() -> FastMCP:
             pass
 
         return json.dumps(profile_data, indent=2)
+
+    @mcp.tool(name="analyze_market", description="Run AI-powered analysis on a provider's market data using LangChain + OpenAI. Returns natural language insights about current probabilities, sentiment, and market conditions.")
+    def analyze_market(provider_id: str) -> str:
+        from core.ai_analyzer import AIAnalyzer
+
+        provider = provider_registry.get(provider_id)
+        if not provider:
+            return f"Error: Provider '{provider_id}' not found."
+
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        result = loop.run_until_complete(provider.get_data({"request_id": hedera.generate_request_id()}))
+        analyzer = AIAnalyzer(settings)
+        analysis = analyzer.analyze(provider_id, result.data)
+
+        if analysis:
+            return f"AI Analysis for {provider.name}:\n\n{analysis}"
+        return "Analysis unavailable (no API key or no data)."
 
     return mcp

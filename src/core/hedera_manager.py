@@ -1,6 +1,7 @@
 import uuid
 import json
 import hashlib
+import asyncio
 from datetime import datetime
 
 from hiero_sdk_python import (
@@ -74,13 +75,17 @@ class HederaManager:
     async def create_topic(self, memo: str) -> TopicId:
         tx = (
             TopicCreateTransaction()
-            .set_topic_memo(memo)
+            .set_memo(memo)
             .set_admin_key(self.operator_key.public_key())
-            .freeze_with(self.client)
-            .sign(self.operator_key)
         )
-        response = await tx.execute_async(self.client)
-        receipt = await response.get_receipt_async(self.client)
+        tx.transaction_fee = 3_000_000_000  # 30 Hbars
+        tx.freeze_with(self.client)
+        tx.sign(self.operator_key)
+
+        receipt = await asyncio.to_thread(tx.execute, self.client)
+        print(f"[Hedera] Topic created: {receipt.topic_id}")
+        if receipt.topic_id is None:
+            raise RuntimeError(f"Topic creation succeeded but topic_id is None. Receipt: {receipt}")
         return receipt.topic_id
 
     async def create_topic_with_fees(self, memo: str, fee_hbar: float) -> TopicId:
@@ -92,20 +97,24 @@ class HederaManager:
 
         tx = (
             TopicCreateTransaction()
-            .set_topic_memo(memo)
+            .set_memo(memo)
             .set_admin_key(operator_pub)
             .set_fee_schedule_key(operator_pub)
             .set_fee_exempt_keys([operator_pub])
             .set_custom_fees([
                 CustomFixedFee()
-                    .set_amount_in_tinybars(amount_tinybar)
+                    .set_hbar_amount(Hbar.from_tinybars(amount_tinybar))
                     .set_fee_collector_account_id(collector)
             ])
-            .freeze_with(self.client)
-            .sign(self.operator_key)
         )
-        response = await tx.execute_async(self.client)
-        receipt = await response.get_receipt_async(self.client)
+        tx.transaction_fee = 5_000_000_000  # 50 Hbars for HIP-991 topic creation
+        tx.freeze_with(self.client)
+        tx.sign(self.operator_key)
+
+        receipt = await asyncio.to_thread(tx.execute, self.client)
+        print(f"[Hedera] Topic with fees created: {receipt.topic_id}")
+        if receipt.topic_id is None:
+            raise RuntimeError(f"Topic creation with fees succeeded but topic_id is None. Receipt: {receipt}")
         return receipt.topic_id
 
     async def get_or_create_audit_topic(self) -> TopicId:
@@ -146,8 +155,7 @@ class HederaManager:
             .freeze_with(self.client)
             .sign(self.operator_key)
         )
-        response = await tx.execute_async(self.client)
-        receipt = await response.get_receipt_async(self.client)
+        receipt = await asyncio.to_thread(tx.execute, self.client)
         return str(receipt.transaction_id)
 
     def compute_data_hash(self, data: dict) -> str:

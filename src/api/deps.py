@@ -5,6 +5,7 @@ from core.payment_engine import PaymentEngine
 from core.agent_registry import AgentRegistry
 from core.provider_registry import ProviderRegistry
 from core.consensus_logger import ConsensusLogger
+from core.auction import AuctionManager
 from core.config import Settings
 
 
@@ -30,3 +31,7 @@ def get_provider_registry(request: Request) -> ProviderRegistry:
 
 def get_consensus_logger(request: Request) -> ConsensusLogger:
     return request.app.state.consensus_logger
+
+
+def get_auction_manager(request: Request) -> AuctionManager:
+    return request.app.state.auction_manager

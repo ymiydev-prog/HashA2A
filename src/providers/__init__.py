@@ -1,3 +1,5 @@
 from providers.base_betting import BettingDataProvider
 from providers.polymarket_edge import PolymarketEdgeProvider
 from providers.kalshi import KalshiBettingProvider
+from providers.predictit import PredictItProvider
+from providers.manifold import ManifoldMarketsProvider

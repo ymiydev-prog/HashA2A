@@ -56,9 +56,9 @@ class KalshiBettingProvider(BettingDataProvider):
         return None
 
     def _parse_market(self, data: dict) -> BettingMarket:
-        yes_price = self._parse_price(data.get("yes_bid_dollars"))
-        no_price = self._parse_price(data.get("no_bid_dollars"))
-        volume = self._parse_count(data.get("volume_fp"))
+        yes_price = self._parse_price_dollars(data.get("yes_bid_dollars"))
+        no_price = self._parse_price_dollars(data.get("no_bid_dollars"))
+        volume = self._parse_count(data.get("volume"))
 
         status_raw = data.get("status", "")
         result = data.get("result", "")
@@ -66,7 +66,7 @@ class KalshiBettingProvider(BettingDataProvider):
             status = MarketStatus.RESOLVED
         elif status_raw == "closed":
             status = MarketStatus.CLOSED
-        elif status_raw == "open":
+        elif status_raw in ("open", "active"):
             status = MarketStatus.OPEN
         else:
             status = MarketStatus.UNKNOWN
@@ -74,12 +74,12 @@ class KalshiBettingProvider(BettingDataProvider):
         outcomes = []
         if yes_price is not None:
             outcomes.append(BettingOutcome(
-                name="Yes", price=yes_price / 100,
+                name="Yes", price=yes_price,
                 volume=volume,
             ))
         if no_price is not None:
             outcomes.append(BettingOutcome(
-                name="No", price=no_price / 100,
+                name="No", price=no_price,
                 volume=volume,
             ))
 
@@ -99,12 +99,20 @@ class KalshiBettingProvider(BettingDataProvider):
             url=f"https://kalshi.com/markets/{data.get('ticker', '')}",
         )
 
-    def _parse_price(self, value) -> float | None:
+    def _parse_price_dollars(self, value) -> float | None:
         if value is None:
             return None
         try:
-            return float(value.replace("$", ""))
-        except (ValueError, AttributeError):
+            return float(str(value).replace("$", ""))
+        except (ValueError, TypeError):
+            return None
+
+    def _parse_price_cents(self, value) -> float | None:
+        if value is None:
+            return None
+        try:
+            return float(value)
+        except (ValueError, TypeError):
             return None
 
     def _parse_count(self, value) -> float | None:
@@ -112,5 +120,5 @@ class KalshiBettingProvider(BettingDataProvider):
             return None
         try:
             return float(value)
-        except (ValueError, AttributeError):
+        except (ValueError, TypeError):
             return None

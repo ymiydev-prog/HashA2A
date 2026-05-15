@@ -26,7 +26,9 @@ class Settings(BaseSettings):
     agent_description: str = "Modular data oracle where agents buy AI-processed intelligence via HBAR micropayments"
     agent_version: str = "0.1.0"
     agent_tags: list[str] = ["data-oracle", "intelligence", "hedera", "ai", "prediction-markets"]
-    agent_promotional_interval: int = 3600
+    agent_promotional_interval: int = 300
+    agent_discovery_interval: int = 60
+    agent_heartbeat_interval: int = 120
 
     api_host: str = "0.0.0.0"
     api_port: int = 8080

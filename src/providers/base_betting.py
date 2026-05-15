@@ -3,6 +3,8 @@ from abc import abstractmethod
 from typing import Any
 
 from core.base_provider import BaseDataProvider
+from core.rate_limiter import rate_limiter
+from core.cache import response_cache
 from models.schemas import DataResponse, RequestStatus, DataQualityReport
 from providers.schemas_betting import BettingMarket, BettingAnalysis, BettingQuery
 
@@ -35,6 +37,22 @@ class BettingDataProvider(BaseDataProvider):
         query = BettingQuery(**params)
         request_id = params.get("request_id", "")
 
+        cached = response_cache.get(self.provider_id, params)
+        if cached is not None:
+            elapsed = (time.monotonic() - start) * 1000
+            return DataResponse(
+                request_id=request_id,
+                provider_id=self.provider_id,
+                status=RequestStatus.COMPLETED,
+                data=cached["data"],
+                analysis=cached.get("analysis"),
+                raw_size_bytes=cached.get("raw_size_bytes", 0),
+                processing_time_ms=elapsed,
+                provider_trust_score=self.reputation.trust_score,
+            )
+
+        await rate_limiter.wait_for_token(self.provider_id)
+
         if query.market_ids:
             markets = []
             for mid in query.market_ids:
@@ -50,7 +68,7 @@ class BettingDataProvider(BaseDataProvider):
 
         elapsed = (time.monotonic() - start) * 1000
 
-        return DataResponse(
+        response = DataResponse(
             request_id=request_id,
             provider_id=self.provider_id,
             status=RequestStatus.COMPLETED,
@@ -60,6 +78,14 @@ class BettingDataProvider(BaseDataProvider):
             processing_time_ms=elapsed,
             provider_trust_score=self.reputation.trust_score,
         )
+
+        response_cache.set(self.provider_id, params, {
+            "data": response.data,
+            "analysis": response.analysis,
+            "raw_size_bytes": response.raw_size_bytes,
+        })
+
+        return response
 
     def evaluate_quality(self, response: DataResponse, threshold: float | None) -> DataQualityReport:
         if response.data is None:
