@@ -519,6 +519,25 @@ function renderQuickProviders(providers) {
   }).join('');
 }
 
+function renderAgents(agents) {
+  const container = document.getElementById('agent-items');
+  const countEl = document.getElementById('agent-count');
+  if (!container) return;
+  if (countEl) {
+    const online = agents.filter(a => a.presence === 'online').length;
+    countEl.textContent = `(${online}/${agents.length} online)`;
+  }
+  if (!agents.length) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No agents discovered. Listening on HCS topics…</div>';
+    return;
+  }
+  container.innerHTML = agents.map(a => {
+    const dotClass = a.presence === 'online' ? 'online' : a.presence === 'offline' ? 'offline' : 'unknown';
+    const tags = (a.tags || []).slice(0, 3).map(t => `<span style="margin-right:4px;">#${t}</span>`).join('');
+    return `<div class="agent-item"><div class="name"><span class="dot ${dotClass}"></span>${a.agent_name}</div><div class="meta">${(a.description||'').substring(0,50)}… · ${a.total_requests||0} requests</div>${tags ? `<div class="tags">${tags}</div>` : ''}</div>`;
+  }).join('');
+}
+
 function renderA2AStats(data) {
   const el = document.getElementById('a2a-stats');
   const content = document.getElementById('a2a-content');
