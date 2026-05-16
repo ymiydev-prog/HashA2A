@@ -12,6 +12,7 @@ class TaskStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELED = "canceled"
+    REJECTED = "rejected"
 
 
 class PartType(str, Enum):

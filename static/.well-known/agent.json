@@ -2,109 +2,16 @@
   "$schema": "https://agent2agent.dev/schema/agent-card.json",
   "name": "HashA2A Intelligence Oracle",
   "version": "0.2.0",
-  "description": "Agent-to-Agent data marketplace. Sells verified multi-oracle prices, prediction market intelligence, cross-oracle arbitrage signals, and deep research to AI agents. Pay per query via USDC (x402/AP2) or HBAR (HIP-991). Fully A2A-compatible with task lifecycle management.",
+  "description": "Agent-to-Agent data marketplace. Sells verified multi-oracle prices, prediction market intelligence, cross-oracle arbitrage signals, and deep research to AI agents. Pay per query via USDC (x402/AP2) or HBAR (HIP-991). Fully A2A-compatible with task lifecycle management, JSON-RPC 2.0, and SSE streaming.",
   "url": "https://github.com/ymiydev-prog/HashA2A",
   "documentation": "https://github.com/ymiydev-prog/HashA2A/blob/main/README.md",
-
-  "skills": [
-    {
-      "id": "get_price",
-      "name": "Verified Price Feed",
-      "description": "Returns a cross-verified price for any asset from multiple independent oracles (Pyth, CoinGecko, DeFiLlama/Chainlink). Includes spread analysis and confidence scoring.",
-      "input": {
-        "type": "object",
-        "properties": {
-          "asset": {"type": "string", "description": "Asset symbol, e.g. BTC/USD, ETH/USD, XAU/USD"},
-          "source": {"type": "string", "description": "Optional: filter to one oracle (pyth, coingecko, defillama)"}
-        },
-        "required": ["asset"]
-      },
-      "output": {
-        "type": "object",
-        "properties": {
-          "prices": {"type": "array", "description": "Array of {source, price, confidence} from each oracle"},
-          "spread_pct": {"type": "number", "description": "Price spread across oracles as percentage"}
-        }
-      }
-    },
-    {
-      "id": "scan_arbitrage",
-      "name": "Cross-Oracle Arbitrage Scan",
-      "description": "Scans all tracked assets for price discrepancies across oracles. Returns ranked opportunities with buy/sell recommendations.",
-      "input": {
-        "type": "object",
-        "properties": {
-          "min_spread": {"type": "number", "description": "Minimum spread percentage to report"}
-        }
-      },
-      "output": {
-        "type": "object",
-        "properties": {
-          "signals": {"type": "array", "description": "Ranked arbitrage signals with asset, spread, buy_from, sell_to"}
-        }
-      }
-    },
-    {
-      "id": "get_prediction_markets",
-      "name": "Prediction Market Data",
-      "description": "Fetches prediction market data from Polymarket, Kalshi, PredictIt, or Manifold. Returns probabilities, volumes, and liquidity.",
-      "input": {
-        "type": "object",
-        "properties": {
-          "provider_id": {"type": "string", "enum": ["polymarket", "kalshi", "predictit", "manifold"]},
-          "params": {"type": "object", "description": "Provider-specific parameters (query, limit, market_ids)"}
-        },
-        "required": ["provider_id"]
-      },
-      "output": {
-        "type": "object",
-        "properties": {
-          "markets": {"type": "array", "description": "Array of markets with outcomes, prices, volume, liquidity"}
-        }
-      }
-    },
-    {
-      "id": "deep_research",
-      "name": "Deep Research",
-      "description": "Performs comprehensive research using web search, news, social signals, and prediction market data combined with AI analysis. Premium intelligence product.",
-      "input": {
-        "type": "object",
-        "properties": {
-          "question": {"type": "string", "description": "Research question or topic"}
-        },
-        "required": ["question"]
-      },
-      "output": {
-        "type": "object",
-        "properties": {
-          "analysis": {"type": "string", "description": "AI-generated research report"},
-          "sources": {"type": "object", "description": "Web, news, and market sources consulted"}
-        }
-      }
-    },
-    {
-      "id": "create_task",
-      "name": "Create A2A Task",
-      "description": "Creates a new task for asynchronous processing. Supports full lifecycle: submitted → working → input-required → completed/failed.",
-      "input": {
-        "type": "object",
-        "properties": {
-          "agent_id": {"type": "string", "description": "Target agent ID", "default": "hasha2a"},
-          "context_id": {"type": "string", "description": "Optional context ID for grouping interactions"}
-        }
-      },
-      "output": {
-        "type": "object",
-        "properties": {
-          "task_id": {"type": "string", "description": "Unique task identifier"},
-          "status": {"type": "string", "enum": ["submitted", "working", "input-required", "completed", "failed"]}
-        }
-      }
-    }
-  ],
+  "provider": {
+    "organization": "HashA2A",
+    "url": "https://github.com/ymiydev-prog/HashA2A"
+  },
 
   "capabilities": {
-    "streaming": false,
+    "streaming": true,
     "push_notifications": false,
     "task_lifecycle": true,
     "context_passing": true,
@@ -112,6 +19,33 @@
     "batch_processing": false,
     "payment_protocols": ["x402", "HIP-991", "AP2"]
   },
+
+  "interfaces": [
+    {
+      "type": "a2a",
+      "url": "http://localhost:8080/api/v1/a2a/rpc",
+      "protocol_binding": "JSONRPC",
+      "protocol_version": "0.3",
+      "description": "A2A JSON-RPC 2.0 endpoint for task management. Supports message/send, tasks/get, tasks/list, tasks/cancel.",
+      "methods": ["message/send", "tasks/get", "tasks/list", "tasks/cancel"]
+    },
+    {
+      "type": "a2a-stream",
+      "url": "http://localhost:8080/api/v1/a2a/rpc/stream",
+      "protocol_binding": "JSONRPC+SSE",
+      "protocol_version": "0.3",
+      "description": "A2A JSON-RPC 2.0 with SSE streaming. Supports message/stream for real-time task progress.",
+      "methods": ["message/stream"],
+      "streaming": true
+    },
+    {
+      "type": "mcp",
+      "url": "http://localhost:8080/mcp",
+      "protocol_binding": "MCP",
+      "protocol_version": "1.0",
+      "description": "MCP Streamable HTTP server with 10 tools"
+    }
+  ],
 
   "authentication": {
     "schemes": [

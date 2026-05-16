@@ -14,7 +14,7 @@ from core.agent_registry import AgentRegistry
 from core.provider_registry import ProviderRegistry
 from core.consensus_logger import ConsensusLogger
 from core.auction import AuctionManager
-from api.routes import requests, providers, agent, dashboard, auctions, staking, websocket, aggregate, research, tasks, auth
+from api.routes import requests, providers, agent, dashboard, auctions, staking, websocket, aggregate, research, tasks, auth, a2a_rpc
 
 
 @asynccontextmanager
@@ -182,6 +182,7 @@ def create_app() -> FastAPI:
     app.include_router(research.router)
     app.include_router(tasks.router, prefix="/api/v1")
     app.include_router(auth.router, prefix="/api/v1")
+    app.include_router(a2a_rpc.router, prefix="/api/v1")
     from api.routes.feeds import router as feeds_router
     app.include_router(feeds_router, prefix="/api/v1")
 
