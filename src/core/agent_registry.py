@@ -11,7 +11,7 @@ from core.agent_listener import AgentListener, agent_listener
 from core.agent_messaging import AgentMessaging, agent_messaging
 from core.protocols.handshake import handshake_manager
 from core.websocket_manager import ws_manager
-from core.twitter_promoter import TwitterPromoter
+from core.twitter_promoter import ContentScheduler
 from models.schemas import AgentProfile, ProviderCapability, AgentHealthCheck
 
 
@@ -44,7 +44,7 @@ class AgentRegistry:
         self._response_times: list[float] = []
         self._hedera_connected = False
         self._mirror_node_reachable = False
-        self._promoter = TwitterPromoter(
+        self._promoter = ContentScheduler(
             api_key=settings.twitter_api_key,
             api_secret=settings.twitter_api_secret,
             access_token=settings.twitter_access_token,
@@ -296,26 +296,10 @@ class AgentRegistry:
             await asyncio.sleep(self.settings.agent_promotional_interval)
 
     async def _tweet_periodic(self):
-        """Tweet stats every cycle, price/arb alerts conditionally."""
-        tweet_count = getattr(self, "_tweet_count", 0) + 1
-        self._tweet_count = tweet_count
-
-        if tweet_count % 3 == 0:
-            providers_count = len(self.providers.list_all())
-            await self._promoter.tweet_stats(
-                total_tasks=self._total_requests_served,
-                providers=providers_count,
-                oracles=3,
-                version=self.settings.agent_version,
-            )
-
-        if tweet_count % 6 == 0:
-            from core.oracle_hub import OracleHub
-            hub = OracleHub()
-            try:
-                prices = await hub.get_price("BTC/USD")
-                if prices:
-                    await self._promoter.tweet_price_feed("BTC/USD", [p.to_dict() for p in prices])
-            except Exception:
-                pass
-            await hub.close()
+        """Run content schedule — posts price, arbitrage, tutorials, weekly recaps."""
+        providers_count = len(self.providers.list_all())
+        await self._promoter.run_scheduled(
+            total_tasks=self._total_requests_served,
+            providers=providers_count,
+            oracles=3,
+        )
