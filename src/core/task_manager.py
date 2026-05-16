@@ -6,14 +6,18 @@ from typing import Any
 from models.schemas import (
     TaskObject, TaskStatus, MessagePart, PartType, Artifact,
 )
+from core.context_manager import ContextManager
 
 
 class TaskManager:
-    """Manages A2A task lifecycle: submitted → working → completed/failed."""
+    """Manages A2A task lifecycle: submitted -> working -> completed/failed."""
 
-    def __init__(self):
+    def __init__(self, context_manager: ContextManager | None = None):
         self._tasks: dict[str, TaskObject] = {}
         self._artifacts: dict[str, Artifact] = {}
+        self._ctx_mgr = context_manager or ContextManager()
+
+    # --- Lifecycle ---
 
     def create_task(self, agent_id: str = "hasha2a", context_id: str | None = None) -> TaskObject:
         task = TaskObject(agent_id=agent_id, context_id=context_id, status=TaskStatus.SUBMITTED)
@@ -37,23 +41,6 @@ class TaskManager:
         task.transition(new_status)
         return True
 
-    def add_part(self, task_id: str, part: MessagePart) -> bool:
-        task = self._tasks.get(task_id)
-        if not task:
-            return False
-        task.add_part(part)
-        return True
-
-    def add_text(self, task_id: str, text: str, metadata: dict | None = None) -> bool:
-        return self.add_part(task_id, MessagePart(
-            type=PartType.TEXT, text=text, metadata=metadata,
-        ))
-
-    def add_data(self, task_id: str, data: dict[str, Any], metadata: dict | None = None) -> bool:
-        return self.add_part(task_id, MessagePart(
-            type=PartType.DATA, data=data, metadata=metadata,
-        ))
-
     def start_working(self, task_id: str) -> bool:
         return self.update_status(task_id, TaskStatus.WORKING)
 
@@ -65,6 +52,23 @@ class TaskManager:
         self.add_text(task_id, prompt)
         return True
 
+    # --- Parts ---
+
+    def add_part(self, task_id: str, part: MessagePart) -> bool:
+        task = self._tasks.get(task_id)
+        if not task:
+            return False
+        task.add_part(part)
+        return True
+
+    def add_text(self, task_id: str, text: str, metadata: dict | None = None) -> bool:
+        return self.add_part(task_id, MessagePart(type=PartType.TEXT, text=text, metadata=metadata))
+
+    def add_data(self, task_id: str, data: dict[str, Any], metadata: dict | None = None) -> bool:
+        return self.add_part(task_id, MessagePart(type=PartType.DATA, data=data, metadata=metadata))
+
+    # --- Completion ---
+
     def complete(self, task_id: str, summary: str | None = None) -> Artifact | None:
         task = self._tasks.get(task_id)
         if not task:
@@ -74,6 +78,8 @@ class TaskManager:
         artifact = Artifact(task_id=task_id, parts=parts)
         self._artifacts[artifact.artifact_id] = artifact
         task.add_artifact_id(artifact.artifact_id)
+        if task.context_id and summary:
+            self._ctx_mgr.add_interaction(task.context_id, task_id, summary[:500], metadata={"status": "completed"})
         return artifact
 
     def fail(self, task_id: str, error: str) -> bool:
@@ -82,13 +88,17 @@ class TaskManager:
             return False
         self.add_text(task_id, f"Error: {error}")
         task.transition(TaskStatus.FAILED)
+        if task.context_id:
+            self._ctx_mgr.add_interaction(task.context_id, task_id, f"Failed: {error[:200]}", metadata={"status": "failed"})
         return True
 
-    def add_artifact(self, task_id: str, parts: list[MessagePart]) -> Artifact | None:
+    # --- Artifacts ---
+
+    def add_artifact(self, task_id: str, parts: list[MessagePart], name: str | None = None) -> Artifact | None:
         task = self._tasks.get(task_id)
         if not task:
             return None
-        artifact = Artifact(task_id=task_id, parts=parts)
+        artifact = Artifact(task_id=task_id, parts=parts, name=name)
         self._artifacts[artifact.artifact_id] = artifact
         task.add_artifact_id(artifact.artifact_id)
         return artifact
@@ -101,6 +111,8 @@ class TaskManager:
         if not task:
             return []
         return [self._artifacts[a_id] for a_id in task.artifacts if a_id in self._artifacts]
+
+    # --- Summary ---
 
     def get_task_summary(self, task_id: str) -> dict[str, Any] | None:
         task = self._tasks.get(task_id)

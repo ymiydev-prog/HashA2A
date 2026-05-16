@@ -25,6 +25,8 @@ class MessagePart(BaseModel):
     text: str | None = None
     data: dict[str, Any] | None = None
     file_uri: str | None = None
+    filename: str | None = None
+    content_type: str | None = None
     metadata: dict[str, Any] | None = None
 
 
@@ -32,6 +34,7 @@ class Artifact(BaseModel):
     artifact_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     task_id: str
     parts: list[MessagePart]
+    name: str | None = None
     metadata: dict[str, Any] | None = None
     created_at: int = Field(default_factory=lambda: int(time.time()))
 
@@ -66,6 +69,18 @@ class TaskObject(BaseModel):
         if not v or len(v) < 8:
             raise ValueError("task_id must be at least 8 characters")
         return v
+
+
+class ContextSummary(BaseModel):
+    context_id: str
+    parent_context_id: str | None = None
+    agent_id: str = "hasha2a"
+    summary: str = ""
+    interaction_count: int = 0
+    last_task_ids: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] | None = None
+    created_at: int = Field(default_factory=lambda: int(time.time()))
+    updated_at: int = Field(default_factory=lambda: int(time.time()))
 
 
 class RequestStatus(str, Enum):
