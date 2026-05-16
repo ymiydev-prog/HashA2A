@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8080
 
+    twitter_bearer_token: str | None = None
+    twitter_api_key: str | None = None
+    twitter_api_secret: str | None = None
+    twitter_enabled: bool = False
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
