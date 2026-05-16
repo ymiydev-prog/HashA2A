@@ -105,7 +105,7 @@ class HederaManager:
             .set_memo(memo)
             .set_admin_key(self.operator_key.public_key())
         )
-        tx.transaction_fee = 50_000_000  # 0.5 HBAR max
+        tx.transaction_fee = 5_000_000_000  # 5 HBAR max
         tx.freeze_with(self.client)
         tx.sign(self.operator_key)
 
@@ -134,7 +134,7 @@ class HederaManager:
                     .set_fee_collector_account_id(collector)
             ])
         )
-        tx.transaction_fee = 100_000_000  # 1 HBAR max
+        tx.transaction_fee = 10_000_000_000  # 10 HBAR max for HIP-991 topic creation
         tx.freeze_with(self.client)
         tx.sign(self.operator_key)
 
