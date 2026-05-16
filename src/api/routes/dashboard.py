@@ -272,6 +272,7 @@ body {
 let charts = {};
 
 function initCharts() {
+  if (typeof Chart === 'undefined') return;
   Chart.defaults.color = '#7b8cae';
   Chart.defaults.borderColor = '#1e2a45';
 }

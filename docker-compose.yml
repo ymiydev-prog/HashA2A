@@ -7,4 +7,10 @@ services:
       - .env
     environment:
       - PYTHONPATH=/app/src
+      - HASHA2A_CACHE_DIR=/data/cache
+    volumes:
+      - hasha2a_data:/data/cache
     restart: unless-stopped
+
+volumes:
+  hasha2a_data:

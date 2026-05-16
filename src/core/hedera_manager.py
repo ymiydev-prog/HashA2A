@@ -2,6 +2,7 @@ import uuid
 import json
 import hashlib
 import asyncio
+import os
 from datetime import datetime
 
 from hiero_sdk_python import (
@@ -16,6 +17,32 @@ from hiero_sdk_python import (
     Hbar,
 )
 from core.config import Settings
+
+
+def _topic_cache_path() -> str:
+    cache_dir = os.environ.get("HASHA2A_CACHE_DIR", os.path.expanduser("~/.hasha2a"))
+    os.makedirs(cache_dir, exist_ok=True)
+    return os.path.join(cache_dir, "topic_cache.json")
+
+
+def _load_topic_cache() -> dict:
+    path = _topic_cache_path()
+    if os.path.isfile(path):
+        try:
+            with open(path) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def _save_topic_cache(cache: dict) -> None:
+    path = _topic_cache_path()
+    try:
+        with open(path, "w") as f:
+            json.dump(cache, f)
+    except Exception:
+        pass
 
 
 class HederaManager:
@@ -78,14 +105,14 @@ class HederaManager:
             .set_memo(memo)
             .set_admin_key(self.operator_key.public_key())
         )
-        tx.transaction_fee = 3_000_000_000  # 30 Hbars
+        tx.transaction_fee = 50_000_000  # 0.5 HBAR max
         tx.freeze_with(self.client)
         tx.sign(self.operator_key)
 
         receipt = await asyncio.to_thread(tx.execute, self.client)
         print(f"[Hedera] Topic created: {receipt.topic_id}")
         if receipt.topic_id is None:
-            raise RuntimeError(f"Topic creation succeeded but topic_id is None. Receipt: {receipt}")
+            raise RuntimeError(f"Topic creation failed (status={receipt.status}). Account may need HBAR.")
         return receipt.topic_id
 
     async def create_topic_with_fees(self, memo: str, fee_hbar: float) -> TopicId:
@@ -107,39 +134,63 @@ class HederaManager:
                     .set_fee_collector_account_id(collector)
             ])
         )
-        tx.transaction_fee = 5_000_000_000  # 50 Hbars for HIP-991 topic creation
+        tx.transaction_fee = 100_000_000  # 1 HBAR max
         tx.freeze_with(self.client)
         tx.sign(self.operator_key)
 
         receipt = await asyncio.to_thread(tx.execute, self.client)
         print(f"[Hedera] Topic with fees created: {receipt.topic_id}")
         if receipt.topic_id is None:
-            raise RuntimeError(f"Topic creation with fees succeeded but topic_id is None. Receipt: {receipt}")
+            raise RuntimeError(f"Topic creation with fees failed (status={receipt.status}). Account may need HBAR.")
         return receipt.topic_id
 
     async def get_or_create_audit_topic(self) -> TopicId:
         if self.audit_topic_id is not None:
             return self.audit_topic_id
+        cache = _load_topic_cache()
+        cached = cache.get("audit")
+        if cached:
+            self.audit_topic_id = TopicId.from_string(cached)
+            print(f"[Hedera] Reusing audit topic: {cached}")
+            return self.audit_topic_id
         self.audit_topic_id = await self.create_topic(
             f"HashA2A Audit Trail v{self.settings.agent_version}"
         )
+        cache["audit"] = str(self.audit_topic_id)
+        _save_topic_cache(cache)
         return self.audit_topic_id
 
     async def get_or_create_inbound_topic(self) -> TopicId:
         if self.inbound_topic_id is not None:
             return self.inbound_topic_id
+        cache = _load_topic_cache()
+        cached = cache.get("inbound")
+        if cached:
+            self.inbound_topic_id = TopicId.from_string(cached)
+            print(f"[Hedera] Reusing inbound topic: {cached}")
+            return self.inbound_topic_id
         self.inbound_topic_id = await self.create_topic_with_fees(
             f"HashA2A Inbound - {self.settings.agent_name}",
             self.settings.hip991_fee_hbar,
         )
+        cache["inbound"] = str(self.inbound_topic_id)
+        _save_topic_cache(cache)
         return self.inbound_topic_id
 
     async def get_or_create_outbound_topic(self) -> TopicId:
         if self.outbound_topic_id is not None:
             return self.outbound_topic_id
+        cache = _load_topic_cache()
+        cached = cache.get("outbound")
+        if cached:
+            self.outbound_topic_id = TopicId.from_string(cached)
+            print(f"[Hedera] Reusing outbound topic: {cached}")
+            return self.outbound_topic_id
         self.outbound_topic_id = await self.create_topic(
             f"HashA2A Outbound - {self.settings.agent_name}"
         )
+        cache["outbound"] = str(self.outbound_topic_id)
+        _save_topic_cache(cache)
         return self.outbound_topic_id
 
     async def submit_message_to_topic(
