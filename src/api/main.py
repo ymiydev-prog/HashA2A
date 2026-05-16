@@ -139,14 +139,38 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="HashA2A — The Agent-to-Agent Intelligence Layer",
+        title="HashA2A — Agent-to-Agent Intelligence Layer",
         description=(
-            "A modular data oracle where AI agents buy processed intelligence "
-            "via HBAR micropayments on Hedera. "
-            "Uses HIP-991 Custom Fees for automatic payment collection."
+            "A decentralized data marketplace where AI agents buy verified "
+            "multi-oracle intelligence via HBAR (HIP-991) or USDC (x402/AP2).\n\n"
+            "## Capabilities\n"
+            "- **OracleHub**: Multi-oracle prices (Pyth, CoinGecko, Chainlink)\n"
+            "- **Arbitrage Engine**: Cross-oracle spread detection\n"
+            "- **A2A Protocol**: Google A2A compliant, JSON-RPC 2.0, SSE streaming\n"
+            "- **Deep Research**: Web search + AI analysis (OpenAI web_search)\n"
+            "- **MCP Server**: 10 tools for Claude/Cursor/LangChain\n"
+            "- **Auth**: Ephemeral JWT tokens + AP2 mandates\n\n"
+            "## Payment\n"
+            "USDC prices are fixed. HBAR prices update in real-time from CoinGecko.\n\n"
+            "## Agent Discovery\n"
+            "`/.well-known/agent.json` · `/llms.txt` · `/mcp/`\n\n"
+            "## Links\n"
+            "[GitHub](https://github.com/ymiydev-prog/HashA2A) · "
+            "[Dashboard](/dashboard) · "
+            "[Oracle Dashboard](/dashboard/oracles) · "
+            "[Task Dashboard](/dashboard/tasks) · "
+            "[X](https://x.com/hasha2a)"
         ),
         version="0.2.0",
         lifespan=lifespan,
+        contact={
+            "name": "HashA2A",
+            "url": "https://github.com/ymiydev-prog/HashA2A",
+        },
+        license_info={
+            "name": "MIT",
+            "url": "https://github.com/ymiydev-prog/HashA2A/blob/main/LICENSE",
+        },
     )
 
     app.add_middleware(

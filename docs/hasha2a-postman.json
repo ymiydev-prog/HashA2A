@@ -1,0 +1,88 @@
+{
+  "info": {
+    "name": "HashA2A — Agent-to-Agent Intelligence Layer",
+    "description": "API collection for HashA2A, a decentralized data marketplace for AI agents.\n\nBase URL: http://localhost:8080\n\nPayment: USDC via x402 or HBAR via HIP-991\n\nDocs: https://github.com/ymiydev-prog/HashA2A",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080", "type": "string" },
+    { "key": "asset", "value": "BTC/USD", "type": "string" },
+    { "key": "task_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "🔍 Agent Discovery",
+      "item": [
+        { "name": "Health Check", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/v1/agent/health", "host": ["{{base_url}}"], "path": ["api", "v1", "agent", "health"] } } },
+        { "name": "Agent Profile", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/v1/agent/profile", "host": ["{{base_url}}"], "path": ["api", "v1", "agent", "profile"] } } },
+        { "name": "A2A Agent Card", "request": { "method": "GET", "url": { "raw": "{{base_url}}/.well-known/agent.json", "host": ["{{base_url}}"], "path": [".well-known", "agent.json"] } } },
+        { "name": "llms.txt", "request": { "method": "GET", "url": { "raw": "{{base_url}}/llms.txt", "host": ["{{base_url}}"], "path": ["llms.txt"] } } }
+      ]
+    },
+    {
+      "name": "🔮 Oracle Data",
+      "item": [
+        { "name": "Get Price", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"asset\": \"{{asset}}\"}" }, "url": { "raw": "{{base_url}}/api/v1/feeds/prices", "host": ["{{base_url}}"], "path": ["api", "v1", "feeds", "prices"] } } },
+        { "name": "Get ETH Price", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"asset\": \"ETH/USD\"}" }, "url": { "raw": "{{base_url}}/api/v1/feeds/prices", "host": ["{{base_url}}"], "path": ["api", "v1", "feeds", "prices"] } } },
+        { "name": "Get Gold Price", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"asset\": \"XAU/USD\"}" }, "url": { "raw": "{{base_url}}/api/v1/feeds/prices", "host": ["{{base_url}}"], "path": ["api", "v1", "feeds", "prices"] } } }
+      ]
+    },
+    {
+      "name": "📊 Arbitrage",
+      "item": [
+        { "name": "Scan All", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{}" }, "url": { "raw": "{{base_url}}/api/v1/feeds/arbitrage", "host": ["{{base_url}}"], "path": ["api", "v1", "feeds", "arbitrage"] } } },
+        { "name": "Scan BTC Spread", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/v1/feeds/verify/BTC/USD", "host": ["{{base_url}}"], "path": ["api", "v1", "feeds", "verify", "BTC", "USD"] } } }
+      ]
+    },
+    {
+      "name": "🔄 A2A Tasks (JSON-RPC)",
+      "item": [
+        { "name": "message/send — Get Price", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"message/send\",\"params\":{\"message\":{\"role\":\"user\",\"parts\":[{\"text\":\"BTC/USD price\",\"type\":\"text\"}]}}}" }, "url": { "raw": "{{base_url}}/api/v1/a2a/rpc", "host": ["{{base_url}}"], "path": ["api", "v1", "a2a", "rpc"] } } },
+        { "name": "message/send — Arbitrage", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"jsonrpc\":\"2.0\",\"id\":\"2\",\"method\":\"message/send\",\"params\":{\"message\":{\"role\":\"user\",\"parts\":[{\"text\":\"Show arbitrage\",\"type\":\"text\"}]}}}" }, "url": { "raw": "{{base_url}}/api/v1/a2a/rpc", "host": ["{{base_url}}"], "path": ["api", "v1", "a2a", "rpc"] } } },
+        { "name": "message/stream — Real-time BTC", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"jsonrpc\":\"2.0\",\"id\":\"3\",\"method\":\"message/stream\",\"params\":{\"message\":{\"role\":\"user\",\"parts\":[{\"text\":\"BTC price stream\",\"type\":\"text\"}]}}}" }, "url": { "raw": "{{base_url}}/api/v1/a2a/rpc/stream", "host": ["{{base_url}}"], "path": ["api", "v1", "a2a", "rpc", "stream"] } } },
+        { "name": "tasks/list", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"jsonrpc\":\"2.0\",\"id\":\"4\",\"method\":\"tasks/list\",\"params\":{\"limit\":10}}" }, "url": { "raw": "{{base_url}}/api/v1/a2a/rpc", "host": ["{{base_url}}"], "path": ["api", "v1", "a2a", "rpc"] } } }
+      ]
+    },
+    {
+      "name": "🔄 A2A Tasks (REST)",
+      "item": [
+        { "name": "Create Task", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/v1/tasks", "host": ["{{base_url}}"], "path": ["api", "v1", "tasks"] } } },
+        { "name": "List Tasks", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/v1/tasks", "host": ["{{base_url}}"], "path": ["api", "v1", "tasks"] } } },
+        { "name": "Complete Task", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"summary\":\"Task completed successfully\"}" }, "url": { "raw": "{{base_url}}/api/v1/tasks/{{task_id}}/complete", "host": ["{{base_url}}"], "path": ["api", "v1", "tasks", "{{task_id}}", "complete"] } } },
+        { "name": "Create Context", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/v1/tasks/context", "host": ["{{base_url}}"], "path": ["api", "v1", "tasks", "context"] } } }
+      ]
+    },
+    {
+      "name": "🔐 Auth & Payments",
+      "item": [
+        { "name": "Request JWT Token", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"agent_id\":\"my-agent\",\"ttl\":300,\"scopes\":[\"read\",\"trade\"]}" }, "url": { "raw": "{{base_url}}/api/v1/auth/token", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "token"] } } },
+        { "name": "Create AP2 Mandate", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"agent_id\":\"my-agent\",\"mandate_type\":\"intent\",\"max_spend_usdc\":10.0}" }, "url": { "raw": "{{base_url}}/api/v1/auth/mandates", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "mandates"] } } },
+        { "name": "Pricing", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/v1/feeds/pricing", "host": ["{{base_url}}"], "path": ["api", "v1", "feeds", "pricing"] } } },
+        { "name": "x402 Manifest", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/v1/feeds/x402/manifest", "host": ["{{base_url}}"], "path": ["api", "v1", "feeds", "x402", "manifest"] } } }
+      ]
+    },
+    {
+      "name": "🧠 Prediction Markets",
+      "item": [
+        { "name": "Polymarket", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"provider_id\":\"polymarket\",\"params\":{\"limit\":3}}" }, "url": { "raw": "{{base_url}}/api/v1/requests", "host": ["{{base_url}}"], "path": ["api", "v1", "requests"] } } },
+        { "name": "Deep Research", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"question\":\"Current state of prediction markets in crypto\"}" }, "url": { "raw": "{{base_url}}/api/v1/research", "host": ["{{base_url}}"], "path": ["api", "v1", "research"] } } }
+      ]
+    },
+    {
+      "name": "📡 MCP Server",
+      "item": [
+        { "name": "MCP Info (GET)", "request": { "method": "GET", "url": { "raw": "{{base_url}}/mcp/", "host": ["{{base_url}}"], "path": ["mcp"] } } },
+        { "name": "MCP tools/list", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json, text/event-stream" }], "body": { "mode": "raw", "raw": "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"tools/list\",\"params\":{}}" }, "url": { "raw": "{{base_url}}/mcp/", "host": ["{{base_url}}"], "path": ["mcp"] } } }
+      ]
+    },
+    {
+      "name": "📈 Dashboards",
+      "item": [
+        { "name": "Main Dashboard", "request": { "method": "GET", "url": { "raw": "{{base_url}}/dashboard", "host": ["{{base_url}}"], "path": ["dashboard"] } } },
+        { "name": "Oracle Dashboard", "request": { "method": "GET", "url": { "raw": "{{base_url}}/dashboard/oracles", "host": ["{{base_url}}"], "path": ["dashboard", "oracles"] } } },
+        { "name": "Task Dashboard", "request": { "method": "GET", "url": { "raw": "{{base_url}}/dashboard/tasks", "host": ["{{base_url}}"], "path": ["dashboard", "tasks"] } } },
+        { "name": "Landing Page", "request": { "method": "GET", "url": { "raw": "{{base_url}}/", "host": ["{{base_url}}"], "path": [""] } } }
+      ]
+    }
+  ]
+}
