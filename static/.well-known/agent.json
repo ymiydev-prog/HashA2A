@@ -2,140 +2,196 @@
   "$schema": "https://agent2agent.dev/schema/agent-card.json",
   "name": "HashA2A Intelligence Oracle",
   "version": "0.2.0",
-  "description": "Agent-to-Agent data marketplace. Sells verified multi-oracle prices, prediction market intelligence, and arbitrage signals to AI agents. Pay per query via HBAR (HIP-991) or USDC (x402).",
+  "description": "Agent-to-Agent data marketplace. Sells verified multi-oracle prices, prediction market intelligence, cross-oracle arbitrage signals, and deep research to AI agents. Pay per query via USDC (x402/AP2) or HBAR (HIP-991). Fully A2A-compatible with task lifecycle management.",
   "url": "https://github.com/ymiydev-prog/HashA2A",
   "documentation": "https://github.com/ymiydev-prog/HashA2A/blob/main/README.md",
-  "capabilities": [
+
+  "skills": [
     {
-      "id": "price_feed",
-      "name": "Verified Price Feeds",
-      "description": "Multi-oracle price data for crypto (BTC, ETH, SOL) aggregated from Pyth, CoinGecko, and Chainlink via DeFiLlama. Includes spread analysis.",
-      "endpoints": [
-        {
-          "url": "/api/v1/feeds/prices",
-          "method": "POST",
-          "contentType": "application/json",
-          "parameters": {
-            "asset": "string (e.g. BTC/USD, ETH/USD)",
-            "source": "string (optional: pyth, coingecko, defillama)"
-          }
-        }
-      ],
-      "payment": {
-        "models": [
-          {"type": "fixed", "amount": 0.25, "currency": "USDC", "protocol": "x402"},
-          {"type": "fixed", "amount": 0.5, "currency": "HBAR", "protocol": "HIP-991"}
-        ]
-      }
-    },
-    {
-      "id": "arbitrage_scan",
-      "name": "Cross-Oracle Arbitrage Scanner",
-      "description": "Scans all tracked assets for price discrepancies across Pyth, CoinGecko, and Chainlink. Returns ranked opportunities with buy/sell recommendations.",
-      "endpoints": [
-        {
-          "url": "/api/v1/feeds/arbitrage",
-          "method": "POST",
-          "contentType": "application/json",
-          "parameters": {
-            "min_spread": "float (optional, minimum spread percentage)"
-          }
-        }
-      ],
-      "payment": {
-        "models": [
-          {"type": "fixed", "amount": 0.5, "currency": "USDC", "protocol": "x402"},
-          {"type": "fixed", "amount": 2.0, "currency": "HBAR", "protocol": "HIP-991"}
-        ]
-      }
-    },
-    {
-      "id": "prediction_markets",
-      "name": "Prediction Market Intelligence",
-      "description": "Aggregated probabilities from Polymarket, Kalshi, PredictIt, and Manifold. Cross-validated with confidence scoring and AI analysis.",
-      "endpoints": [
-        {
-          "url": "/api/v1/requests",
-          "method": "POST",
-          "contentType": "application/json",
-          "parameters": {
-            "provider_id": "string (polymarket, kalshi, predictit, manifold)",
-            "params": "object"
-          }
+      "id": "get_price",
+      "name": "Verified Price Feed",
+      "description": "Returns a cross-verified price for any asset from multiple independent oracles (Pyth, CoinGecko, DeFiLlama/Chainlink). Includes spread analysis and confidence scoring.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "asset": {"type": "string", "description": "Asset symbol, e.g. BTC/USD, ETH/USD, XAU/USD"},
+          "source": {"type": "string", "description": "Optional: filter to one oracle (pyth, coingecko, defillama)"}
         },
-        {
-          "url": "/api/v1/requests/aggregate",
-          "method": "POST",
-          "contentType": "application/json",
-          "parameters": {
-            "query": "string",
-            "providers": "array (optional)"
-          }
+        "required": ["asset"]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "prices": {"type": "array", "description": "Array of {source, price, confidence} from each oracle"},
+          "spread_pct": {"type": "number", "description": "Price spread across oracles as percentage"}
         }
-      ],
-      "payment": {
-        "models": [
-          {"type": "fixed", "amount": 0.3, "currency": "HBAR", "protocol": "HIP-991", "note": "per provider, 0.5-1.5 HBAR for multi-provider aggregation"},
-          {"type": "fixed", "amount": 0.15, "currency": "USDC", "protocol": "x402", "note": "per provider query"}
-        ]
+      }
+    },
+    {
+      "id": "scan_arbitrage",
+      "name": "Cross-Oracle Arbitrage Scan",
+      "description": "Scans all tracked assets for price discrepancies across oracles. Returns ranked opportunities with buy/sell recommendations.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "min_spread": {"type": "number", "description": "Minimum spread percentage to report"}
+        }
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "signals": {"type": "array", "description": "Ranked arbitrage signals with asset, spread, buy_from, sell_to"}
+        }
+      }
+    },
+    {
+      "id": "get_prediction_markets",
+      "name": "Prediction Market Data",
+      "description": "Fetches prediction market data from Polymarket, Kalshi, PredictIt, or Manifold. Returns probabilities, volumes, and liquidity.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "provider_id": {"type": "string", "enum": ["polymarket", "kalshi", "predictit", "manifold"]},
+          "params": {"type": "object", "description": "Provider-specific parameters (query, limit, market_ids)"}
+        },
+        "required": ["provider_id"]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "markets": {"type": "array", "description": "Array of markets with outcomes, prices, volume, liquidity"}
+        }
       }
     },
     {
       "id": "deep_research",
       "name": "Deep Research",
-      "description": "Web search + news + social signals + prediction market data combined with AI analysis. Premium intelligence product.",
-      "endpoints": [
-        {
-          "url": "/api/v1/research",
-          "method": "POST",
-          "contentType": "application/json",
-          "parameters": {
-            "question": "string"
-          }
+      "description": "Performs comprehensive research using web search, news, social signals, and prediction market data combined with AI analysis. Premium intelligence product.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "question": {"type": "string", "description": "Research question or topic"}
+        },
+        "required": ["question"]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "analysis": {"type": "string", "description": "AI-generated research report"},
+          "sources": {"type": "object", "description": "Web, news, and market sources consulted"}
         }
-      ],
-      "payment": {
-        "models": [
-          {"type": "fixed", "amount": 1.0, "currency": "HBAR", "protocol": "HIP-991"},
-          {"type": "fixed", "amount": 0.5, "currency": "USDC", "protocol": "x402"}
-        ]
       }
     },
     {
-      "id": "mcp_server",
-      "name": "MCP Server",
-      "description": "Model Context Protocol server with 7 tools: list_providers, get_market_data, check_request, get_agent_profile, analyze_market, get_price, scan_arbitrage",
-      "endpoints": [
-        {
-          "url": "/mcp",
-          "method": "POST",
-          "contentType": "application/json",
-          "protocol": "MCP Streamable HTTP"
+      "id": "create_task",
+      "name": "Create A2A Task",
+      "description": "Creates a new task for asynchronous processing. Supports full lifecycle: submitted → working → input-required → completed/failed.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "agent_id": {"type": "string", "description": "Target agent ID", "default": "hasha2a"},
+          "context_id": {"type": "string", "description": "Optional context ID for grouping interactions"}
         }
-      ],
-      "payment": {
-        "models": [
-          {"type": "free", "note": "MCP introspection tools are free. Data tools require payment via x402 or HIP-991."}
-        ]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "task_id": {"type": "string", "description": "Unique task identifier"},
+          "status": {"type": "string", "enum": ["submitted", "working", "input-required", "completed", "failed"]}
+        }
       }
     }
   ],
+
+  "capabilities": {
+    "streaming": false,
+    "push_notifications": false,
+    "task_lifecycle": true,
+    "context_passing": true,
+    "artifact_storage": true,
+    "batch_processing": false,
+    "payment_protocols": ["x402", "HIP-991", "AP2"]
+  },
+
   "authentication": {
-    "type": "none",
-    "note": "No API key required. Payment-based access via x402 (USDC) or HIP-991 (HBAR)."
+    "schemes": [
+      {
+        "type": "jwt",
+        "in": "header",
+        "name": "Authorization",
+        "format": "Bearer {token}",
+        "description": "Ephemeral JWT tokens for stateless authentication. Tokens expire in 5 minutes."
+      },
+      {
+        "type": "none",
+        "description": "All queries are payment-gated via x402 (USDC) or HIP-991 (HBAR). No API key required."
+      }
+    ]
   },
+
+  "endpoints": {
+    "task_submission": {
+      "url": "http://localhost:8080/api/v1/tasks",
+      "method": "POST",
+      "contentType": "application/json"
+    },
+    "task_status": {
+      "url": "http://localhost:8080/api/v1/tasks/{task_id}",
+      "method": "GET"
+    },
+    "health": {
+      "url": "http://localhost:8080/api/v1/agent/health",
+      "method": "GET"
+    },
+    "profile": {
+      "url": "http://localhost:8080/api/v1/agent/profile",
+      "method": "GET"
+    },
+    "mcp": {
+      "url": "http://localhost:8080/mcp",
+      "method": "POST",
+      "protocol": "MCP Streamable HTTP"
+    },
+    "token": {
+      "url": "http://localhost:8080/api/v1/auth/token",
+      "method": "POST",
+      "description": "Request ephemeral JWT token for authenticated requests"
+    }
+  },
+
   "payment": {
-    "protocols": ["x402", "HIP-991"],
+    "protocols": ["x402", "HIP-991", "AP2"],
     "currencies": ["USDC", "HBAR"],
-    "networks": ["eip155:8453", "hedera:testnet"]
+    "networks": ["eip155:8453", "hedera:testnet"],
+    "mandates": {
+      "supported": true,
+      "types": ["cart", "intent"],
+      "description": "AP2 cryptographic mandates for autonomous agent spending. Agents can pre-authorize spending limits."
+    }
   },
+
+  "security": {
+    "endpoint_auth": ["jwt", "none"],
+    "message_integrity": "SHA-256 proofs via HCS audit topic",
+    "ephemeral_tokens_ttl": 300,
+    "audit_trail": true
+  },
+
   "discovery": {
     "protocols": ["mcp", "a2a", "rest"],
     "endpoints": {
+      "agent_card": "/.well-known/agent.json",
       "mcp": "http://localhost:8080/mcp",
       "health": "http://localhost:8080/api/v1/agent/health",
-      "profile": "http://localhost:8080/api/v1/agent/profile",
-      "rss": null
-    }
+      "profile": "http://localhost:8080/api/v1/agent/profile"
+    },
+    "hol_registry_topic": "0.0.29640405"
+  },
+
+  "context": {
+    "supported": true,
+    "max_history": 50,
+    "summary_truncation": 500,
+    "forking": true
   }
 }
