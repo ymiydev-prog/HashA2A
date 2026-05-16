@@ -989,6 +989,7 @@ button:focus, [tabindex]:focus { outline: 2px solid var(--purple); outline-offse
 .pricing-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
 .pricing-desc { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
 .pricing-amount { font-size: 28px; font-weight: 800; }
+.pricing-hbar { color: var(--blue); font-size: 16px; margin-top: 4px; }
 .pricing-hbar { color: var(--blue); }
 .pricing-usdc { color: var(--green); margin-top: 4px; font-size: 14px; }
 .pricing-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-bottom: 1px solid rgba(30,42,69,0.5); }
@@ -1114,38 +1115,39 @@ button:focus, [tabindex]:focus { outline: 2px solid var(--purple); outline-offse
   </div>
 </section>
 
-<section class="pricing" id="pricing" aria-label="Pricing plans">
-  <div class="container">
-    <h2 class="section-title">Pay Per Query</h2>
-    <p class="section-sub">No subscriptions. No API keys. No accounts. Just pay and receive.</p>
-    <div class="pricing-grid">
-      <div class="pricing-card">
-        <div class="pricing-name">Price Feed</div>
-        <div class="pricing-desc">Single asset, multi-oracle</div>
-        <div class="pricing-amount pricing-hbar">0.5 HBAR</div>
-        <div class="pricing-usdc">or $0.25 USDC</div>
-      </div>
-      <div class="pricing-card featured">
-        <div class="pricing-name">Arbitrage Scan</div>
-        <div class="pricing-desc">All assets, ranked by spread</div>
-        <div class="pricing-amount pricing-hbar">2 HBAR</div>
-        <div class="pricing-usdc">or $0.50 USDC</div>
-      </div>
-      <div class="pricing-card">
-        <div class="pricing-name">Deep Research</div>
-        <div class="pricing-desc">Web + news + AI analysis</div>
-        <div class="pricing-amount pricing-hbar">1 HBAR</div>
-        <div class="pricing-usdc">or $0.50 USDC</div>
-      </div>
-      <div class="pricing-card">
-        <div class="pricing-name">Predictions</div>
-        <div class="pricing-desc">Per provider query</div>
-        <div class="pricing-amount pricing-hbar">0.3 HBAR</div>
-        <div class="pricing-usdc">or $0.15 USDC</div>
-      </div>
-    </div>
-  </div>
-</section>
+ <section class="pricing" id="pricing" aria-label="Pricing plans">
+   <div class="container">
+     <h2 class="section-title">Pay Per Query</h2>
+     <p class="section-sub">USDC prices are fixed. HBAR updates in real-time with the market.</p>
+     <div class="pricing-grid">
+       <div class="pricing-card" data-usdc="0.25" data-key="price_feed">
+         <div class="pricing-name">Price Feed</div>
+         <div class="pricing-desc">Single asset, multi-oracle</div>
+         <div class="pricing-amount pricing-usdc">$0.25 USDC</div>
+         <div class="pricing-hbar" id="hbar-price_feed">~ — HBAR</div>
+       </div>
+       <div class="pricing-card featured" data-usdc="0.50" data-key="arbitrage_scan">
+         <div class="pricing-name">Arbitrage Scan</div>
+         <div class="pricing-desc">All assets, ranked by spread</div>
+         <div class="pricing-amount pricing-usdc">$0.50 USDC</div>
+         <div class="pricing-hbar" id="hbar-arbitrage_scan">~ — HBAR</div>
+       </div>
+       <div class="pricing-card" data-usdc="0.50" data-key="deep_research">
+         <div class="pricing-name">Deep Research</div>
+         <div class="pricing-desc">Web + news + AI analysis</div>
+         <div class="pricing-amount pricing-usdc">$0.50 USDC</div>
+         <div class="pricing-hbar" id="hbar-deep_research">~ — HBAR</div>
+       </div>
+       <div class="pricing-card" data-usdc="0.15" data-key="prediction_market">
+         <div class="pricing-name">Predictions</div>
+         <div class="pricing-desc">Per provider query</div>
+         <div class="pricing-amount pricing-usdc">$0.15 USDC</div>
+         <div class="pricing-hbar" id="hbar-prediction_market">~ — HBAR</div>
+       </div>
+     </div>
+     <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:16px;" id="rate-info">Loading live HBAR rate...</p>
+   </div>
+ </section>
 
 <section class="integrate" id="integrate" aria-label="Integration guide">
   <div class="container">
@@ -1252,16 +1254,37 @@ async function loadBtcPrice() {
       sourcesEl.innerHTML = data.prices.map(p => `<span class="live-source"><span class="live-dot online"></span>${p.source_name}</span>`).join('');
       refreshEl.textContent = data.oracles + ' oracles · updated ' + new Date().toLocaleTimeString();
     } else {
-      priceEl.textContent = '—';
+      priceEl.textContent = '\u2014';
       refreshEl.textContent = 'No data available';
     }
   } catch(e) {
-    priceEl.textContent = '⚠️';
+    priceEl.textContent = '\u26A0\uFE0F';
     refreshEl.textContent = 'Connection error';
   }
 }
+
+async function loadPricing() {
+  const rateInfo = document.getElementById('rate-info');
+  if (!rateInfo) return;
+  try {
+    const resp = await fetch('/api/v1/feeds/pricing');
+    const data = await resp.json();
+    const p = data.products;
+    const r = data.rates;
+    document.getElementById('hbar-price_feed').textContent = '\u2248 ' + p.price_feed.hbar + ' HBAR';
+    document.getElementById('hbar-arbitrage_scan').textContent = '\u2248 ' + p.arbitrage_scan.hbar + ' HBAR';
+    document.getElementById('hbar-deep_research').textContent = '\u2248 ' + p.deep_research.hbar + ' HBAR';
+    document.getElementById('hbar-prediction_market').textContent = '\u2248 ' + p.prediction_market.hbar + ' HBAR';
+    rateInfo.textContent = '1 HBAR = $' + r.usd_per_hbar + ' · Updated ' + new Date(r.updated_at * 1000).toLocaleTimeString();
+  } catch(e) {
+    rateInfo.textContent = 'Live pricing unavailable — using default rates';
+  }
+}
+
 loadBtcPrice();
+loadPricing();
 setInterval(loadBtcPrice, 30000);
+setInterval(loadPricing, 60000);
 </script>
 </body>
 </html>"""

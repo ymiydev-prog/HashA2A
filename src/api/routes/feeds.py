@@ -8,6 +8,7 @@ from core.hedera_manager import HederaManager
 from core.payment_engine import PaymentEngine
 from core.oracle_hub import OracleHub
 from core.arbitrage_engine import ArbitrageEngine
+from core.pricing import PricingConverter
 from core.x402 import X402Handler
 from api.deps import get_hedera_manager, get_payment_engine, get_settings
 from models.schemas import PaymentRequest, RequestStatus
@@ -61,7 +62,9 @@ async def get_prices(body: PriceQuery, request: Request):
     key = _get_prices_key(body.asset, body.source)
     _feed_pending[key] = "paid"
 
+    pricing = PricingConverter()
     usdc_cost = 0.25
+    hbar_cost = await pricing.usdc_to_hbar(usdc_cost)
     payment = x402.build_402_response(str(request.url), usdc_cost, f"Price feed: {body.asset}")
 
     return {
@@ -70,10 +73,10 @@ async def get_prices(body: PriceQuery, request: Request):
         "oracles_consulted": len(results),
         "price": prices[0].price if len(results) == 1 else None,
         "payment": {
-            "hbar": {"amount": 0.5, "hip991": True},
+            "hbar": {"amount": hbar_cost, "hip991": True},
             "usdc": {"amount": usdc_cost, "protocol": "x402", "accept": payment[1].get("PAYMENT-REQUIRED")},
         },
-        "instructions": "Send HBAR via HCS or USDC via x402",
+        "instructions": "Pay USDC (fixed) or HBAR (calculated live from HBAR/USD rate)",
     }
 
 
@@ -85,7 +88,9 @@ async def scan_arbitrage(body: ArbitrageScanQuery, request: Request):
     if body.min_spread:
         signals = [s for s in signals if s.spread_pct >= body.min_spread]
 
+    pricing = PricingConverter()
     usdc_cost = 0.50
+    hbar_cost = await pricing.usdc_to_hbar(usdc_cost)
     payment = x402.build_402_response(str(request.url), usdc_cost, "Arbitrage scan")
 
     return {
@@ -93,7 +98,7 @@ async def scan_arbitrage(body: ArbitrageScanQuery, request: Request):
         "total_scanned": len(signals),
         "timestamp": int(time.time()),
         "payment": {
-            "hbar": {"amount": 2, "hip991": True},
+            "hbar": {"amount": hbar_cost, "hip991": True},
             "usdc": {"amount": usdc_cost, "protocol": "x402", "accept": payment[1].get("PAYMENT-REQUIRED")},
         },
     }
@@ -104,12 +109,14 @@ async def verify_arbitrage(asset: str, request: Request):
     if not arb_engine:
         init_feeds(request.app.state.settings)
     signal = await arb_engine.scan_asset(asset.upper())
+    pricing = PricingConverter()
     usdc_cost = 0.10
+    hbar_cost = await pricing.usdc_to_hbar(usdc_cost)
     payment = x402.build_402_response(str(request.url), usdc_cost, f"Arbitrage verify: {asset}")
     return {
         "signal": signal.to_dict(),
         "payment": {
-            "hbar": {"amount": 0.5, "hip991": True},
+            "hbar": {"amount": hbar_cost, "hip991": True},
             "usdc": {"amount": usdc_cost, "protocol": "x402", "accept": payment[1].get("PAYMENT-REQUIRED")},
         },
     }
@@ -128,13 +135,23 @@ async def verify_x402_payment(payload: dict):
 
 @router.get("/x402/manifest")
 async def x402_manifest():
+    pricing = PricingConverter()
+    prices = await pricing.get_prices()
     return {
         "protocol": "x402 v2",
         "network": "eip155:8453",
         "asset": "USDC",
         "pricing": {
-            "price_feed": "$0.25 USDC (single asset, multi-oracle)",
-            "arbitrage_scan": "$0.50 USDC (all assets)",
-            "arbitrage_verify": "$0.10 USDC (single asset)",
+            "price_feed": f"${prices['products']['price_feed']['usdc']} USDC (~{prices['products']['price_feed']['hbar']} HBAR)",
+            "arbitrage_scan": f"${prices['products']['arbitrage_scan']['usdc']} USDC (~{prices['products']['arbitrage_scan']['hbar']} HBAR)",
+            "arbitrage_verify": f"${prices['products']['arbitrage_verify']['usdc']} USDC (~{prices['products']['arbitrage_verify']['hbar']} HBAR)",
         },
+        "rate": prices["rates"],
     }
+
+
+@router.get("/pricing")
+async def get_pricing():
+    """Real-time pricing: USDC fixed, HBAR calculated from live HBAR/USD rate."""
+    pricing = PricingConverter()
+    return await pricing.get_prices()
