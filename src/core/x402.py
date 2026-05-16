@@ -40,11 +40,11 @@ class X402Handler:
     def build_402_response(
         self,
         request_url: str,
-        amount_hbar: float,
+        usdc_amount: float,
         description: str = "HashA2A data request",
     ) -> tuple[int, dict, str]:
-        amount_usdc = int(amount_hbar * 100)  # 1 HBAR ≈ 0.20 USDC approx
-        amount_atomic = str(amount_usdc * 10**6)
+        # USDC has 6 decimals on Base
+        amount_atomic = str(int(usdc_amount * 10**6))
 
         payment_req = {
             "x402Version": 2,
