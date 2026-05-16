@@ -767,6 +767,30 @@ async def get_dashboard_data(request: Request):
         return JSONResponse({"error": str(e)})
 
 
+@router.get("/dashboard/tasks", response_class=HTMLResponse, include_in_schema=False)
+async def get_tasks_dashboard():
+    return HTMLResponse(TASKS_HTML)
+
+
+@router.get("/dashboard/tasks/data", include_in_schema=False)
+async def get_tasks_data():
+    from api.routes.tasks import get_mgr, get_ctx
+    mgr = get_mgr()
+    ctx = get_ctx()
+    try:
+        tasks = mgr.list_tasks(limit=30)
+        contexts = ctx.list_contexts(limit=20)
+        return JSONResponse({
+            "tasks": [t.model_dump(mode="json") for t in tasks],
+            "counts": mgr.count_by_status(),
+            "contexts": [c.model_dump(mode="json") for c in contexts],
+            "task_count": len(tasks),
+            "context_count": len(contexts),
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)})
+
+
 ORACLE_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -916,6 +940,134 @@ async function fetchData() {
 }
 fetchData();
 setInterval(fetchData, 30000);
+</script>
+</body>
+</html>"""
+
+
+TASKS_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HashA2A — Task Dashboard</title>
+<style>
+:root{--bg:#0b1120;--card:#131b2e;--border:#1e2a45;--text:#e8edf5;--muted:#7b8cae;--blue:#3b82f6;--purple:#8b5cf6;--green:#22c55e;--yellow:#eab308;--red:#ef4444;--radius:12px;--gap:16px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;padding:24px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px}
+.header h1{font-size:24px;font-weight:700}
+.header h1 span{color:var(--blue)}
+.badge{background:rgba(59,130,246,0.12);color:var(--blue);padding:4px 12px;border-radius:999px;font-size:13px}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--gap);margin-bottom:var(--gap)}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;text-align:center}
+.kpi .num{font-size:28px;font-weight:800}
+.kpi .label{font-size:12px;color:var(--muted);margin-top:4px}
+.kpi .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:var(--gap)}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.card h3{font-size:14px;font-weight:600;color:var(--muted);margin-bottom:12px}
+.task-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(30,42,69,0.5);font-size:13px;align-items:center;cursor:pointer;transition:background .1s}
+.task-row:hover{background:rgba(59,130,246,0.04)}
+.task-row:last-child{border-bottom:none}
+.task-id{color:var(--muted);font-family:monospace;font-size:11px}
+.task-status{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.status-submitted{background:rgba(59,130,246,0.1);color:var(--blue)}
+.status-working{background:rgba(234,179,8,0.1);color:var(--yellow)}
+.status-completed{background:rgba(34,197,94,0.1);color:var(--green)}
+.status-failed{background:rgba(239,68,68,0.1);color:var(--red)}
+.status-input-required{background:rgba(139,92,246,0.1);color:var(--purple)}
+.ctx-row{padding:8px 0;border-bottom:1px solid rgba(30,42,69,0.5);font-size:12px}
+.ctx-row:last-child{border-bottom:none}
+.ctx-id{color:var(--muted);font-family:monospace;font-size:11px}
+.ctx-count{color:var(--green);font-weight:600}
+.detail-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:var(--gap);display:none}
+.detail-panel.open{display:block}
+.detail-row{display:flex;padding:6px 0;font-size:13px;border-bottom:1px solid rgba(30,42,69,0.3)}
+.detail-label{color:var(--muted);width:100px;flex-shrink:0}
+.detail-value{color:var(--text)}
+.footer{text-align:center;margin-top:24px;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📋 <span>HashA2A</span> Task Dashboard</h1>
+  <span class="badge" id="status-badge">Loading...</span>
+</div>
+<div class="kpi-row" id="kpi-row"></div>
+<div class="grid">
+  <div>
+    <div class="card">
+      <h3>📌 Recent Tasks</h3>
+      <div id="task-list">Loading...</div>
+    </div>
+    <div class="detail-panel" id="detail-panel">
+      <h3 style="margin-bottom:12px">📄 Task Detail</h3>
+      <div id="detail-content"></div>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <h3>🧠 Context Activity</h3>
+      <div id="ctx-list">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="footer">Auto-refreshes every 15s · A2A Tasks API</div>
+<script>
+async function fetchData() {
+  try {
+    const resp = await fetch('/dashboard/tasks/data');
+    const data = await resp.json();
+    if (data.error) { document.getElementById('status-badge').textContent = 'Error'; return; }
+    document.getElementById('status-badge').textContent = data.task_count + ' tasks · ' + data.context_count + ' contexts · ' + new Date().toLocaleTimeString();
+
+    const kpi = document.getElementById('kpi-row');
+    kpi.innerHTML = Object.entries(data.counts).map(([s, c]) =>
+      `<div class="kpi"><div class="num" style="color:var(--${s === 'completed' ? 'green' : s === 'failed' ? 'red' : s === 'working' ? 'yellow' : s === 'input-required' ? 'purple' : 'blue'})">${c}</div><div class="label">${s}</div></div>`
+    ).join('');
+
+    const taskList = document.getElementById('task-list');
+    taskList.innerHTML = data.tasks.map(t => {
+      const sClass = 'status-' + t.status;
+      return '<div class="task-row" onclick="showDetail(\'' + t.task_id + '\')"><span class="task-id">' + t.task_id.substring(0, 16) + '...</span><span class="task-status ' + sClass + '">' + t.status + '</span><span style="color:var(--muted);font-size:11px">' + t.parts.length + ' parts</span></div>';
+    }).join('') || '<div style="color:var(--muted);font-size:13px;padding:12px 0">No tasks yet. Create one via API.</div>';
+
+    const ctxList = document.getElementById('ctx-list');
+    ctxList.innerHTML = data.contexts.map(c => {
+      const desc = c.summary ? c.summary.substring(0, 60) + '...' : 'No activity';
+      return '<div class="ctx-row"><span class="ctx-id">' + c.context_id.substring(0, 16) + '...</span><span class="ctx-count">' + c.interaction_count + ' interactions</span><div style="color:var(--muted);font-size:11px;margin-top:2px">' + desc + '</div></div>';
+    }).join('') || '<div style="color:var(--muted);font-size:13px;padding:12px 0">No contexts yet.</div>';
+
+    window._tasks = data.tasks;
+    window._contexts = data.contexts;
+  } catch(e) {
+    document.getElementById('status-badge').textContent = 'Offline';
+  }
+}
+
+function showDetail(taskId) {
+  const panel = document.getElementById('detail-panel');
+  const content = document.getElementById('detail-content');
+  const task = window._tasks ? window._tasks.find(t => t.task_id === taskId) : null;
+  if (!task) return;
+  panel.classList.add('open');
+  content.innerHTML = [
+    '<div class="detail-row"><span class="detail-label">Task ID</span><span class="detail-value" style="font-family:monospace;font-size:11px">' + task.task_id + '</span></div>',
+    '<div class="detail-row"><span class="detail-label">Status</span><span class="detail-value"><span class="task-status status-' + task.status + '">' + task.status + '</span></span></div>',
+    '<div class="detail-row"><span class="detail-label">Context</span><span class="detail-value" style="font-family:monospace;font-size:11px">' + (task.context_id || 'none') + '</span></div>',
+    '<div class="detail-row"><span class="detail-label">Parts</span><span class="detail-value">' + task.parts.length + ' parts</span></div>',
+    '<div class="detail-row"><span class="detail-label">Artifacts</span><span class="detail-value">' + task.artifacts.length + ' files</span></div>',
+    task.context_id ? '<div style="margin-top:12px"><a href="/api/v1/tasks/context/' + task.context_id + '/history" target="_blank" style="color:var(--blue);font-size:13px">View context history →</a></div>' : '',
+  ].join('');
+  if (task.parts.length) {
+    content.innerHTML += '<div style="margin-top:12px;font-size:12px;color:var(--muted)">Last part: ' + task.parts[task.parts.length - 1].text?.substring(0, 120) + '</div>';
+  }
+}
+
+fetchData();
+setInterval(fetchData, 15000);
 </script>
 </body>
 </html>"""
