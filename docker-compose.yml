@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   hasha2a:
     build: .
@@ -9,6 +7,4 @@ services:
       - .env
     environment:
       - PYTHONPATH=/app/src
-    volumes:
-      - ./static:/app/static
     restart: unless-stopped

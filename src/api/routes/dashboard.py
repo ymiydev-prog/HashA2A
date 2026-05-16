@@ -845,3 +845,386 @@ setInterval(fetchData, 30000);
 </script>
 </body>
 </html>"""
+
+
+@router.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def get_landing():
+    return HTMLResponse(LANDING_HTML)
+
+
+@router.get("/landing/data", include_in_schema=False)
+async def get_landing_data():
+    from core.oracle_hub import OracleHub
+    hub = OracleHub()
+    try:
+        import asyncio
+        prices = await hub.get_price("BTC/USD")
+        await hub.close()
+        if prices:
+            return JSONResponse({
+                "prices": [p.to_dict() for p in prices],
+                "oracles": len(prices),
+            })
+        return JSONResponse({"prices": [], "oracles": 0})
+    except Exception as e:
+        await hub.close()
+        return JSONResponse({"error": str(e)})
+
+
+LANDING_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HashA2A — Agent-to-Agent Intelligence Layer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0b1120; --card: #131b2e; --border: #1e2a45;
+  --text: #e8edf5; --muted: #7b8cae;
+  --blue: #3b82f6; --purple: #8b5cf6; --green: #22c55e; --cyan: #06b6d4;
+  --radius: 12px; --gap: 16px;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; }
+a { color: var(--blue); text-decoration: none; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* Nav */
+.nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); }
+.nav-logo { font-size: 22px; font-weight: 800; }
+.nav-logo span:first-child { color: var(--blue); }
+.nav-logo span:last-child { color: var(--purple); }
+.nav-links { display: flex; gap: 24px; align-items: center; }
+.nav-links a { font-size: 14px; color: var(--muted); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-btn { background: linear-gradient(135deg, var(--blue), var(--purple)); color: white !important; padding: 8px 20px; border-radius: 8px; font-weight: 600; font-size: 13px !important; }
+
+/* Hero */
+.hero { padding: 80px 0 60px; text-align: center; position: relative; overflow: hidden; }
+.hero-bg { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.08) 0%, transparent 60%), radial-gradient(ellipse at 80% 50%, rgba(139,92,246,0.06) 0%, transparent 50%); pointer-events: none; }
+.hero h1 { font-size: 56px; font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; position: relative; }
+.hero h1 .accent { background: linear-gradient(135deg, var(--blue), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero p { font-size: 20px; color: var(--muted); margin-top: 20px; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6; position: relative; }
+.hero-btns { display: flex; gap: 16px; justify-content: center; margin-top: 32px; position: relative; }
+.hero-btn { padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; transition: all 0.2s; }
+.hero-btn-primary { background: linear-gradient(135deg, var(--blue), var(--purple)); color: white; }
+.hero-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(59,130,246,0.3); }
+.hero-btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.hero-btn-secondary:hover { border-color: var(--blue); }
+
+/* Video */
+.video-section { padding: 0 0 60px; text-align: center; }
+.video-container { max-width: 800px; margin: 0 auto; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: var(--card); position: relative; }
+.video-container video { width: 100%; display: block; }
+.video-placeholder { aspect-ratio: 16/9; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(139,92,246,0.05)); gap: 12px; }
+.video-placeholder .play-icon { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 28px; color: white; opacity: 0.8; }
+.video-placeholder p { color: var(--muted); font-size: 14px; }
+
+/* Section titles */
+.section-title { font-size: 32px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+.section-sub { font-size: 16px; color: var(--muted); text-align: center; margin-bottom: 48px; }
+
+/* Features */
+.features { padding: 60px 0; }
+.features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--gap); }
+.feature-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px 24px; transition: all 0.2s; }
+.feature-card:hover { border-color: var(--blue); transform: translateY(-2px); }
+.feature-icon { font-size: 32px; margin-bottom: 16px; }
+.feature-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.feature-card p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+/* Live Data */
+.live-data { padding: 60px 0; }
+.live-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; text-align: center; max-width: 500px; margin: 0 auto; }
+.live-label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.live-price { font-size: 48px; font-weight: 800; margin: 8px 0; }
+.live-price .currency { font-size: 24px; color: var(--muted); }
+.live-sources { display: flex; justify-content: center; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--muted); }
+.live-source { display: flex; align-items: center; gap: 4px; }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.live-dot.online { background: var(--green); }
+.live-refresh { font-size: 12px; color: var(--muted); margin-top: 12px; }
+
+/* Pricing */
+.pricing { padding: 60px 0; }
+.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--gap); }
+.pricing-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; text-align: center; }
+.pricing-card.featured { border-color: var(--blue); position: relative; }
+.pricing-card.featured::before { content: 'Best Seller'; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--blue), var(--purple)); padding: 4px 16px; border-radius: 999px; font-size: 11px; font-weight: 600; color: white; }
+.pricing-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.pricing-desc { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+.pricing-amount { font-size: 28px; font-weight: 800; }
+.pricing-hbar { color: var(--blue); }
+.pricing-usdc { color: var(--green); margin-top: 4px; font-size: 14px; }
+.pricing-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-bottom: 1px solid rgba(30,42,69,0.5); }
+.pricing-row:last-child { border-bottom: none; }
+.pricing-row .label { color: var(--muted); }
+.pricing-row .value { color: var(--text); font-weight: 500; }
+
+/* Integration */
+.integrate { padding: 60px 0; }
+.integrate-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: var(--gap); }
+.integrate-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.integrate-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.integrate-header h3 { font-size: 14px; font-weight: 600; }
+.integrate-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(59,130,246,0.1); color: var(--blue); }
+.integrate-body { padding: 16px 20px; }
+.integrate-body pre { font-size: 12px; color: var(--muted); line-height: 1.7; overflow-x: auto; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+.integrate-body code { color: var(--cyan); }
+
+/* Footer */
+.footer { border-top: 1px solid var(--border); padding: 40px 0; margin-top: 60px; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
+.footer-brand h3 { font-size: 18px; font-weight: 700; }
+.footer-brand h3 span:first-child { color: var(--blue); }
+.footer-brand h3 span:last-child { color: var(--purple); }
+.footer-brand p { font-size: 13px; color: var(--muted); margin-top: 8px; max-width: 300px; line-height: 1.6; }
+.footer-col h4 { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
+.footer-col a { display: block; font-size: 13px; color: var(--muted); margin-bottom: 10px; transition: color 0.2s; }
+.footer-col a:hover { color: var(--text); }
+.footer-bottom { border-top: 1px solid var(--border); margin-top: 32px; padding-top: 24px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); }
+.footer-social { display: flex; gap: 16px; }
+.footer-social a { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); transition: color 0.2s; }
+.footer-social a:hover { color: var(--text); }
+
+@media (max-width: 768px) {
+  .hero h1 { font-size: 32px; }
+  .hero p { font-size: 16px; }
+  .footer-grid { grid-template-columns: 1fr; gap: 24px; }
+  .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
+  .integrate-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+    <div class="nav-logo"><span>Hash</span><span>A2A</span></div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#integrate">Integrate</a>
+      <a href="https://github.com/ymiydev-prog/HashA2A">GitHub</a>
+      <a href="/dashboard" class="nav-btn">Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="container">
+    <h1>Buy Verified Intelligence<br/>with <span class="accent">HBAR or USDC</span></h1>
+    <p>HashA2A is a decentralized data marketplace where AI agents discover, purchase, and consume verified multi-oracle intelligence — powered by Hedera HCS and the x402 protocol.</p>
+    <div class="hero-btns">
+      <a href="#integrate" class="hero-btn hero-btn-primary">Integrate Your Agent →</a>
+      <a href="/dashboard" class="hero-btn hero-btn-secondary">Live Dashboard</a>
+    </div>
+  </div>
+</section>
+
+<section class="video-section">
+  <div class="container">
+    <div class="video-container">
+      <video controls poster="" preload="metadata" playsinline>
+        <source src="/promo.mp4" type="video/mp4">
+      </video>
+      <div class="video-placeholder" id="video-fallback" style="display:none;">
+        <div class="play-icon">▶</div>
+        <p>HashA2A Promo — Agent-to-Agent Data Marketplace</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="container">
+    <h2 class="section-title">Everything AI Agents Need</h2>
+    <p class="section-sub">Real-time, cross-verified, cryptographically provable data</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔮</div>
+        <h3>OracleHub</h3>
+        <p>Multi-oracle price aggregation from Pyth, CoinGecko, and Chainlink (via DeFiLlama). Median-price with IQR confidence scoring.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Arbitrage Scanner</h3>
+        <p>Real-time cross-oracle spread detection. Buy from the cheapest oracle, sell to the most expensive. Identifies profitable opportunities.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🧠</div>
+        <h3>Deep Research</h3>
+        <p>Web search + news + social signals + prediction market data combined with AI analysis (GPT-5-nano). Premium intelligence product.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔌</div>
+        <h3>MCP + A2A + REST</h3>
+        <p>10 MCP tools, A2A agent discovery, REST API, WebSocket, and x402 payments. Works with Claude, Cursor, LangChain, and any HTTP client.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="live-data">
+  <div class="container" style="text-align:center;">
+    <h2 class="section-title">Live Oracle Data</h2>
+    <p class="section-sub">Real-time BTC/USD cross-verified across multiple oracles</p>
+    <div class="live-card">
+      <div class="live-label">BTC / USD</div>
+      <div class="live-price"><span id="btc-price">—</span> <span class="currency">USD</span></div>
+      <div class="live-sources" id="btc-sources"></div>
+      <div class="live-refresh" id="btc-refresh">Fetching live data...</div>
+    </div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="container">
+    <h2 class="section-title">Pay Per Query</h2>
+    <p class="section-sub">No subscriptions. No API keys. No accounts. Just pay and receive.</p>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <div class="pricing-name">Price Feed</div>
+        <div class="pricing-desc">Single asset, multi-oracle</div>
+        <div class="pricing-amount pricing-hbar">0.5 HBAR</div>
+        <div class="pricing-usdc">or $0.25 USDC</div>
+      </div>
+      <div class="pricing-card featured">
+        <div class="pricing-name">Arbitrage Scan</div>
+        <div class="pricing-desc">All assets, ranked by spread</div>
+        <div class="pricing-amount pricing-hbar">2 HBAR</div>
+        <div class="pricing-usdc">or $0.50 USDC</div>
+      </div>
+      <div class="pricing-card">
+        <div class="pricing-name">Deep Research</div>
+        <div class="pricing-desc">Web + news + AI analysis</div>
+        <div class="pricing-amount pricing-hbar">1 HBAR</div>
+        <div class="pricing-usdc">or $0.50 USDC</div>
+      </div>
+      <div class="pricing-card">
+        <div class="pricing-name">Predictions</div>
+        <div class="pricing-desc">Per provider query</div>
+        <div class="pricing-amount pricing-hbar">0.3 HBAR</div>
+        <div class="pricing-usdc">or $0.15 USDC</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="integrate" id="integrate">
+  <div class="container">
+    <h2 class="section-title">Start in 30 Seconds</h2>
+    <p class="section-sub">Three ways to integrate HashA2A into your agent</p>
+    <div class="integrate-grid">
+      <div class="integrate-card">
+        <div class="integrate-header"><h3>MCP (Recommended)</h3><span class="integrate-badge">Agents</span></div>
+        <div class="integrate-body">
+<pre>{
+  "mcpServers": {
+    "hasha2a": {
+      "url": "http://localhost:8080/mcp"
+    }
+  }
+}
+
+# 10 tools: get_price, scan_arbitrage,
+# list_providers, deep_research, and more</pre>
+        </div>
+      </div>
+      <div class="integrate-card">
+        <div class="integrate-header"><h3>REST API</h3><span class="integrate-badge">Universal</span></div>
+        <div class="integrate-body">
+<pre><code>curl -X POST</code> http://localhost:8080/api/v1/feeds/prices \
+  -H <code>"Content-Type: application/json"</code> \
+  -d <code>'{"asset":"BTC/USD"}'</code>
+
+<code>curl -X POST</code> http://localhost:8080/api/v1/requests \
+  -H <code>"Content-Type: application/json"</code> \
+  -d <code>'{"provider_id":"polymarket"}'</code></pre>
+        </div>
+      </div>
+      <div class="integrate-card">
+        <div class="integrate-header"><h3>A2A Discovery</h3><span class="integrate-badge">Autonomous</span></div>
+        <div class="integrate-body">
+<pre>GET /.well-known/agent.json
+  → 5 capabilities
+  → HBAR + USDC payments
+  → MCP + REST endpoints
+
+GET /llms.txt
+  → Full API documentation
+  → Pricing in both currencies</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <h3><span>Hash</span><span>A2A</span></h3>
+        <p>The Agent-to-Agent Intelligence Layer. A decentralized data marketplace where AI agents buy verified multi-oracle intelligence via HBAR (HIP-991) or USDC (x402).</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#integrate">Integration</a>
+        <a href="/dashboard/oracles">Oracle Dashboard</a>
+      </div>
+      <div class="footer-col">
+        <h4>Protocols</h4>
+        <a href="/mcp/">MCP Server</a>
+        <a href="/.well-known/agent.json">A2A Card</a>
+        <a href="/.well-known/x402.json">x402 Payments</a>
+        <a href="/llms.txt">llms.txt</a>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <a href="https://github.com/ymiydev-prog/HashA2A">GitHub</a>
+        <a href="https://github.com/ymiydev-prog/HashA2A/pull/1">Pull Request</a>
+        <a href="https://x.com" target="_blank" rel="noopener">X (Twitter)</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>HashA2A v0.2.0 — MIT License</span>
+      <div class="footer-social">
+        <a href="https://github.com/ymiydev-prog/HashA2A">🐙 GitHub</a>
+        <a href="https://x.com" target="_blank" rel="noopener">𝕏 X</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+async function loadBtcPrice() {
+  const priceEl = document.getElementById('btc-price');
+  const sourcesEl = document.getElementById('btc-sources');
+  const refreshEl = document.getElementById('btc-refresh');
+  try {
+    const resp = await fetch('/landing/data');
+    const data = await resp.json();
+    if (data.prices && data.prices.length) {
+      const pyth = data.prices.find(p => p.source === 'pyth');
+      if (pyth) {
+        priceEl.textContent = '$' + pyth.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      }
+      sourcesEl.innerHTML = data.prices.map(p => `<span class="live-source"><span class="live-dot online"></span>${p.source_name}</span>`).join('');
+      refreshEl.textContent = data.oracles + ' oracles · updated ' + new Date().toLocaleTimeString();
+    } else {
+      priceEl.textContent = '—';
+      refreshEl.textContent = 'No data available';
+    }
+  } catch(e) {
+    priceEl.textContent = '⚠️';
+    refreshEl.textContent = 'Connection error';
+  }
+}
+loadBtcPrice();
+setInterval(loadBtcPrice, 30000);
+</script>
+</body>
+</html>"""
