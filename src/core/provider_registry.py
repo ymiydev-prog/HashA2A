@@ -54,6 +54,8 @@ class ProviderRegistry:
                         isinstance(obj, type)
                         and issubclass(obj, BaseDataProvider)
                         and obj is not BaseDataProvider
+                        and hasattr(obj, "provider_id")
+                        and getattr(obj, "provider_id", None) is not None
                     ):
                         self.register(obj())
                         discovered.append(obj.provider_id)

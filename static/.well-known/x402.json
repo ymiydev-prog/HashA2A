@@ -1,0 +1,33 @@
+{
+  "x402Version": 2,
+  "network": "eip155:8453",
+  "asset": "USDC",
+  "assetAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "decimals": 6,
+  "description": "HashA2A — pay-per-query data marketplace for AI agents",
+  "endpoints": [
+    {
+      "path": "/api/v1/feeds/prices",
+      "method": "POST",
+      "description": "Multi-oracle price feed (BTC, ETH, SOL)",
+      "price": 0.25,
+      "priceAtomic": "250000"
+    },
+    {
+      "path": "/api/v1/feeds/arbitrage",
+      "method": "POST",
+      "description": "Cross-oracle arbitrage scanner",
+      "price": 0.5,
+      "priceAtomic": "500000"
+    },
+    {
+      "path": "/api/v1/feeds/verify/{asset}",
+      "method": "GET",
+      "description": "Verify arbitrage for single asset",
+      "price": 0.1,
+      "priceAtomic": "100000"
+    }
+  ],
+  "treasury": null,
+  "note": "Set treasury address via environment or leave null for manual routing"
+}

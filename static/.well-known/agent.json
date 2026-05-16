@@ -1,0 +1,141 @@
+{
+  "$schema": "https://agent2agent.dev/schema/agent-card.json",
+  "name": "HashA2A Intelligence Oracle",
+  "version": "0.2.0",
+  "description": "Agent-to-Agent data marketplace. Sells verified multi-oracle prices, prediction market intelligence, and arbitrage signals to AI agents. Pay per query via HBAR (HIP-991) or USDC (x402).",
+  "url": "https://github.com/ymiydev-prog/HashA2A",
+  "documentation": "https://github.com/ymiydev-prog/HashA2A/blob/main/README.md",
+  "capabilities": [
+    {
+      "id": "price_feed",
+      "name": "Verified Price Feeds",
+      "description": "Multi-oracle price data for crypto (BTC, ETH, SOL) aggregated from Pyth, CoinGecko, and Chainlink via DeFiLlama. Includes spread analysis.",
+      "endpoints": [
+        {
+          "url": "/api/v1/feeds/prices",
+          "method": "POST",
+          "contentType": "application/json",
+          "parameters": {
+            "asset": "string (e.g. BTC/USD, ETH/USD)",
+            "source": "string (optional: pyth, coingecko, defillama)"
+          }
+        }
+      ],
+      "payment": {
+        "models": [
+          {"type": "fixed", "amount": 0.25, "currency": "USDC", "protocol": "x402"},
+          {"type": "fixed", "amount": 0.5, "currency": "HBAR", "protocol": "HIP-991"}
+        ]
+      }
+    },
+    {
+      "id": "arbitrage_scan",
+      "name": "Cross-Oracle Arbitrage Scanner",
+      "description": "Scans all tracked assets for price discrepancies across Pyth, CoinGecko, and Chainlink. Returns ranked opportunities with buy/sell recommendations.",
+      "endpoints": [
+        {
+          "url": "/api/v1/feeds/arbitrage",
+          "method": "POST",
+          "contentType": "application/json",
+          "parameters": {
+            "min_spread": "float (optional, minimum spread percentage)"
+          }
+        }
+      ],
+      "payment": {
+        "models": [
+          {"type": "fixed", "amount": 0.5, "currency": "USDC", "protocol": "x402"},
+          {"type": "fixed", "amount": 2.0, "currency": "HBAR", "protocol": "HIP-991"}
+        ]
+      }
+    },
+    {
+      "id": "prediction_markets",
+      "name": "Prediction Market Intelligence",
+      "description": "Aggregated probabilities from Polymarket, Kalshi, PredictIt, and Manifold. Cross-validated with confidence scoring and AI analysis.",
+      "endpoints": [
+        {
+          "url": "/api/v1/requests",
+          "method": "POST",
+          "contentType": "application/json",
+          "parameters": {
+            "provider_id": "string (polymarket, kalshi, predictit, manifold)",
+            "params": "object"
+          }
+        },
+        {
+          "url": "/api/v1/requests/aggregate",
+          "method": "POST",
+          "contentType": "application/json",
+          "parameters": {
+            "query": "string",
+            "providers": "array (optional)"
+          }
+        }
+      ],
+      "payment": {
+        "models": [
+          {"type": "fixed", "amount": 0.3, "currency": "HBAR", "protocol": "HIP-991", "note": "per provider, 0.5-1.5 HBAR for multi-provider aggregation"},
+          {"type": "fixed", "amount": 0.15, "currency": "USDC", "protocol": "x402", "note": "per provider query"}
+        ]
+      }
+    },
+    {
+      "id": "deep_research",
+      "name": "Deep Research",
+      "description": "Web search + news + social signals + prediction market data combined with AI analysis. Premium intelligence product.",
+      "endpoints": [
+        {
+          "url": "/api/v1/research",
+          "method": "POST",
+          "contentType": "application/json",
+          "parameters": {
+            "question": "string"
+          }
+        }
+      ],
+      "payment": {
+        "models": [
+          {"type": "fixed", "amount": 1.0, "currency": "HBAR", "protocol": "HIP-991"},
+          {"type": "fixed", "amount": 0.5, "currency": "USDC", "protocol": "x402"}
+        ]
+      }
+    },
+    {
+      "id": "mcp_server",
+      "name": "MCP Server",
+      "description": "Model Context Protocol server with 7 tools: list_providers, get_market_data, check_request, get_agent_profile, analyze_market, get_price, scan_arbitrage",
+      "endpoints": [
+        {
+          "url": "/mcp",
+          "method": "POST",
+          "contentType": "application/json",
+          "protocol": "MCP Streamable HTTP"
+        }
+      ],
+      "payment": {
+        "models": [
+          {"type": "free", "note": "MCP introspection tools are free. Data tools require payment via x402 or HIP-991."}
+        ]
+      }
+    }
+  ],
+  "authentication": {
+    "type": "none",
+    "note": "No API key required. Payment-based access via x402 (USDC) or HIP-991 (HBAR)."
+  },
+  "payment": {
+    "protocols": ["x402", "HIP-991"],
+    "currencies": ["USDC", "HBAR"],
+    "networks": ["eip155:8453", "hedera:testnet"]
+  },
+  "discovery": {
+    "protocols": ["mcp", "a2a", "rest"],
+    "endpoints": {
+      "mcp": "http://localhost:8080/mcp",
+      "health": "http://localhost:8080/api/v1/agent/health",
+      "profile": "http://localhost:8080/api/v1/agent/profile",
+      "rss": null
+    }
+  }
+}

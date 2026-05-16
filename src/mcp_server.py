@@ -20,16 +20,22 @@ def create_mcp_server() -> FastMCP:
 
     from providers.polymarket_edge import PolymarketEdgeProvider
     from providers.kalshi import KalshiBettingProvider
+    from providers.predictit import PredictItProvider
+    from providers.manifold import ManifoldMarketsProvider
     provider_registry.register(PolymarketEdgeProvider())
     provider_registry.register(KalshiBettingProvider())
+    provider_registry.register(PredictItProvider())
+    provider_registry.register(ManifoldMarketsProvider())
     provider_registry.discover()
 
     mcp = FastMCP(
         name="HashA2A",
         instructions=(
-            "A decentralized data oracle where AI agents buy processed intelligence "
-            "via HBAR micropayments on Hedera. "
-            "Available providers: polymarket (0.5 HBAR) and kalshi (0.3 HBAR)."
+            "Agent-to-Agent Intelligence Layer. "
+            "10 tools: prediction market data, multi-oracle price feeds, "
+            "cross-oracle arbitrage scanning, deep research with web+news+AI. "
+            "Pay per query via HBAR (HIP-991) or USDC (x402). "
+            "Agent discovery: /.well-known/agent.json"
         ),
     )
 
@@ -126,5 +132,197 @@ def create_mcp_server() -> FastMCP:
             pass
 
         return json.dumps(profile_data, indent=2)
+
+    @mcp.tool(name="analyze_market", description="Run AI-powered analysis on a provider's market data using LangChain + OpenAI. Returns natural language insights about current probabilities, sentiment, and market conditions.")
+    def analyze_market(provider_id: str) -> str:
+        from core.ai_analyzer import AIAnalyzer
+
+        provider = provider_registry.get(provider_id)
+        if not provider:
+            return f"Error: Provider '{provider_id}' not found."
+
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        result = loop.run_until_complete(provider.get_data({"request_id": hedera.generate_request_id()}))
+        analyzer = AIAnalyzer(settings)
+        analysis = analyzer.analyze(provider_id, result.data)
+
+        if analysis:
+            return f"AI Analysis for {provider.name}:\n\n{analysis}"
+        return "Analysis unavailable (no API key or no data)."
+
+    @mcp.tool(name="aggregate_market_data", description="Collect data from ALL prediction market providers simultaneously, cross-validate prices, and produce a unified intelligence report with verification score. Costs more but provides higher-quality verified data.")
+    def aggregate_market_data(query: str = "latest markets") -> str:
+        from core.ai_analyzer import AIAnalyzer
+        from core.data_aggregator import DataAggregator
+
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        aggregator = DataAggregator(provider_registry, AIAnalyzer(settings), settings)
+        result = loop.run_until_complete(aggregator.aggregate(
+            request_id=hedera.generate_request_id(),
+            query=query,
+        ))
+
+        lines = [
+            f"=== Aggregated Intelligence Report ===",
+            f"Query: {result.query}",
+            f"Sources consulted: {result.consensus.total_sources}",
+            f"Successful: {result.consensus.successful_sources}/{result.consensus.total_sources}",
+            f"Agreement score: {result.consensus.agreement_score:.1%}",
+            f"Verification score: {result.verification_score:.1%}",
+            f"Total cost: {result.total_cost_hbar} HBAR",
+            f"Processing time: {result.processing_time_ms:.0f}ms",
+            f"",
+            f"Sources:",
+        ]
+        for s in result.sources:
+            status = "✅" if s.success else "❌"
+            lines.append(f"  {status} {s.provider_name}: {s.market_count} markets ({s.processing_time_ms:.0f}ms, {s.cost_hbar} HBAR)")
+        lines.append("")
+        lines.append(f"Consensus: {result.consensus.summary}")
+        lines.append("")
+        if result.analysis:
+            lines.append(f"AI Analysis:")
+            lines.append(result.analysis)
+        return "\n".join(lines)
+
+    @mcp.tool(name="deep_research", description="Perform deep research on a question: searches the web, news, social signals, AND prediction markets. Returns a comprehensive intelligence report with cited sources. This is the premium product — real research, not just API proxying.")
+    def deep_research(question: str) -> str:
+        from core.ai_analyzer import AIAnalyzer
+        from core.deep_research import DeepResearchEngine
+
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        engine = DeepResearchEngine(settings, provider_registry, AIAnalyzer(settings))
+        report = loop.run_until_complete(engine.research(hedera.generate_request_id(), question))
+        d = report.to_dict()
+
+        lines = [
+            f"=== Deep Research Report ===",
+            f"Question: {d['question']}",
+            f"Status: {d['status']}",
+            f"Processing time: {d['processing_time_ms']:.0f}ms",
+            f"",
+            f"Sources: {d['sources']['web']} web, {d['sources']['news']} news",
+            f"Social sentiment: {d['social_signals'].get('sentiment', 'N/A')}",
+            f"",
+        ]
+        if report.web_results:
+            lines.append("Top Web Results:")
+            for r in report.web_results[:4]:
+                lines.append(f"  • {r.get('title', '')[:80]}")
+            lines.append("")
+        if report.news_results:
+            lines.append("Top News:")
+            for r in report.news_results[:3]:
+                lines.append(f"  • {r.get('title', '')[:60]} ({r.get('date', '')})")
+            lines.append("")
+        if report.market_data:
+            lines.append("Prediction Market Data:")
+            for pid, data in report.market_data.items():
+                m = data.get("markets", [])
+                if m:
+                    q = m[0].get("question", m[0].get("title", "?"))[:50]
+                    p = m[0].get("yes_price", "?")
+                    lines.append(f"  {data.get('name', pid)}: {q} → {p}")
+            lines.append("")
+        if d["analysis"]:
+            lines.append("AI Analysis:")
+            lines.append(d["analysis"])
+        return "\n".join(lines)
+
+    @mcp.tool(name="verified_feed", description="Request a verified data feed — aggregates prices from ALL prediction market providers, computes median with confidence intervals (IQR-based), and returns a cryptographically-style verified price point with audit proof. Best product for agents that need reliable, verified market data.")
+    def verified_feed(topic: str = "general") -> str:
+        from core.verified_feed import VerifiedFeedEngine
+
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        engine = VerifiedFeedEngine(settings, provider_registry)
+        feed = loop.run_until_complete(engine.produce_feed(hedera.generate_request_id(), topic))
+        a = feed.aggregate
+
+        lines = [
+            f"=== Verified Data Feed ===",
+            f"Topic: {feed.topic}",
+            f"",
+            f"Median Price: {a.price}",
+            f"Confidence: {a.confidence:.1%}",
+            f"Sources: {a.sources}",
+            f"Agreement: {a.agreement:.1%}",
+            f"Verification: {feed.verification.upper()}",
+            f"Timestamp: {a.timestamp}",
+            f"",
+            f"Source Breakdown:",
+        ]
+        for s in feed.sources:
+            if s.success:
+                lines.append(f"  ✅ {s.provider_name}: price={s.price}, weight={s.weight}")
+            else:
+                lines.append(f"  ❌ {s.provider_name}: {s.error}")
+        lines.extend([
+            "",
+            f"Cost: {feed.total_cost_hbar} HBAR total",
+            f"Processing: {feed.processing_time_ms:.0f}ms",
+        ])
+        return "\n".join(lines)
+
+    @mcp.tool(name="get_price", description="Get a verified price for any asset from MULTIPLE oracles simultaneously (Pyth + CoinGecko + DeFiLlama). Returns cross-verified price with spread detection.")
+    def get_price(asset: str = "BTC/USD") -> str:
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        from core.oracle_hub import OracleHub
+        hub = OracleHub()
+        prices = loop.run_until_complete(hub.get_price(asset.upper()))
+        loop.run_until_complete(hub.close())
+
+        if not prices:
+            return f"No prices available for {asset}"
+
+        lines = [f"=== {asset.upper()} — Multi-Oracle Price ===", ""]
+        for p in prices:
+            lines.append(f"  {p.source_name:20s} ${p.price:>10.2f}")
+        lines.append("")
+        vals = [p.price for p in prices]
+        spread = max(vals) - min(vals)
+        mid = sum(vals) / len(vals)
+        spread_pct = (spread / mid) * 100
+        lines.append(f"  Spread: {spread_pct:.3f}%")
+        lines.append(f"  Oracles: {len(prices)}")
+        lines.append(f"  Timestamp: {prices[0].timestamp}")
+        return "\n".join(lines)
+
+    @mcp.tool(name="scan_arbitrage", description="Scan all tracked assets for price discrepancies across oracles. Returns arbitrage opportunities ranked by spread percentage.")
+    def scan_arbitrage(min_spread: float = 0.01) -> str:
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        from core.oracle_hub import OracleHub
+        from core.arbitrage_engine import ArbitrageEngine
+        hub = OracleHub()
+        engine = ArbitrageEngine(hub)
+        signals = loop.run_until_complete(engine.scan_all())
+        loop.run_until_complete(hub.close())
+
+        lines = ["=== Arbitrage Scan ===", ""]
+        for s in sorted(signals, key=lambda x: x.spread_pct, reverse=True):
+            if s.spread_pct >= min_spread:
+                lines.append(f"  {s.asset:10s} spread={s.spread_pct:.3f}% [{s.opportunity}]")
+                lines.append(f"           {s.analysis}")
+                lines.append("")
+        if len(lines) == 2:
+            lines.append("  No arbitrage opportunities above threshold.")
+        return "\n".join(lines)
 
     return mcp

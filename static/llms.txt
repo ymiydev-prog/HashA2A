@@ -1,0 +1,91 @@
+# HashA2A — Agent-to-Agent Intelligence Layer
+
+> A decentralized data marketplace where AI agents buy verified multi-oracle intelligence via HBAR (HIP-991) or USDC (x402) micropayments.
+
+## Quick Start
+
+```bash
+# MCP (Model Context Protocol) — for Claude, Cursor, etc
+# Add to your MCP config:
+{
+  "mcpServers": {
+    "hasha2a": {
+      "url": "http://localhost:8080/mcp"
+    }
+  }
+}
+
+# REST API
+curl http://localhost:8080/api/v1/agent/profile
+
+# Price feed (USDC via x402)
+curl -X POST http://localhost:8080/api/v1/feeds/prices \
+  -H "Content-Type: application/json" \
+  -d '{"asset":"BTC/USD"}'
+```
+
+## Pricing
+
+| Product | HBAR | USDC |
+|---------|------|------|
+| Price Feed (single asset) | 0.5 | $0.25 |
+| Arbitrage Scan (all assets) | 2.0 | $0.50 |
+| Arbitrage Verify (single) | 0.5 | $0.10 |
+| Prediction Market (single) | 0.3-0.5 | $0.15 |
+| Deep Research | 1.0 | $0.50 |
+| Aggregate Intelligence | 1.5 | — |
+
+## Available Tools
+
+### REST API (`http://localhost:8080/api/v1/`)
+
+**Price Feeds** — `POST /api/v1/feeds/prices`
+  - Params: `{"asset": "BTC/USD", "source": "pyth"}` (source optional)
+  - Returns prices from Pyth, CoinGecko, DeFiLlama (Chainlink)
+
+**Arbitrage Scanner** — `POST /api/v1/feeds/arbitrage`
+  - Params: `{"min_spread": 0.01}` (optional)
+  - Returns ranked arbitrage opportunities with buy/sell recommendations
+
+**Prediction Markets** — `POST /api/v1/requests`
+  - Params: `{"provider_id": "polymarket", "params": {"limit": 5}}`
+  - Providers: polymarket, kalshi, predictit, manifold
+
+**Aggregate Intelligence** — `POST /api/v1/requests/aggregate`
+  - Params: `{"query": "topic", "providers": ["polymarket", "kalshi"]}`
+
+**Deep Research** — `POST /api/v1/research`
+  - Params: `{"question": "Will Rihanna release an album before GTA VI?"}`
+  - Returns web research + news + social sentiment + market data + AI analysis
+
+**Agent** — `GET /api/v1/agent/profile`, `GET /api/v1/agent/health`
+
+**Payments Manifest** — `GET /api/v1/feeds/x402/manifest`
+
+### MCP Server (`http://localhost:8080/mcp`)
+
+7 tools: list_providers, get_market_data, check_request, get_agent_profile, analyze_market, get_price, scan_arbitrage
+
+## Payment
+
+Two payment protocols:
+
+1. **HIP-991** (HBAR native): Send HCS message to inbound topic. Fee auto-collected. Poll for result.
+2. **x402** (USDC): HTTP 402 response → pay USDC on Base → retry with signature → receive data.
+
+x402 manifest: `/.well-known/x402.json`
+
+## Agent Discovery
+
+A2A agent card: `/.well-known/agent.json`
+MCP endpoint: `/mcp`
+
+## Network
+
+- Hedera testnet (default, for development)
+- Hedera mainnet (set `HEDERA_NETWORK=mainnet`)
+- USDC on Base mainnet (`eip155:8453`)
+
+## Source Code
+
+`https://github.com/ymiydev-prog/HashA2A`

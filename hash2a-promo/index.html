@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<title>HashA2A Promo</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=block" rel="stylesheet" />
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#0a0a1a;font-family:"Inter",sans-serif}
+.scene{position:absolute;top:0;left:0;width:100%;height:100%}
+.caption-text-wrapper{position:absolute;bottom:120px;left:0;right:0;display:flex;justify-content:center;pointer-events:none;overflow:visible;padding:15px 0;min-height:74px}
+.caption-line{color:white;font-size:36px;font-weight:600;letter-spacing:-0.02em;text-align:center;text-shadow:0 4px 12px rgba(0,0,0,0.5);transform:translateY(100%);opacity:0}
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="30" data-width="1920" data-height="1080">
+  <div id="scene-1" class="scene" data-composition-id="scene1-logo-intro" data-composition-src="compositions/scene1-logo-intro.html" data-start="0" data-duration="3.5" data-track-index="1" data-width="1920" data-height="1080"></div>
+  <div id="scene-2-4" class="scene" data-composition-id="scene2-4-canvas" data-composition-src="compositions/scene2-4-canvas.html" data-start="3.5" data-duration="20" data-track-index="1" data-width="1920" data-height="1080"></div>
+  <div id="scene-5" class="scene" data-composition-id="scene5-logo-outro" data-composition-src="compositions/scene5-logo-outro.html" data-start="23.5" data-duration="6" data-track-index="1" data-width="1920" data-height="1080"></div>
+  <div id="captions-comp" data-composition-id="captions" data-start="0" data-duration="29.5" data-track-index="2" data-width="1920" data-height="1080">
+    <div class="caption-text-wrapper"><div id="caption-text" class="caption-line"></div></div>
+    <script>
+      (function(){const tl=gsap.timeline({paused:true}),text=document.querySelector("#caption-text"),lines=[{t:1.0,d:2.0,txt:"HashA2A — The Agent-to-Agent Intelligence Layer"},{t:4.0,d:2.5,txt:"AI agents need real-world data..."},{t:7.0,d:2.5,txt:"But there's no marketplace for agent intelligence"},{t:10.0,d:2.5,txt:"HashA2A solves this on Hedera"},{t:13.0,d:2.5,txt:"Agents request data, pay with HBAR via HIP-991"},{t:16.0,d:2.5,txt:"AI analysis + HCS proof for every request"},{t:19.5,d:2.5,txt:"4 providers: Polymarket, Kalshi, PredictIt, Manifold"},{t:23.0,d:2.5,txt:"Start building at github.com/ymiydev-prog/HashA2A"}];lines.forEach(({t,d,txt})=>{tl.set(text,{innerText:txt,y:40},t);tl.to(text,{opacity:1,y:0,duration:0.4,ease:"power3.out"},t);tl.to(text,{opacity:0,y:-20,duration:0.3,ease:"power3.in"},t+d-0.3)});window.__timelines=window.__timelines||{};window.__timelines["captions"]=tl;})();
+    </script>
+  </div>
+</div>
+<script>
+window.__timelines=window.__timelines||{};const mainTl=gsap.timeline({paused:true});
+mainTl.set("#scene-2-4",{scale:1,filter:"blur(0px)"},3.5);
+mainTl.to("#scene-2-4",{duration:0.3,scale:0.95,filter:"blur(4px)",opacity:0,ease:"power2.in"},23.2);
+window.__timelines["main"]=mainTl;
+</script>
+</body>
+</html>

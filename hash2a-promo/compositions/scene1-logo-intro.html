@@ -1,0 +1,41 @@
+<template id="scene1-logo-intro-template">
+  <div data-composition-id="scene1-logo-intro" data-width="1920" data-height="1080" data-duration="3.5">
+    <div class="canvas">
+      <div class="bg-grid"></div>
+      <div class="logo-wrap">
+        <div class="logo-icon">
+          <svg viewBox="0 0 80 80" width="80" height="80">
+            <rect x="4" y="4" width="72" height="72" rx="16" fill="none" stroke="#3b82f6" stroke-width="3"/>
+            <path d="M28 40 L40 28 L52 40 L40 52Z" fill="#3b82f6" opacity="0.9"/>
+            <circle cx="40" cy="40" r="8" fill="#8b5cf6"/>
+          </svg>
+        </div>
+        <div class="title-line"><span class="title-hash">Hash</span><span class="title-a2a">A2A</span></div>
+        <div class="subtitle">Agent-to-Agent Intelligence Layer</div>
+      </div>
+      <div class="particle-ring"></div>
+    </div>
+    <style>
+      [data-composition-id="scene1-logo-intro"] .canvas { width:1920px;height:1080px;background:linear-gradient(135deg,#0a0a1a 0%,#0f172a 50%,#0a0a1a 100%);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center; }
+      [data-composition-id="scene1-logo-intro"] .bg-grid { position:absolute;inset:0;background-image:linear-gradient(rgba(59,130,246,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.05) 1px,transparent 1px);background-size:60px 60px; }
+      [data-composition-id="scene1-logo-intro"] .logo-wrap { text-align:center;z-index:2; }
+      [data-composition-id="scene1-logo-intro"] .logo-icon { opacity:0;transform:scale(0.3); }
+      [data-composition-id="scene1-logo-intro"] .title-line { font-size:80px;font-weight:800;letter-spacing:-0.03em;margin-top:24px;opacity:0;transform:translateY(20px); }
+      [data-composition-id="scene1-logo-intro"] .title-hash { color:#3b82f6; }
+      [data-composition-id="scene1-logo-intro"] .title-a2a { color:#8b5cf6; }
+      [data-composition-id="scene1-logo-intro"] .subtitle { font-size:24px;color:#7b8cae;margin-top:12px;opacity:0;transform:translateY(10px);letter-spacing:0.15em;text-transform:uppercase; }
+      [data-composition-id="scene1-logo-intro"] .particle-ring { position:absolute;width:600px;height:600px;border-radius:50%;border:1px solid rgba(59,130,246,0.15);top:50%;left:50%;transform:translate(-50%,-50%) scale(0);pointer-events:none; }
+    </style>
+    <script>
+      (function(){const tl=gsap.timeline({paused:true});const id='[data-composition-id="scene1-logo-intro"]';
+        tl.to(id+' .logo-icon',{opacity:1,scale:1,duration:0.6,ease:'back.out(1.5)'},0.2);
+        tl.to(id+' .title-line',{opacity:1,y:0,duration:0.5,ease:'power3.out'},0.9);
+        tl.to(id+' .subtitle',{opacity:1,y:0,duration:0.4,ease:'power3.out'},1.5);
+        tl.to(id+' .particle-ring',{scale:1,opacity:0.6,duration:1.2,ease:'power2.out'},0.3);
+        tl.to(id+' .particle-ring',{opacity:0,duration:0.5,ease:'power2.in'},2.5);
+        tl.to(id+' .logo-wrap',{opacity:0,y:-30,duration:0.4,ease:'power2.in'},3.0);
+        window.__timelines=window.__timelines||{};window.__timelines["scene1-logo-intro"]=tl;
+      })();
+    </script>
+  </div>
+</template>

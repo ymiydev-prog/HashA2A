@@ -1,3 +1,4 @@
+import json
 import httpx
 
 from providers.base_betting import BettingDataProvider
@@ -45,24 +46,37 @@ class PolymarketEdgeProvider(BettingDataProvider):
         return None
 
     def _parse_market(self, data: dict) -> BettingMarket:
-        outcomes_raw = data.get("outcomes", []) or []
+        outcomes_raw = data.get("outcomes", [])
+        if isinstance(outcomes_raw, str):
+            try:
+                outcomes_raw = json.loads(outcomes_raw)
+            except (json.JSONDecodeError, TypeError):
+                outcomes_raw = []
+
+        prices_raw = data.get("outcomePrices", [])
+        if isinstance(prices_raw, str):
+            try:
+                prices_raw = json.loads(prices_raw)
+            except (json.JSONDecodeError, TypeError):
+                prices_raw = []
+
         outcomes = []
-        for o in outcomes_raw:
-            name = o.get("name", "Unknown")
-            price = o.get("price")
-            if price is not None:
-                price = float(price)
-            token_id = o.get("token_id")
-            outcome_volume = o.get("volume")
+        for i, name in enumerate(outcomes_raw):
+            price = None
+            if i < len(prices_raw):
+                try:
+                    price = float(prices_raw[i])
+                except (ValueError, TypeError):
+                    pass
             outcomes.append(BettingOutcome(
-                name=name, price=price,
-                volume=float(outcome_volume) if outcome_volume else None,
-                token_id=token_id,
+                name=name,
+                price=price,
+                volume=None,
             ))
 
         is_closed = data.get("closed", False)
-        is_resolved = data.get("resolved", False)
-        if is_resolved:
+        resolved = data.get("resolved", False)
+        if resolved:
             status = MarketStatus.RESOLVED
         elif is_closed:
             status = MarketStatus.CLOSED
@@ -71,15 +85,15 @@ class PolymarketEdgeProvider(BettingDataProvider):
 
         return BettingMarket(
             platform="polymarket",
-            market_id=data.get("id", ""),
-            title=data.get("title", "Untitled"),
+            market_id=str(data.get("id", "")),
+            title=data.get("question", "Untitled"),
             description=data.get("description"),
             status=status,
             outcomes=outcomes,
             volume=float(data.get("volume", 0) or 0),
             liquidity=float(data.get("liquidity", 0) or 0),
-            close_time=data.get("close_time"),
-            resolution_outcome=data.get("outcome"),
+            close_time=data.get("endDate"),
+            resolution_outcome=None,
             category=data.get("category"),
             tags=data.get("tags", []),
             url=f"https://polymarket.com/event/{data.get('slug', '')}" if data.get("slug") else None,
