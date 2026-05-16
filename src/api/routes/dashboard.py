@@ -269,12 +269,16 @@ body {
 </div>
 
 <script>
-let charts = {};
+let charts = { initialized: false };
 
 function initCharts() {
-  if (typeof Chart === 'undefined') return;
+  if (typeof Chart === 'undefined') {
+    setTimeout(initCharts, 1000);
+    return;
+  }
   Chart.defaults.color = '#7b8cae';
   Chart.defaults.borderColor = '#1e2a45';
+  charts.initialized = true;
 }
 
 function renderDashboard(data) {
@@ -610,7 +614,7 @@ async function fetchData() {
     renderDashboard(data);
   } catch (e) {
     document.getElementById('dashboard-content').innerHTML =
-      `<div class="loading" style="color:var(--red)">⚠️ Connection error</div>`;
+      `<div class="loading" style="color:var(--red)">⚠️ Connection error (${e.message || 'unknown'})</div>`;
   }
 }
 
