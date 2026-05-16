@@ -18,12 +18,6 @@ class PricingConverter:
         "aggregate": 1.00,
     }
 
-    FIXED_PRICING_HBAR: dict[str, float] = {
-        "prediction_market": 0.3,
-        "deep_research": 1.0,
-        "aggregate": 1.5,
-    }
-
     def __init__(self):
         self._hbars_per_usd: float | None = None
         self._last_fetch: float = 0
@@ -57,19 +51,16 @@ class PricingConverter:
 
     async def get_prices(self) -> dict[str, Any]:
         """Returns all product prices in both USDC and HBAR."""
-        hbar_rate = await self.get_hbars_per_usd()
         products = {}
         for key, usdc in self.FIXED_PRICING_USDC.items():
-            hbar_fixed = self.FIXED_PRICING_HBAR.get(key)
-            if hbar_fixed is not None:
-                products[key] = {"usdc": usdc, "hbar": hbar_fixed}
-            else:
-                products[key] = {"usdc": usdc, "hbar": await self.usdc_to_hbar(usdc)}
+            hbar = await self.usdc_to_hbar(usdc)
+            products[key] = {"usdc": usdc, "hbar": hbar}
+        rate = await self.get_hbars_per_usd()
         return {
             "products": products,
             "rates": {
-                "hbar_per_usd": round(hbar_rate, 4),
-                "usd_per_hbar": round(1.0 / hbar_rate, 4) if hbar_rate > 0 else 0,
+                "hbar_per_usd": round(rate, 4),
+                "usd_per_hbar": round(1.0 / rate, 4) if rate > 0 else 0,
                 "updated_at": int(time.time()),
             },
         }
