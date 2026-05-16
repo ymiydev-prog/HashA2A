@@ -1,69 +1,66 @@
-"""Auto-promotion service for X/Twitter — tweets price data, arbitrage, and stats."""
+"""Auto-promotion for X/Twitter — tweets price data, arbitrage, and stats."""
 
-import asyncio
 import time
 from typing import Any
 
-import httpx
+HAS_TWEEPY = True
 
 
 class TwitterPromoter:
     """Posts automated promotional tweets about HashA2A activity."""
 
-    def __init__(self, bearer_token: str | None, api_key: str | None = None,
-                 api_secret: str | None = None, enabled: bool = False):
-        self.bearer_token = bearer_token
+    def __init__(self, bearer_token: str | None = None, api_key: str | None = None,
+                 api_secret: str | None = None, access_token: str | None = None,
+                 access_secret: str | None = None, enabled: bool = False):
         self.api_key = api_key
         self.api_secret = api_secret
-        self.enabled = enabled and bool(bearer_token)
+        self.access_token = access_token
+        self.access_secret = access_secret
+        self.enabled = enabled and bool(api_key) and bool(access_token)
         self._last_tweet: float = 0
-        self._min_interval: float = 3600  # 1 hour minimum between auto-tweets
-        self._http: httpx.AsyncClient | None = None
+        self._min_interval: float = 3600
+        self._client: Any = None
 
-    async def _client(self) -> httpx.AsyncClient:
-        if self._http is None:
-            self._http = httpx.AsyncClient(timeout=10)
-        return self._http
-
-    async def close(self):
-        if self._http:
-            await self._http.aclose()
-            self._http = None
+    def _get_client(self):
+        if self._client is None:
+            import tweepy
+            self._client = tweepy.Client(
+                consumer_key=self.api_key,
+                consumer_secret=self.api_secret,
+                access_token=self.access_token,
+                access_token_secret=self.access_secret,
+            )
+        return self._client
 
     async def post_tweet(self, text: str) -> bool:
-        if not self.enabled or not self.bearer_token:
+        if not self.enabled:
             return False
         if len(text) > 280:
             text = text[:277] + "..."
-
         now = time.time()
         if now - self._last_tweet < self._min_interval:
             return False
         self._last_tweet = now
-
         try:
-            c = await self._client()
-            resp = await c.post(
-                "https://api.twitter.com/2/tweets",
-                json={"text": text},
-                headers={"Authorization": f"Bearer {self.bearer_token}"},
-            )
-            return resp.status_code in (200, 201)
+            client = self._get_client()
+            if client is None:
+                return False
+            import asyncio
+            result = await asyncio.to_thread(client.create_tweet, text=text)
+            return result is not None and result.data is not None
         except Exception:
             return False
 
     async def tweet_price_feed(self, asset: str, prices: list[dict]) -> bool:
         if not prices:
             return False
-        p = prices[0]
+        vals = [p["price"] for p in prices]
+        spread = (max(vals) - min(vals)) / (sum(vals) / len(vals)) * 100
         text = (
-            f"🔮 ${p['price']:,.2f} — {asset}\n"
-            f"Verified by {len(prices)} oracles"
+            f"🔮 ${prices[0]['price']:,.2f} — {asset}\n"
+            f"Verified by {len(prices)} oracles | Spread: {spread:.3f}%\n"
+            f"hasha2a.dev"
         )
-        if len(prices) >= 2:
-            vals = [p["price"] for p in prices]
-            spread = (max(vals) - min(vals)) / (sum(vals) / len(vals)) * 100
-            text += f" | Spread: {spread:.3f}%"
         return await self.post_tweet(text)
 
     async def tweet_arbitrage(self, asset: str, spread_pct: float,
@@ -72,7 +69,7 @@ class TwitterPromoter:
             f"📊 Arbitrage: {asset}\n"
             f"Spread: {spread_pct:.3f}%\n"
             f"Buy: {buy_from} → Sell: {sell_to}\n"
-            f"hasha2a.io"
+            f"hasha2a.dev"
         )
         return await self.post_tweet(text[:280])
 

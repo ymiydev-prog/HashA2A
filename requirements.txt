@@ -24,6 +24,7 @@ openai>=1.0.0
 # Utilities
 python-dotenv>=1.0.0
 duckduckgo_search>=8.0.0
+tweepy>=4.16.0
 
 # Dev
 # mypy>=1.10.0
