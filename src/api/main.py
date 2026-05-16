@@ -2,7 +2,7 @@ import json
 import contextlib
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -156,6 +156,20 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(exc)[:200], "type": type(exc).__name__},
+        )
+
+    @app.exception_handler(404)
+    async def not_found_handler(request: Request, exc):
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Not found", "path": str(request.url.path)},
+        )
 
     app.include_router(requests.router, prefix="/api/v1")
     app.include_router(providers.router, prefix="/api/v1")

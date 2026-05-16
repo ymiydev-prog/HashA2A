@@ -876,7 +876,37 @@ LANDING_HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HashA2A — Agent-to-Agent Intelligence Layer</title>
+<title>HashA2A — Agent-to-Agent Intelligence Layer | Data Marketplace for AI Agents</title>
+<meta name="description" content="A decentralized data marketplace where AI agents discover, purchase, and consume verified multi-oracle intelligence. Pay per query via HBAR (HIP-991) or USDC (x402).">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://github.com/ymiydev-prog/HashA2A">
+<!-- Open Graph -->
+<meta property="og:title" content="HashA2A — Agent-to-Agent Intelligence Layer">
+<meta property="og:description" content="Buy verified multi-oracle intelligence with HBAR or USDC. AI agent data marketplace on Hedera.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://github.com/ymiydev-prog/HashA2A">
+<meta property="og:image" content="/og-image.png">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HashA2A — A2A Intelligence Layer">
+<meta name="twitter:description" content="Decentralized data marketplace for AI agents. OracleHub + Arbitrage + Deep Research.">
+<!-- Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "HashA2A",
+  "applicationCategory": "Data Marketplace",
+  "description": "Agent-to-Agent Intelligence Layer on Hedera. AI agents buy processed data via HBAR micropayments.",
+  "url": "https://github.com/ymiydev-prog/HashA2A",
+  "operatingSystem": "Linux, macOS, Docker",
+  "offers": {
+    "@type": "Offer",
+    "price": "0.25",
+    "priceCurrency": "USD"
+  }
+}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -888,6 +918,13 @@ LANDING_HTML = """<!DOCTYPE html>
 }
 body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; }
 a { color: var(--blue); text-decoration: none; }
+a:focus { outline: 2px solid var(--blue); outline-offset: 2px; }
+button:focus, [tabindex]:focus { outline: 2px solid var(--purple); outline-offset: 2px; }
+:focus:not(:focus-visible) { outline: none; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.skip-link { position: absolute; top: -40px; left: 0; background: var(--blue); color: white; padding: 8px 16px; z-index: 100; transition: top 0.2s; }
+.skip-link:focus { top: 0; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 
 /* Nav */
@@ -995,21 +1032,26 @@ a { color: var(--blue); text-decoration: none; }
 </style>
 </head>
 <body>
-<div class="nav">
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<header role="banner">
+<div class="nav" role="navigation" aria-label="Main navigation">
   <div class="container" style="display:flex;justify-content:space-between;align-items:center;width:100%;">
     <div class="nav-logo"><span>Hash</span><span>A2A</span></div>
     <div class="nav-links">
       <a href="#features">Features</a>
       <a href="#pricing">Pricing</a>
       <a href="#integrate">Integrate</a>
-      <a href="https://github.com/ymiydev-prog/HashA2A">GitHub</a>
+      <a href="https://github.com/ymiydev-prog/HashA2A" aria-label="View source on GitHub">GitHub</a>
       <a href="/dashboard" class="nav-btn">Dashboard</a>
     </div>
   </div>
 </div>
+</header>
 
-<section class="hero">
-  <div class="hero-bg"></div>
+<main id="main-content" role="main">
+
+<section class="hero" aria-label="Hero banner">
+  <div class="hero-bg" aria-hidden="true"></div>
   <div class="container">
     <h1>Buy Verified Intelligence<br/>with <span class="accent">HBAR or USDC</span></h1>
     <p>HashA2A is a decentralized data marketplace where AI agents discover, purchase, and consume verified multi-oracle intelligence — powered by Hedera HCS and the x402 protocol.</p>
@@ -1020,17 +1062,17 @@ a { color: var(--blue); text-decoration: none; }
   </div>
 </section>
 
-<section class="video-section">
+<section class="video-section" aria-label="Promotional video">
   <div class="container">
     <div class="video-container">
-      <video controls poster="" preload="metadata" playsinline>
+      <video controls poster="" preload="metadata" playsinline aria-label="HashA2A promotional video">
         <source src="/promo.mp4" type="video/mp4">
       </video>
     </div>
   </div>
 </section>
 
-<section class="features" id="features">
+<section class="features" id="features" aria-label="Features overview">
   <div class="container">
     <h2 class="section-title">Everything AI Agents Need</h2>
     <p class="section-sub">Real-time, cross-verified, cryptographically provable data</p>
@@ -1059,7 +1101,7 @@ a { color: var(--blue); text-decoration: none; }
   </div>
 </section>
 
-<section class="live-data">
+<section class="live-data" aria-label="Live oracle data">
   <div class="container" style="text-align:center;">
     <h2 class="section-title">Live Oracle Data</h2>
     <p class="section-sub">Real-time BTC/USD cross-verified across multiple oracles</p>
@@ -1072,7 +1114,7 @@ a { color: var(--blue); text-decoration: none; }
   </div>
 </section>
 
-<section class="pricing" id="pricing">
+<section class="pricing" id="pricing" aria-label="Pricing plans">
   <div class="container">
     <h2 class="section-title">Pay Per Query</h2>
     <p class="section-sub">No subscriptions. No API keys. No accounts. Just pay and receive.</p>
@@ -1105,7 +1147,7 @@ a { color: var(--blue); text-decoration: none; }
   </div>
 </section>
 
-<section class="integrate" id="integrate">
+<section class="integrate" id="integrate" aria-label="Integration guide">
   <div class="container">
     <h2 class="section-title">Start in 30 Seconds</h2>
     <p class="section-sub">Three ways to integrate HashA2A into your agent</p>
@@ -1154,7 +1196,9 @@ GET /llms.txt
   </div>
 </section>
 
-<footer class="footer">
+</main>
+
+<footer class="footer" role="contentinfo">
   <div class="container">
     <div class="footer-grid">
       <div class="footer-brand">

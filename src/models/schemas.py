@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Any
 from enum import Enum
+import uuid
 
 
 class RequestStatus(str, Enum):
@@ -16,11 +17,25 @@ class RequestStatus(str, Enum):
 class PaymentRequest(BaseModel):
     request_id: str
     provider_id: str
-    amount_hbar: float
+    amount_hbar: float = Field(default=0.0, ge=0.0, description="Payment amount in HBAR")
     destination_account: str
     memo: str
-    expires_at: int
+    expires_at: int = Field(default=0, ge=0, description="Unix timestamp when payment expires")
     status: RequestStatus = RequestStatus.AWAITING_PAYMENT
+
+    @field_validator("request_id")
+    @classmethod
+    def validate_request_id(cls, v: str) -> str:
+        if not v or len(v) < 8:
+            raise ValueError("request_id must be at least 8 characters")
+        return v
+
+    @field_validator("destination_account")
+    @classmethod
+    def validate_account(cls, v: str) -> str:
+        if v and not v.startswith("0.0.") and not v.startswith("0x"):
+            raise ValueError("destination_account must start with 0.0. (Hedera) or 0x (EVM)")
+        return v
 
 
 class QueryRequest(BaseModel):
@@ -29,6 +44,15 @@ class QueryRequest(BaseModel):
     quality_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
     max_cost_hbar: float | None = Field(default=None, ge=0.0)
 
+    @field_validator("provider_id")
+    @classmethod
+    def validate_provider(cls, v: str) -> str:
+        allowed = {"polymarket", "kalshi", "predictit", "manifold", "aggregated", "research", "feed"}
+        if v and v not in allowed:
+            from warnings import warn
+            warn(f"Unknown provider '{v}'. Known: {allowed}")
+        return v
+
 
 class DataResponse(BaseModel):
     request_id: str
@@ -36,7 +60,7 @@ class DataResponse(BaseModel):
     status: RequestStatus
     data: dict[str, Any] | None = None
     analysis: str | None = None
-    quality_score: float | None = None
+    quality_score: float | None = Field(default=None, ge=0.0, le=1.0)
     quality_reason: str | None = None
     raw_size_bytes: int | None = None
     proof_tx_id: str | None = None
@@ -183,21 +207,26 @@ class AggregatedResult(BaseModel):
 class VerifiedPricePoint(BaseModel):
     asset: str
     price: float
-    confidence: float
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     bid: float | None = None
     ask: float | None = None
-    sources: int
-    agreement: float
-    timestamp: int
+    sources: int = Field(default=0, ge=0)
+    agreement: float = Field(default=0.0, ge=0.0, le=1.0)
+    timestamp: int = Field(default=0, ge=0)
+
+    @field_validator("asset")
+    @classmethod
+    def asset_uppercase(cls, v: str) -> str:
+        return v.upper()
 
 
 class SourceFeedBack(BaseModel):
     provider_id: str
     provider_name: str
     price: float | None = None
-    confidence: float | None = None
-    weight: float
-    success: bool
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    weight: float = Field(default=0.0, ge=0.0, le=1.0)
+    success: bool = False
     error: str | None = None
 
 
@@ -206,8 +235,8 @@ class VerifiedDataFeed(BaseModel):
     topic: str
     aggregate: VerifiedPricePoint
     sources: list[SourceFeedBack]
-    verification: str = "low"
-    total_cost_hbar: float = 0
+    verification: str = Field(default="low", pattern=r"^(high|medium|low)$")
+    total_cost_hbar: float = 0.0
     proof_tx_id: str | None = None
     audit_topic_id: str | None = None
     processing_time_ms: float | None = None
