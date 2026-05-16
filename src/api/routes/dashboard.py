@@ -726,6 +726,38 @@ async def get_dashboard():
     return HTMLResponse(DASHBOARD_HTML)
 
 
+@router.get("/dashboard/oracles", response_class=HTMLResponse, include_in_schema=False)
+async def get_oracle_dashboard():
+    return HTMLResponse(ORACLE_HTML)
+
+
+@router.get("/dashboard/oracles/data", include_in_schema=False)
+async def get_oracle_data():
+    from core.oracle_hub import OracleHub
+    from core.arbitrage_engine import ArbitrageEngine
+    hub = OracleHub()
+    engine = ArbitrageEngine(hub)
+    try:
+        import asyncio
+        signals = await engine.scan_all()
+        assets = {}
+        for s in signals:
+            assets[s.asset] = {
+                "prices": [p.to_dict() for p in s.prices],
+                "spread_pct": round(s.spread_pct, 4),
+                "opportunity": s.opportunity,
+                "analysis": s.analysis,
+            }
+        await hub.close()
+        return JSONResponse({
+            "assets": assets,
+            "count": len(assets),
+        })
+    except Exception as e:
+        await hub.close()
+        return JSONResponse({"error": str(e)})
+
+
 @router.get("/dashboard/data", include_in_schema=False)
 async def get_dashboard_data(request: Request):
     try:
@@ -733,3 +765,83 @@ async def get_dashboard_data(request: Request):
         return JSONResponse(data)
     except Exception as e:
         return JSONResponse({"error": str(e)})
+
+
+ORACLE_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HashA2A — Oracle Dashboard</title>
+<style>
+:root {
+  --bg: #0b1120; --card: #131b2e; --border: #1e2a45;
+  --text: #e8edf5; --muted: #7b8cae;
+  --blue: #3b82f6; --purple: #8b5cf6; --green: #22c55e; --yellow: #eab308; --red: #ef4444;
+  --radius: 12px; --gap: 16px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; padding: 24px; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.header h1 { font-size: 24px; font-weight: 700; }
+.header h1 span { color: var(--blue); }
+.badge { background: rgba(59,130,246,0.12); color: var(--blue); padding: 4px 12px; border-radius: 999px; font-size: 13px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: var(--gap); }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.card h3 { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 12px; }
+.card .asset-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.oracle-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(30,42,69,0.5); font-size: 14px; }
+.oracle-row:last-child { border-bottom: none; }
+.oracle-name { color: var(--muted); }
+.oracle-price { font-weight: 600; }
+.spread { margin-top: 12px; padding: 8px 12px; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between; }
+.spread-high { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+.spread-medium { background: rgba(234,179,8,0.1); color: var(--yellow); border: 1px solid rgba(234,179,8,0.2); }
+.spread-low { background: rgba(123,140,174,0.1); color: var(--muted); border: 1px solid rgba(30,42,69,0.5); }
+.footer { text-align: center; margin-top: 24px; font-size: 12px; color: var(--muted); }
+.loading { text-align: center; padding: 40px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🔮 <span>HashA2A</span> Oracle Dashboard</h1>
+  <span class="badge" id="status-badge">Loading...</span>
+</div>
+<div class="grid" id="oracle-grid">
+  <div class="loading" style="grid-column:1/-1;">Fetching live oracle data...</div>
+</div>
+<div class="footer">Auto-refreshes every 30s · Data from Pyth · CoinGecko · DeFiLlama</div>
+<script>
+async function fetchData() {
+  const badge = document.getElementById('status-badge');
+  const grid = document.getElementById('oracle-grid');
+  try {
+    badge.textContent = '⏳ Fetching...';
+    const resp = await fetch('/dashboard/oracles/data');
+    const data = await resp.json();
+    if (data.error) { badge.textContent = '⚠️ Error'; return; }
+    badge.textContent = data.count + ' assets · ' + new Date().toLocaleTimeString();
+    grid.innerHTML = Object.entries(data.assets).map(([asset, info]) => {
+      const spreadClass = info.opportunity === 'high' ? 'spread-high' : info.opportunity === 'medium' ? 'spread-medium' : 'spread-low';
+      return `<div class="card">
+        <div class="asset-title">${asset}</div>
+        ${info.prices.map(p => `<div class="oracle-row">
+          <span class="oracle-name">${p.source_name}</span>
+          <span class="oracle-price">$${p.price.toFixed(2)}</span>
+        </div>`).join('')}
+        <div class="spread ${spreadClass}">
+          <span>Spread</span>
+          <span><strong>${info.spread_pct}%</strong> · ${info.opportunity}</span>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = '<div class="loading" style="grid-column:1/-1;">Connection error. Retrying...</div>';
+    badge.textContent = '⚠️ Offline';
+  }
+}
+fetchData();
+setInterval(fetchData, 30000);
+</script>
+</body>
+</html>"""

@@ -203,3 +203,110 @@ class TestHederaManager:
         h3 = hedera.compute_data_hash({"a": 2})
         assert h1 == h2
         assert h1 != h3
+
+
+class TestOracleHub:
+    def test_oracle_price_model(self):
+        from core.oracle_hub import OraclePrice
+        p = OraclePrice("pyth", "BTC/USD", 50000.0, 0.01, 1000)
+        assert p.source == "pyth"
+        assert p.source_name == "Pyth Network"
+        assert p.price == 50000.0
+        d = p.to_dict()
+        assert d["source_name"] == "Pyth Network"
+
+    def test_pyth_feed_ids(self):
+        from core.oracle_hub import PYTH_FEEDS
+        assert "BTC/USD" in PYTH_FEEDS
+        assert "ETH/USD" in PYTH_FEEDS
+        assert len(PYTH_FEEDS["BTC/USD"]) == 64
+
+    def test_coingecko_ids(self):
+        from core.oracle_hub import COINGECKO_IDS
+        assert COINGECKO_IDS["BTC/USD"] == "bitcoin"
+        assert COINGECKO_IDS["ETH/USD"] == "ethereum"
+        assert len(COINGECKO_IDS) >= 15
+
+    def test_oracle_names(self):
+        from core.oracle_hub import ORACLE_NAMES
+        assert ORACLE_NAMES["pyth"] == "Pyth Network"
+        assert ORACLE_NAMES["coingecko"] == "CoinGecko"
+
+
+class TestArbitrageEngine:
+    def test_arbitrage_signal_to_dict(self):
+        from core.arbitrage_engine import ArbitrageSignal
+        from core.oracle_hub import OraclePrice
+        p1 = OraclePrice("pyth", "BTC/USD", 50000.0, 0.01, 1000)
+        p2 = OraclePrice("coingecko", "BTC/USD", 50100.0, None, 1000)
+        signal = ArbitrageSignal("BTC/USD", [p1, p2])
+        assert signal.asset == "BTC/USD"
+        d = signal.to_dict()
+        assert d["asset"] == "BTC/USD"
+        assert len(d["prices"]) == 2
+        assert d["buy_from"] is None  # not computed until scan_asset
+
+    def test_arbitrage_single_oracle(self):
+        from core.arbitrage_engine import ArbitrageSignal
+        from core.oracle_hub import OraclePrice
+        p1 = OraclePrice("pyth", "BTC/USD", 50000.0, 0.01, 1000)
+        signal = ArbitrageSignal("BTC/USD", [p1])
+        assert signal.analysis is None  # not computed until scan_asset
+
+
+class TestVerifiedFeed:
+    def test_verification_levels(self):
+        from core.verified_feed import _verification
+        assert _verification(0.8, 3) == "high"
+        assert _verification(0.5, 2) == "medium"
+        assert _verification(0.3, 1) == "low"
+        assert _verification(0.9, 5) == "high"
+
+    def test_confidence_from_iqr(self):
+        from core.verified_feed import _confidence_from_iqr
+        vals = [0.5, 0.51, 0.49, 0.52, 0.48]
+        c = _confidence_from_iqr(vals, 0.5)
+        assert 0.0 <= c <= 1.0
+        assert c >= 0.5
+
+    def test_agreement_score(self):
+        from core.verified_feed import _agreement
+        assert _agreement([1.0, 1.0, 1.0]) == 1.0
+        assert _agreement([0.5, 0.51]) > 0.9
+
+    def test_median(self):
+        from core.verified_feed import _median
+        assert _median([1, 2, 3]) == 2
+        assert _median([1, 2]) == 1.5
+        assert _median([]) == 0.0
+
+
+class TestFeedSchemas:
+    def test_feed_request_model(self):
+        from models.schemas import FeedRequest
+        r = FeedRequest(topic="BTC/USD")
+        assert r.topic == "BTC/USD"
+        assert r.min_confidence is None
+
+    def test_verified_price_point(self):
+        from models.schemas import VerifiedPricePoint
+        p = VerifiedPricePoint(asset="BTC/USD", price=50000.0, confidence=0.95, sources=3, agreement=0.98, timestamp=1000)
+        assert p.asset == "BTC/USD"
+        assert p.price == 50000.0
+
+    def test_verified_data_feed(self):
+        from models.schemas import VerifiedDataFeed, VerifiedPricePoint, SourceFeedBack
+        agg = VerifiedPricePoint(asset="BTC/USD", price=50000.0, confidence=0.95, sources=3, agreement=0.98, timestamp=1000)
+        src = SourceFeedBack(provider_id="pyth", provider_name="Pyth", price=50000.0, weight=0.9, success=True)
+        feed = VerifiedDataFeed(feed_id="f1", topic="BTC/USD", aggregate=agg, sources=[src], verification="high")
+        assert feed.feed_id == "f1"
+        assert feed.verification == "high"
+
+    def test_source_feedback(self):
+        from models.schemas import SourceFeedBack
+        s = SourceFeedBack(provider_id="kalshi", provider_name="Kalshi", price=0.5, weight=0.8, success=True)
+        assert s.success
+        assert s.error is None
+        s2 = SourceFeedBack(provider_id="bad", provider_name="Bad", weight=0.0, success=False, error="fail")
+        assert not s2.success
+

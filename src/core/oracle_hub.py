@@ -11,16 +11,27 @@ PYTH_FEEDS = {
     "BTC/USD": "e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
     "ETH/USD": "ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
     "SOL/USD": "ef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d",
-    "AAPL/USD": "b9eefb129a6c0eac1d1aeaaea4e891b2652678e7ec5388bbb09e63d17c1d2ec5",
-    "XAU/USD": "765d2c9068b1f8f44a5e983db118f1ed1d49eb07c0a9a041274e1c67f6a02b12",
-    "XAG/USD": "f2fb37a195e0b7a6e4e67c1a7a5c7c2e7f0b4a1e8a9b4c5d6e7f8a9b0c1d2e3",
-    "EUR/USD": "a995d24e5a6c5b0c5a9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7",
 }
 
 COINGECKO_IDS = {
     "BTC/USD": "bitcoin",
     "ETH/USD": "ethereum",
     "SOL/USD": "solana",
+    "BNB/USD": "binancecoin",
+    "XRP/USD": "ripple",
+    "ADA/USD": "cardano",
+    "DOGE/USD": "dogecoin",
+    "AVAX/USD": "avalanche-2",
+    "DOT/USD": "polkadot",
+    "MATIC/USD": "matic-network",
+    "LINK/USD": "chainlink",
+    "UNI/USD": "uniswap",
+    "AAVE/USD": "aave",
+    "ATOM/USD": "cosmos",
+    "ARB/USD": "arbitrum",
+    "APT/USD": "aptos",
+    "OP/USD": "optimism",
+    "SUI/USD": "sui",
 }
 
 ORACLE_NAMES = {
@@ -82,7 +93,7 @@ class OracleHub:
         return results
 
     async def get_all_prices(self) -> dict[str, list[OraclePrice]]:
-        assets = list(set(list(PYTH_FEEDS.keys()) + list(COINGECKO_IDS.keys()) + ["BTC/USD", "ETH/USD"]))
+        assets = list(set(list(PYTH_FEEDS.keys()) + list(COINGECKO_IDS.keys())))
         results = {}
         tasks = {a: self.get_price(a) for a in assets}
         for asset, task in tasks.items():
