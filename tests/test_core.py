@@ -311,3 +311,84 @@ class TestFeedSchemas:
         s2 = SourceFeedBack(provider_id="bad", provider_name="Bad", weight=0.0, success=False, error="fail")
         assert not s2.success
 
+
+class TestTaskManager:
+    def test_create_task(self):
+        from core.task_manager import TaskManager
+        mgr = TaskManager()
+        task = mgr.create_task()
+        assert task.task_id is not None
+        assert task.status.value == "submitted"
+
+    def test_task_lifecycle(self):
+        from core.task_manager import TaskManager
+        from models.schemas import TaskStatus
+        mgr = TaskManager()
+        task = mgr.create_task()
+        assert mgr.start_working(task.task_id)
+        assert mgr.get_task(task.task_id).status == TaskStatus.WORKING
+        artifact = mgr.complete(task.task_id, summary="Done")
+        assert artifact is not None
+        assert mgr.get_task(task.task_id).status == TaskStatus.COMPLETED
+
+    def test_fail_task(self):
+        from core.task_manager import TaskManager
+        mgr = TaskManager()
+        task = mgr.create_task()
+        assert mgr.fail(task.task_id, "Something broke")
+        from models.schemas import TaskStatus
+        assert mgr.get_task(task.task_id).status == TaskStatus.FAILED
+
+    def test_add_parts(self):
+        from core.task_manager import TaskManager
+        from models.schemas import MessagePart, PartType
+        mgr = TaskManager()
+        task = mgr.create_task()
+        assert mgr.add_text(task.task_id, "Hello")
+        assert mgr.add_data(task.task_id, {"key": "value"})
+        assert len(mgr.get_task(task.task_id).parts) == 2
+
+    def test_artifacts(self):
+        from core.task_manager import TaskManager
+        from models.schemas import MessagePart, PartType
+        mgr = TaskManager()
+        task = mgr.create_task()
+        parts = [MessagePart(type=PartType.TEXT, text="result")]
+        art = mgr.add_artifact(task.task_id, parts)
+        assert art is not None
+        assert len(mgr.list_artifacts(task.task_id)) == 1
+        assert mgr.get_artifact(art.artifact_id) is not None
+
+    def test_count_by_status(self):
+        from core.task_manager import TaskManager
+        mgr = TaskManager()
+        mgr.create_task()
+        t2 = mgr.create_task()
+        mgr.start_working(t2.task_id)
+        counts = mgr.count_by_status()
+        assert counts.get("submitted", 0) >= 1
+        assert counts.get("working", 0) >= 1
+
+    def test_list_tasks_filter(self):
+        from core.task_manager import TaskManager
+        from models.schemas import TaskStatus
+        mgr = TaskManager()
+        t1 = mgr.create_task()
+        t2 = mgr.create_task()
+        mgr.start_working(t1.task_id)
+        working = mgr.list_tasks(status=TaskStatus.WORKING)
+        assert len(working) >= 1
+        submitted = mgr.list_tasks(status=TaskStatus.SUBMITTED)
+        assert len(submitted) >= 1
+
+    def test_get_task_summary(self):
+        from core.task_manager import TaskManager
+        mgr = TaskManager()
+        task = mgr.create_task()
+        mgr.add_text(task.task_id, "processing")
+        mgr.complete(task.task_id, "all done")
+        summary = mgr.get_task_summary(task.task_id)
+        assert summary is not None
+        assert summary["status"] == "completed"
+        assert len(summary["artifacts"]) == 1
+

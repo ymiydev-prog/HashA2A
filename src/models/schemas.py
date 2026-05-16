@@ -2,6 +2,70 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Any
 from enum import Enum
 import uuid
+import time
+
+
+class TaskStatus(str, Enum):
+    SUBMITTED = "submitted"
+    WORKING = "working"
+    INPUT_REQUIRED = "input-required"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELED = "canceled"
+
+
+class PartType(str, Enum):
+    TEXT = "text"
+    DATA = "data"
+    FILE = "file"
+
+
+class MessagePart(BaseModel):
+    type: PartType
+    text: str | None = None
+    data: dict[str, Any] | None = None
+    file_uri: str | None = None
+    metadata: dict[str, Any] | None = None
+
+
+class Artifact(BaseModel):
+    artifact_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    task_id: str
+    parts: list[MessagePart]
+    metadata: dict[str, Any] | None = None
+    created_at: int = Field(default_factory=lambda: int(time.time()))
+
+
+class TaskObject(BaseModel):
+    task_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    agent_id: str = "hasha2a"
+    status: TaskStatus = TaskStatus.SUBMITTED
+    parts: list[MessagePart] = Field(default_factory=list)
+    artifacts: list[str] = Field(default_factory=list, description="List of artifact IDs")
+    metadata: dict[str, Any] | None = None
+    created_at: int = Field(default_factory=lambda: int(time.time()))
+    updated_at: int = Field(default_factory=lambda: int(time.time()))
+    context_id: str | None = None
+
+    def transition(self, new_status: TaskStatus) -> None:
+        self.status = new_status
+        self.updated_at = int(time.time())
+
+    def add_part(self, part: MessagePart) -> None:
+        self.parts.append(part)
+        self.updated_at = int(time.time())
+
+    def add_artifact_id(self, artifact_id: str) -> None:
+        if artifact_id not in self.artifacts:
+            self.artifacts.append(artifact_id)
+        self.updated_at = int(time.time())
+
+    @field_validator("task_id")
+    @classmethod
+    def validate_task_id(cls, v: str) -> str:
+        if not v or len(v) < 8:
+            raise ValueError("task_id must be at least 8 characters")
+        return v
 
 
 class RequestStatus(str, Enum):
