@@ -11,6 +11,9 @@ PYTH_FEEDS = {
     "BTC/USD": "e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
     "ETH/USD": "ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
     "SOL/USD": "ef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d",
+    "USD/JPY": "ef2c98c804ba503c6a707e38be4dfbb16683775f195b091252bf24693042fd52",
+    "XAU/USD": "765d2ba906dbc32ca17cc11f5310a89e9ee1f6420508c63861f2f8ba4ee34bb2",
+    "XAG/USD": "f2fb02c32b055c805e7238d628e5e9dadef274376114eb1f012337cabe93871e",
 }
 
 COINGECKO_IDS = {
@@ -23,7 +26,6 @@ COINGECKO_IDS = {
     "DOGE/USD": "dogecoin",
     "AVAX/USD": "avalanche-2",
     "DOT/USD": "polkadot",
-    "MATIC/USD": "matic-network",
     "LINK/USD": "chainlink",
     "UNI/USD": "uniswap",
     "AAVE/USD": "aave",
@@ -64,8 +66,10 @@ class OraclePrice:
 class OracleHub:
     """Fetches prices from multiple free oracle sources simultaneously."""
 
-    def __init__(self):
+    def __init__(self, cache_ttl: int = 15):
         self._http: httpx.AsyncClient | None = None
+        self._cache: dict[str, tuple[float, list[OraclePrice]]] = {}
+        self._cache_ttl = cache_ttl
 
     async def _client(self) -> httpx.AsyncClient:
         if self._http is None:
@@ -78,6 +82,11 @@ class OracleHub:
             self._http = None
 
     async def get_price(self, asset: str) -> list[OraclePrice]:
+        now = time.time()
+        cached = self._cache.get(asset)
+        if cached and (now - cached[0]) < self._cache_ttl:
+            return cached[1]
+
         results: list[OraclePrice] = []
         tasks = []
         if asset in PYTH_FEEDS:
@@ -90,6 +99,9 @@ class OracleHub:
         for r in done:
             if isinstance(r, OraclePrice):
                 results.append(r)
+
+        if results:
+            self._cache[asset] = (now, results)
         return results
 
     async def get_all_prices(self) -> dict[str, list[OraclePrice]]:
@@ -104,6 +116,12 @@ class OracleHub:
             except Exception:
                 pass
         return results
+
+    async def invalidate_cache(self, asset: str | None = None):
+        if asset:
+            self._cache.pop(asset, None)
+        else:
+            self._cache.clear()
 
     async def _fetch_pyth(self, asset: str) -> OraclePrice | None:
         feed_id = PYTH_FEEDS.get(asset)

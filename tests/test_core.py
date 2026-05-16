@@ -219,6 +219,7 @@ class TestOracleHub:
         from core.oracle_hub import PYTH_FEEDS
         assert "BTC/USD" in PYTH_FEEDS
         assert "ETH/USD" in PYTH_FEEDS
+        assert "XAU/USD" in PYTH_FEEDS
         assert len(PYTH_FEEDS["BTC/USD"]) == 64
 
     def test_coingecko_ids(self):

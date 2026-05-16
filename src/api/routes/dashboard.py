@@ -773,45 +773,126 @@ ORACLE_HTML = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HashA2A — Oracle Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
 <style>
-:root {
-  --bg: #0b1120; --card: #131b2e; --border: #1e2a45;
-  --text: #e8edf5; --muted: #7b8cae;
-  --blue: #3b82f6; --purple: #8b5cf6; --green: #22c55e; --yellow: #eab308; --red: #ef4444;
-  --radius: 12px; --gap: 16px;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; padding: 24px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-.header h1 { font-size: 24px; font-weight: 700; }
-.header h1 span { color: var(--blue); }
-.badge { background: rgba(59,130,246,0.12); color: var(--blue); padding: 4px 12px; border-radius: 999px; font-size: 13px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: var(--gap); }
-.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
-.card h3 { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 12px; }
-.card .asset-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-.oracle-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(30,42,69,0.5); font-size: 14px; }
-.oracle-row:last-child { border-bottom: none; }
-.oracle-name { color: var(--muted); }
-.oracle-price { font-weight: 600; }
-.spread { margin-top: 12px; padding: 8px 12px; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between; }
-.spread-high { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
-.spread-medium { background: rgba(234,179,8,0.1); color: var(--yellow); border: 1px solid rgba(234,179,8,0.2); }
-.spread-low { background: rgba(123,140,174,0.1); color: var(--muted); border: 1px solid rgba(30,42,69,0.5); }
-.footer { text-align: center; margin-top: 24px; font-size: 12px; color: var(--muted); }
-.loading { text-align: center; padding: 40px; color: var(--muted); }
+:root { --bg:#0b1120;--card:#131b2e;--border:#1e2a45;--text:#e8edf5;--muted:#7b8cae;--blue:#3b82f6;--purple:#8b5cf6;--green:#22c55e;--yellow:#eab308;--red:#ef4444;--radius:12px;--gap:16px; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;padding:24px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.header h1{font-size:24px;font-weight:700}
+.header h1 span{color:var(--blue)}
+.badge{background:rgba(59,130,246,0.12);color:var(--blue);padding:4px 12px;border-radius:999px;font-size:13px}
+.chart-row{display:grid;grid-template-columns:2fr 1fr;gap:var(--gap);margin-bottom:var(--gap)}
+@media(max-width:900px){.chart-row{grid-template-columns:1fr}}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.chart-card h3{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:12px}
+.chart-card canvas{max-height:200px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:var(--gap)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.card .asset-title{font-size:18px;font-weight:700;margin-bottom:8px}
+.oracle-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(30,42,69,0.5);font-size:14px;align-items:center}
+.oracle-row:last-child{border-bottom:none}
+.oracle-name{color:var(--muted)}
+.oracle-price{font-weight:600}
+.confidence-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.spread{margin-top:12px;padding:8px 12px;border-radius:8px;font-size:13px;display:flex;justify-content:space-between}
+.spread-high{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)}
+.spread-medium{background:rgba(234,179,8,0.1);color:var(--yellow);border:1px solid rgba(234,179,8,0.2)}
+.spread-low{background:rgba(123,140,174,0.1);color:var(--muted);border:1px solid rgba(30,42,69,0.5)}
+.footer{text-align:center;margin-top:24px;font-size:12px;color:var(--muted)}
+.loading{text-align:center;padding:40px;color:var(--muted)}
 </style>
 </head>
 <body>
 <div class="header">
   <h1>🔮 <span>HashA2A</span> Oracle Dashboard</h1>
-  <span class="badge" id="status-badge">Loading...</span>
+  <div style="display:flex;gap:12px;align-items:center">
+    <span class="badge" id="status-badge">Loading...</span>
+    <span class="badge" id="history-count" style="background:rgba(139,92,246,0.12);color:var(--purple)">0 snapshots</span>
+  </div>
 </div>
+
+<div class="chart-row">
+  <div class="chart-card">
+    <h3>📈 Spread History (last 20 snapshots)</h3>
+    <canvas id="spread-chart"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>📊 Sources per Asset</h3>
+    <canvas id="sources-chart"></canvas>
+  </div>
+</div>
+
 <div class="grid" id="oracle-grid">
   <div class="loading" style="grid-column:1/-1;">Fetching live oracle data...</div>
 </div>
-<div class="footer">Auto-refreshes every 30s · Data from Pyth · CoinGecko · DeFiLlama</div>
+<div class="footer">Auto-refreshes every 30s · Data from Pyth · CoinGecko · DeFiLlama · Spread history stored locally</div>
+
 <script>
+const SPREAD_KEY = 'hasha2a_spread_history';
+const MAX_HISTORY = 20;
+let spreadChart = null;
+let sourcesChart = null;
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(SPREAD_KEY) || '[]'); } catch(e) { return []; }
+}
+
+function saveHistory(history) {
+  localStorage.setItem(SPREAD_KEY, JSON.stringify(history));
+}
+
+function updateCharts(assets) {
+  const history = loadHistory();
+  const now = new Date().toLocaleTimeString();
+  const snapshot = { time: now };
+  for (const [asset, info] of Object.entries(assets)) {
+    snapshot[asset] = info.spread_pct;
+  }
+  history.push(snapshot);
+  if (history.length > MAX_HISTORY) history.shift();
+  saveHistory(history);
+  document.getElementById('history-count').textContent = history.length + ' snapshots';
+
+  const labels = history.map(h => h.time);
+  const datasets = Object.keys(assets).map((asset, i) => ({
+    label: asset,
+    data: history.map(h => h[asset] || 0),
+    borderColor: ['#3b82f6','#8b5cf6','#22c55e','#06b6d4','#eab308','#ef4444'][i],
+    backgroundColor: ['#3b82f633','#8b5cf633','#22c55e33','#06b6d433','#eab30833','#ef444433'][i],
+    borderWidth: 2,
+    pointRadius: 2,
+    tension: 0.3,
+  }));
+
+  if (spreadChart) { spreadChart.destroy(); }
+  const ctx = document.getElementById('spread-chart').getContext('2d');
+  spreadChart = new Chart(ctx, {
+    type: 'line', data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: '#7b8cae', font: { size: 10 } } },
+        y: { ticks: { color: '#7b8cae', font: { size: 10 }, callback: v => v + '%' } }
+      },
+      plugins: { legend: { position: 'bottom', labels: { color: '#7b8cae', usePointStyle: true, padding: 8, font: { size: 10 } } } }
+    }
+  });
+
+  if (sourcesChart) { sourcesChart.destroy(); }
+  const srcCtx = document.getElementById('sources-chart').getContext('2d');
+  const srcLabels = Object.keys(assets);
+  const srcData = Object.values(assets).map(a => a.prices.length);
+  sourcesChart = new Chart(srcCtx, {
+    type: 'bar', data: { labels: srcLabels, datasets: [{ label: 'Oracle Sources', data: srcData, backgroundColor: ['#3b82f6','#8b5cf6','#22c55e','#06b6d4','#eab308','#ef4444'] }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { ticks: { color: '#7b8cae', font: { size: 10 }, stepSize: 1 } } },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
 async function fetchData() {
   const badge = document.getElementById('status-badge');
   const grid = document.getElementById('oracle-grid');
@@ -819,25 +900,18 @@ async function fetchData() {
     badge.textContent = '⏳ Fetching...';
     const resp = await fetch('/dashboard/oracles/data');
     const data = await resp.json();
-    if (data.error) { badge.textContent = '⚠️ Error'; return; }
+    if (data.error) { badge.textContent = '⚠ Error'; return; }
     badge.textContent = data.count + ' assets · ' + new Date().toLocaleTimeString();
+    updateCharts(data.assets);
     grid.innerHTML = Object.entries(data.assets).map(([asset, info]) => {
-      const spreadClass = info.opportunity === 'high' ? 'spread-high' : info.opportunity === 'medium' ? 'spread-medium' : 'spread-low';
-      return `<div class="card">
-        <div class="asset-title">${asset}</div>
-        ${info.prices.map(p => `<div class="oracle-row">
-          <span class="oracle-name">${p.source_name}</span>
-          <span class="oracle-price">$${p.price.toFixed(2)}</span>
-        </div>`).join('')}
-        <div class="spread ${spreadClass}">
-          <span>Spread</span>
-          <span><strong>${info.spread_pct}%</strong> · ${info.opportunity}</span>
-        </div>
-      </div>`;
+      const sc = info.opportunity === 'high' ? 'spread-high' : info.opportunity === 'medium' ? 'spread-medium' : 'spread-low';
+      return '<div class="card"><div class="asset-title">' + asset + '</div>' +
+        info.prices.map(p => '<div class="oracle-row"><span class="oracle-name"><span class="confidence-dot" style="background:' + (p.confidence > 0.5 ? 'var(--green)' : p.confidence > 0.2 ? 'var(--yellow)' : 'var(--red)') + '"></span>' + p.source_name + '</span><span class="oracle-price">$' + p.price.toFixed(2) + '</span></div>').join('') +
+        '<div class="spread ' + sc + '"><span>Spread</span><span><strong>' + info.spread_pct + '%</strong> · ' + info.opportunity + '</span></div></div>';
     }).join('');
   } catch(e) {
     grid.innerHTML = '<div class="loading" style="grid-column:1/-1;">Connection error. Retrying...</div>';
-    badge.textContent = '⚠️ Offline';
+    badge.textContent = '⚠ Offline';
   }
 }
 fetchData();
