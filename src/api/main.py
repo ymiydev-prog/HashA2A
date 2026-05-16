@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from core.config import Settings
 from core.hedera_manager import HederaManager
@@ -13,7 +14,7 @@ from core.agent_registry import AgentRegistry
 from core.provider_registry import ProviderRegistry
 from core.consensus_logger import ConsensusLogger
 from core.auction import AuctionManager
-from api.routes import requests, providers, agent, dashboard, auctions, staking, websocket
+from api.routes import requests, providers, agent, dashboard, auctions, staking, websocket, aggregate, research
 
 
 @asynccontextmanager
@@ -48,15 +49,41 @@ async def lifespan(app: FastAPI):
     app.state.agent_registry = agent_registry
     app.state.auction_manager = auction_manager
 
+    from core.ai_analyzer import AIAnalyzer
+    from core.data_aggregator import DataAggregator
+    from core.deep_research import DeepResearchEngine
+    ai_analyzer = AIAnalyzer(settings)
+    data_aggregator = DataAggregator(provider_registry, ai_analyzer, settings)
+    app.state.data_aggregator = data_aggregator
+    research_engine = DeepResearchEngine(settings, provider_registry, ai_analyzer)
+    app.state.research_engine = research_engine
+
     async def on_payment(request_id: str):
-        await requests.process_paid_request(
-            request_id=request_id,
-            hedera=hedera,
-            payment_engine=payment_engine,
-            provider_registry=provider_registry,
-            agent_registry=agent_registry,
-            consensus_logger=consensus_logger,
-        )
+        pending = payment_engine.get_pending(request_id)
+        if not pending:
+            return
+        if pending.provider_id == "aggregated":
+            await aggregate.process_aggregate_request(
+                request_id=request_id, hedera=hedera,
+                payment_engine=payment_engine,
+                provider_registry=provider_registry,
+                aggregator=data_aggregator,
+            )
+        elif pending.provider_id == "research":
+            await research.process_research_request(
+                request_id=request_id, hedera=hedera,
+                payment_engine=payment_engine,
+                provider_registry=provider_registry,
+                research_engine=research_engine,
+            )
+        else:
+            await requests.process_paid_request(
+                request_id=request_id, hedera=hedera,
+                payment_engine=payment_engine,
+                provider_registry=provider_registry,
+                agent_registry=agent_registry,
+                consensus_logger=consensus_logger,
+            )
 
     payment_engine.on_payment_confirmed(on_payment)
 
@@ -137,6 +164,10 @@ def create_app() -> FastAPI:
     app.include_router(staking.router, prefix="/api/v1")
     app.include_router(websocket.router)
     app.include_router(dashboard.router)
+    app.include_router(aggregate.router)
+    app.include_router(research.router)
+    from api.routes.feeds import router as feeds_router
+    app.include_router(feeds_router, prefix="/api/v1")
 
     async def mcp_asgi(scope, receive, send):
         if scope["type"] != "http":
@@ -147,13 +178,24 @@ def create_app() -> FastAPI:
                 "name": "HashA2A MCP Server",
                 "protocol": "MCP Streamable HTTP",
                 "version": "0.2.0",
-                "tools": ["list_providers", "get_market_data", "check_request", "get_agent_profile"],
-                "usage": "Send POST requests with JSON-RPC 2.0 messages to this endpoint",
+                "tools": [
+                    "list_providers", "get_market_data", "check_request",
+                    "get_agent_profile", "analyze_market", "deep_research",
+                    "aggregate_market_data", "verified_feed", "get_price",
+                    "scan_arbitrage",
+                ],
+                "pricing": {
+                    "free": "list_providers, get_agent_profile, check_request",
+                    "paid": "get_market_data (0.5 HBAR), deep_research (1 HBAR), get_price ($0.25 USDC), scan_arbitrage ($0.50 USDC)",
+                },
+                "discovery": {
+                    "a2a_agent_card": "/.well-known/agent.json",
+                    "x402_manifest": "/.well-known/x402.json",
+                    "llms_txt": "/llms.txt",
+                },
                 "example": {
-                    "jsonrpc": "2.0",
-                    "id": 1,
-                    "method": "tools/list",
-                    "params": {},
+                    "jsonrpc": "2.0", "id": 1,
+                    "method": "tools/list", "params": {},
                 },
             })
             await resp(scope, receive, send)
@@ -163,7 +205,11 @@ def create_app() -> FastAPI:
 
     app.mount("/mcp/", mcp_asgi)
 
-    return app
+    import os
+    static_dir = os.path.join(os.path.dirname(__file__), "..", "..", "static")
+    if os.path.isdir(static_dir):
+        app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
+    return app
 
 app = create_app()

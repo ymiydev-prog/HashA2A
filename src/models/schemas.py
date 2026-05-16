@@ -136,6 +136,83 @@ class ProviderReputation(BaseModel):
         )
 
 
+class FeedRequest(BaseModel):
+    topic: str = Field(..., description="Topic/asset to get verified data for, e.g. 'BTC price', 'election 2028'")
+    min_confidence: float | None = Field(default=None, ge=0.0, le=1.0, description="Minimum confidence interval (0-1)")
+    max_cost_hbar: float | None = Field(default=None, ge=0.0)
+
+
+class AggregateRequest(BaseModel):
+    query: str = Field(..., description="Query/topic to aggregate across providers")
+    providers: list[str] | None = Field(default=None, description="Provider IDs to query, or null for all")
+    max_cost_hbar: float | None = Field(default=None, ge=0.0)
+    quality_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
+
+
+class SourceResult(BaseModel):
+    provider_id: str
+    provider_name: str
+    success: bool
+    market_count: int = 0
+    cost_hbar: float = 0
+    processing_time_ms: float | None = None
+    error: str | None = None
+
+
+class ConsensusReport(BaseModel):
+    agreement_score: float = 0.0
+    total_sources: int = 0
+    successful_sources: int = 0
+    summary: str | None = None
+
+
+class AggregatedResult(BaseModel):
+    request_id: str
+    query: str
+    sources: list[SourceResult]
+    consensus: ConsensusReport
+    data: dict[str, Any] | None = None
+    analysis: str | None = None
+    verification_score: float = 0.0
+    total_cost_hbar: float = 0
+    proof_tx_id: str | None = None
+    audit_topic_id: str | None = None
+    processing_time_ms: float | None = None
+
+
+class VerifiedPricePoint(BaseModel):
+    asset: str
+    price: float
+    confidence: float
+    bid: float | None = None
+    ask: float | None = None
+    sources: int
+    agreement: float
+    timestamp: int
+
+
+class SourceFeedBack(BaseModel):
+    provider_id: str
+    provider_name: str
+    price: float | None = None
+    confidence: float | None = None
+    weight: float
+    success: bool
+    error: str | None = None
+
+
+class VerifiedDataFeed(BaseModel):
+    feed_id: str
+    topic: str
+    aggregate: VerifiedPricePoint
+    sources: list[SourceFeedBack]
+    verification: str = "low"
+    total_cost_hbar: float = 0
+    proof_tx_id: str | None = None
+    audit_topic_id: str | None = None
+    processing_time_ms: float | None = None
+
+
 class ConsensusRecord(BaseModel):
     request_id: str
     provider_id: str

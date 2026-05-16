@@ -29,6 +29,14 @@ PROVIDER_CONTEXTS = {
         "For binary markets, price represents probability (0-100%). "
         "Analyze the market consensus and trader activity."
     ),
+    "aggregated": (
+        "This is aggregated intelligence from MULTIPLE prediction market platforms: "
+        "Polymarket (decentralized), Kalshi (CFTC-regulated), PredictIt (academic), "
+        "and Manifold (play-money). Data has been cross-validated across sources. "
+        "Compare prices across platforms, identify arbitrage opportunities, "
+        "and assess the overall market consensus. When sources agree, confidence is high. "
+        "When they diverge, highlight the spread and possible reasons."
+    ),
 }
 
 ANALYSIS_PROMPT = """You are a financial analysis AI specializing in prediction markets.
