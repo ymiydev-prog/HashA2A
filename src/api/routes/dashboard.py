@@ -232,6 +232,11 @@ body {
 .agent-item .meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 .agent-item .tags { font-size: 10px; color: var(--accent-3); margin-top: 4px; }
 
+.a2a-row { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; border-bottom:1px solid rgba(30,42,69,0.3); }
+.a2a-row:last-child { border-bottom:none; }
+.a2a-label { color:var(--muted); }
+.a2a-value { font-weight:600; }
+
 /* Footer */
 .footer { text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px; }
 
@@ -366,6 +371,10 @@ function renderDashboard(data) {
           <h3>🔌 Quick Access</h3>
           <div id="quick-providers"></div>
         </div>
+        <div class="provider-list" id="a2a-stats" style="display:none;">
+          <h3>🔄 A2A Protocol</h3>
+          <div id="a2a-content"></div>
+        </div>
         <div class="agent-list">
           <h3>🤖 Discovered Agents <span id="agent-count" style="color:var(--green);font-size:12px;"></span></h3>
           <div id="agent-items"><div style="color:var(--text-muted);font-size:12px;">Scanning HCS topics…</div></div>
@@ -386,6 +395,7 @@ function renderDashboard(data) {
   renderRadarChart(providers);
   renderQuickProviders(providers);
   renderAgents(window._agents);
+  renderA2AStats(data);
 }
 
 function renderTrustChart(providers) {
@@ -504,38 +514,30 @@ function renderQuickProviders(providers) {
   }).join('');
 }
 
-function renderAgents(agents) {
-  const container = document.getElementById('agent-items');
-  const countEl = document.getElementById('agent-count');
-  if (!container) return;
-
-  if (countEl) {
-    const online = agents.filter(a => a.presence === 'online').length;
-    countEl.textContent = `(${online}/${agents.length} online)`;
-  }
-
-  if (!agents.length) {
-    container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No agents discovered yet. Listening on HCS topics…</div>';
+function renderA2AStats(data) {
+  const el = document.getElementById('a2a-stats');
+  const content = document.getElementById('a2a-content');
+  if (!el || !content) return;
+  const a2a = data.a2a;
+  if (!a2a || !a2a.tasks_by_status || !Object.keys(a2a.tasks_by_status).length) {
+    el.style.display = 'none';
     return;
   }
-
-  container.innerHTML = agents.map(a => {
-    const dotClass = a.presence === 'online' ? 'online' : a.presence === 'offline' ? 'offline' : 'unknown';
-    const tags = (a.tags || []).slice(0, 3).map(t => `<span style="margin-right:4px;">#${t}</span>`).join('');
-    return `<div class="agent-item">
-      <div class="name"><span class="dot ${dotClass}"></span>${a.agent_name}</div>
-      <div class="meta">${a.description ? a.description.substring(0, 50) + '…' : 'No description'} · ${a.total_requests || 0} requests</div>
-      ${tags ? `<div class="tags">${tags}</div>` : ''}
-    </div>`;
-  }).join('');
-}
-
-function updateAgentPresence(agentId, presence) {
-  const idx = window._agents.findIndex(a => a.agent_id === agentId);
-  if (idx >= 0) {
-    window._agents[idx].presence = presence;
-    renderAgents(window._agents);
-  }
+  el.style.display = 'block';
+  const statusMap = a2a.tasks_by_status;
+  const total = a2a.total_tasks || 0;
+  const contexts = a2a.total_contexts || 0;
+  const completed = statusMap.completed || 0;
+  const failed = statusMap.failed || 0;
+  const active = (statusMap.submitted || 0) + (statusMap.working || 0);
+  const successRate = total > 0 ? ((completed / total) * 100).toFixed(0) : '—';
+  content.innerHTML =
+    '<div class="a2a-row"><span class="a2a-label">Tasks</span><span class="a2a-value">' + total + '</span></div>' +
+    '<div class="a2a-row"><span class="a2a-label">Contexts</span><span class="a2a-value">' + contexts + '</span></div>' +
+    '<div class="a2a-row"><span class="a2a-label">Active</span><span class="a2a-value" style="color:var(--yellow)">' + active + '</span></div>' +
+    '<div class="a2a-row"><span class="a2a-label">Completed</span><span class="a2a-value" style="color:var(--green)">' + completed + '</span></div>' +
+    '<div class="a2a-row"><span class="a2a-label">Success Rate</span><span class="a2a-value" style="color:var(--' + (successRate >= 80 ? 'green' : successRate >= 50 ? 'yellow' : 'red') + ')">' + successRate + '%</span></div>' +
+    '<div style="margin-top:8px;font-size:11px;text-align:center"><a href="/dashboard/tasks" style="color:var(--blue)">Manage tasks →</a></div>';
 }
 
 let _sortCol = 'trust_score', _sortDir = 'desc';
@@ -726,42 +728,23 @@ async def get_dashboard():
     return HTMLResponse(DASHBOARD_HTML)
 
 
-@router.get("/dashboard/oracles", response_class=HTMLResponse, include_in_schema=False)
-async def get_oracle_dashboard():
-    return HTMLResponse(ORACLE_HTML)
-
-
-@router.get("/dashboard/oracles/data", include_in_schema=False)
-async def get_oracle_data():
-    from core.oracle_hub import OracleHub
-    from core.arbitrage_engine import ArbitrageEngine
-    hub = OracleHub()
-    engine = ArbitrageEngine(hub)
-    try:
-        import asyncio
-        signals = await engine.scan_all()
-        assets = {}
-        for s in signals:
-            assets[s.asset] = {
-                "prices": [p.to_dict() for p in s.prices],
-                "spread_pct": round(s.spread_pct, 4),
-                "opportunity": s.opportunity,
-                "analysis": s.analysis,
-            }
-        await hub.close()
-        return JSONResponse({
-            "assets": assets,
-            "count": len(assets),
-        })
-    except Exception as e:
-        await hub.close()
-        return JSONResponse({"error": str(e)})
-
-
 @router.get("/dashboard/data", include_in_schema=False)
 async def get_dashboard_data(request: Request):
     try:
         data = _collect_dashboard_data(request)
+        # Add A2A task stats
+        from api.routes.tasks import get_mgr, get_ctx
+        try:
+            mgr = get_mgr()
+            ctx = get_ctx()
+            all_tasks = mgr.list_tasks(limit=1000)
+            data["a2a"] = {
+                "tasks_by_status": mgr.count_by_status(),
+                "total_tasks": len(all_tasks),
+                "total_contexts": len(ctx.list_contexts()),
+            }
+        except Exception:
+            data["a2a"] = {"tasks_by_status": {}, "total_tasks": 0, "total_contexts": 0}
         return JSONResponse(data)
     except Exception as e:
         return JSONResponse({"error": str(e)})
