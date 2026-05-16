@@ -1281,7 +1281,7 @@ button:focus, [tabindex]:focus { outline: 2px solid var(--purple); outline-offse
   <div class="hero-bg" aria-hidden="true"></div>
   <div class="container">
     <h1>Buy Verified Intelligence<br/>with <span class="accent">HBAR or USDC</span></h1>
-    <p>HashA2A is a decentralized data marketplace where AI agents discover, purchase, and consume verified multi-oracle intelligence — powered by Hedera HCS and the x402 protocol.</p>
+    <p>HashA2A is a decentralized data marketplace where AI agents discover, purchase, and consume verified multi-oracle intelligence — powered by Hedera HCS, the A2A protocol, and the x402 payment standard.</p>
     <div class="hero-btns">
       <a href="#integrate" class="hero-btn hero-btn-primary">Integrate Your Agent →</a>
       <a href="/dashboard" class="hero-btn hero-btn-secondary">Live Dashboard</a>
@@ -1307,22 +1307,32 @@ button:focus, [tabindex]:focus { outline: 2px solid var(--purple); outline-offse
       <div class="feature-card">
         <div class="feature-icon">🔮</div>
         <h3>OracleHub</h3>
-        <p>Multi-oracle price aggregation from Pyth, CoinGecko, and Chainlink (via DeFiLlama). Median-price with IQR confidence scoring.</p>
+        <p>Multi-oracle price aggregation from Pyth, CoinGecko, and Chainlink (via DeFiLlama). 19 assets: crypto, gold, silver, forex. Median-price with IQR confidence scoring.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📊</div>
-        <h3>Arbitrage Scanner</h3>
-        <p>Real-time cross-oracle spread detection. Buy from the cheapest oracle, sell to the most expensive. Identifies profitable opportunities.</p>
+        <h3>Arbitrage Engine</h3>
+        <p>Real-time cross-oracle spread detection across 6+ assets. Buy from the cheapest oracle, sell to the most expensive. Identifies profitable opportunities instantly.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <h3>A2A Protocol</h3>
+        <p>Full Google A2A compliance: JSON-RPC 2.0, SSE streaming, task lifecycle (7 states), context passing, artifact storage, AP2 mandates, and JWT auth.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🧠</div>
         <h3>Deep Research</h3>
-        <p>Web search + news + social signals + prediction market data combined with AI analysis (GPT-5-nano). Premium intelligence product.</p>
+        <p>Web search + news + social signals + prediction market data combined with AI analysis (GPT-5-nano). Premium intelligence delivered via A2A tasks.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <h3>Auth + Payments</h3>
+        <p>Ephemeral JWT tokens, AP2 cryptographic mandates with spending limits. Pay per query via USDC (x402), HBAR (HIP-991), or pre-authorized budgets.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🔌</div>
         <h3>MCP + A2A + REST</h3>
-        <p>10 MCP tools, A2A agent discovery, REST API, WebSocket, and x402 payments. Works with Claude, Cursor, LangChain, and any HTTP client.</p>
+        <p>10 MCP tools, Google A2A JSON-RPC, SSE streaming, REST API, WebSocket. Works with Claude, Cursor, LangChain, and any A2A-compatible agent.</p>
       </div>
     </div>
   </div>
@@ -1408,12 +1418,38 @@ button:focus, [tabindex]:focus { outline: 2px solid var(--purple); outline-offse
         </div>
       </div>
       <div class="integrate-card">
+        <div class="integrate-header"><h3>A2A JSON-RPC 2.0</h3><span class="integrate-badge">Standard</span></div>
+        <div class="integrate-body">
+<pre><code>POST /api/v1/a2a/rpc</code>
+<code>{"jsonrpc":"2.0","id":"1",
+ "method":"message/send",
+ "params":{"message":{
+   "parts":[
+     {"text":"BTC/USD price"}
+]}}}</code>
+
+# Or with SSE streaming:
+<code>POST /api/v1/a2a/rpc/stream</code>
+<code>{"jsonrpc":"2.0","id":"1",
+ "method":"message/stream",
+ "params":{"message":{
+   "parts":[
+     {"text":"BTC/USD price"}
+]}}}</code>
+→ SSE: task/submitted → task/working
+→ SSE: task/progress →
+  "Consulting oracles..."
+→ SSE: task/completed → ✅</pre>
+        </div>
+      </div>
+      <div class="integrate-card">
         <div class="integrate-header"><h3>A2A Discovery</h3><span class="integrate-badge">Autonomous</span></div>
         <div class="integrate-body">
 <pre>GET /.well-known/agent.json
-  → 5 capabilities
-  → HBAR + USDC payments
-  → MCP + REST endpoints
+  → 6 interfaces (JSONRPC, SSE, MCP)
+  → 5 skills with I/O schemas
+  → JWT + AP2 + x402 payments
+  → Context + artifact support
 
 GET /llms.txt
   → Full API documentation
@@ -1445,7 +1481,14 @@ GET /llms.txt
         <a href="/mcp/">MCP Server</a>
         <a href="/.well-known/agent.json">A2A Card</a>
         <a href="/.well-known/x402.json">x402 Payments</a>
+        <a href="/api/v1/feeds/pricing">Live Pricing</a>
         <a href="/llms.txt">llms.txt</a>
+      </div>
+      <div class="footer-col">
+        <h4>Dashboards</h4>
+        <a href="/dashboard">Main Dashboard</a>
+        <a href="/dashboard/oracles">Oracle Dashboard</a>
+        <a href="/dashboard/tasks">Task Dashboard</a>
       </div>
       <div class="footer-col">
         <h4>Community</h4>

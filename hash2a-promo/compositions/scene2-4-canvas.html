@@ -1,5 +1,5 @@
 <template id="scene2-4-canvas-template">
-  <div data-composition-id="scene2-4-canvas" data-width="1920" data-height="1080" data-duration="20">
+  <div data-composition-id="scene2-4-canvas" data-width="1920" data-height="1080" data-duration="26">
     <div class="canvas">
       <div class="bg-particles"></div>
       <div class="slide slide-1">
@@ -24,13 +24,29 @@
         </div>
       </div>
       <div class="slide slide-3">
-        <div class="slide-tag" style="color:#06b6d4">PROVIDERS</div>
-        <div class="slide-title">Real data. Real APIs. 4 markets.</div>
+        <div class="slide-tag" style="color:#06b6d4">ORACLEHUB</div>
+        <div class="slide-title">Multi-Oracle Intelligence Hub</div>
+        <div class="slide-desc">19 assets across crypto, gold, silver, forex — aggregated from Pyth, CoinGecko, and Chainlink with median-price confidence scoring.</div>
         <div class="providers-grid">
-          <div class="prov-card"><div class="prov-name">Polymarket</div><div class="prov-price">0.5 HBAR</div><div class="prov-desc">Decentralized prediction markets</div></div>
-          <div class="prov-card"><div class="prov-name">Kalshi</div><div class="prov-price">0.3 HBAR</div><div class="prov-desc">CFTC-regulated US markets</div></div>
-          <div class="prov-card"><div class="prov-name">PredictIt</div><div class="prov-price">0.4 HBAR</div><div class="prov-desc">Academic prediction markets</div></div>
-          <div class="prov-card"><div class="prov-name">Manifold</div><div class="prov-price">0.3 HBAR</div><div class="prov-desc">Play-money markets</div></div>
+          <div class="prov-card"><div class="prov-name">OracleHub</div><div class="prov-price">3 oracles</div><div class="prov-desc">BTC, ETH, SOL, XAU, XAG, USD/JPY + 17 more</div></div>
+          <div class="prov-card"><div class="prov-name">Arbitrage</div><div class="prov-price">Real-time</div><div class="prov-desc">Cross-oracle spread detection + ranking</div></div>
+          <div class="prov-card"><div class="prov-name">Price Feeds</div><div class="prov-price">$0.25</div><div class="prov-desc">Single asset, multi-oracle, verified</div></div>
+          <div class="prov-card"><div class="prov-name">Deep Research</div><div class="prov-price">$0.50</div><div class="prov-desc">Web + news + AI analysis</div></div>
+        </div>
+      </div>
+      <div class="slide slide-4">
+        <div class="slide-tag" style="color:#22c55e">A2A PROTOCOL</div>
+        <div class="slide-title">Standard Agent-to-Agent<br/>Compatibility</div>
+        <div class="slide-desc">Full Google A2A compliance: JSON-RPC 2.0, SSE streaming, task lifecycle, context passing, JWT auth, AP2 mandates.</div>
+        <div class="a2a-tags">
+          <div class="a2a-tag">JSON-RPC 2.0</div>
+          <div class="a2a-tag">SSE Streaming</div>
+          <div class="a2a-tag">Task Lifecycle</div>
+          <div class="a2a-tag">Context Memory</div>
+          <div class="a2a-tag">JWT Auth</div>
+          <div class="a2a-tag">AP2 Payments</div>
+          <div class="a2a-tag">MCP Server</div>
+          <div class="a2a-tag">Artifact Storage</div>
         </div>
       </div>
     </div>
@@ -55,9 +71,11 @@
       .prov-name{font-size:22px;font-weight:700}
       .prov-price{font-size:14px;color:#22c55e;font-weight:600;margin-top:4px}
       .prov-desc{font-size:14px;color:#64748b;margin-top:6px}
+      .a2a-tags{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:32px;max-width:600px}
+      .a2a-tag{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:10px 22px;font-size:15px;font-weight:500;color:#cbd5e1;opacity:0;transform:scale(0.8)}
     </style>
     <script>
-      (function(){const tl=gsap.timeline({paused:true});const s1='[data-composition-id="scene2-4-canvas"] .slide-1',s2='[data-composition-id="scene2-4-canvas"] .slide-2',s3='[data-composition-id="scene2-4-canvas"] .slide-3';
+      (function(){const tl=gsap.timeline({paused:true});const s1='[data-composition-id="scene2-4-canvas"] .slide-1',s2='[data-composition-id="scene2-4-canvas"] .slide-2',s3='[data-composition-id="scene2-4-canvas"] .slide-3',s4='[data-composition-id="scene2-4-canvas"] .slide-4';
         tl.to(s1+' .slide-tag',{opacity:1,y:0,duration:0.4,ease:'power3.out'},0);
         tl.to(s1+' .slide-title',{opacity:1,y:0,duration:0.5,ease:'power3.out'},0.3);
         tl.to(s1+' .slide-desc',{opacity:1,y:0,duration:0.4,ease:'power3.out'},0.6);
@@ -70,7 +88,13 @@
         tl.to(s2+' .slide-tag',{opacity:0,y:-10,duration:0.3},10.5);tl.to(s2+' .slide-title',{opacity:0,y:-10,duration:0.3},10.5);tl.to(s2+' .flow-step',{opacity:0,y:-10,duration:0.25,stagger:0.05},10.5);tl.to(s2+' .flow-arrow',{opacity:0,duration:0.2,stagger:0.05},10.5);
         tl.to(s3+' .slide-tag',{opacity:1,y:0,duration:0.4,ease:'power3.out'},11.2);
         tl.to(s3+' .slide-title',{opacity:1,y:0,duration:0.5,ease:'power3.out'},11.5);
-        tl.to(s3+' .prov-card',{opacity:1,y:0,duration:0.4,stagger:0.1,ease:'back.out(1.2)'},11.9);
+        tl.to(s3+' .slide-desc',{opacity:1,y:0,duration:0.4,ease:'power3.out'},11.9);
+        tl.to(s3+' .prov-card',{opacity:1,y:0,duration:0.4,stagger:0.1,ease:'back.out(1.2)'},12.3);
+        tl.to(s3+' .slide-tag',{opacity:0,y:-10,duration:0.3},16.5);tl.to(s3+' .slide-title',{opacity:0,y:-10,duration:0.3},16.5);tl.to(s3+' .slide-desc',{opacity:0,y:-10,duration:0.3},16.5);tl.to(s3+' .prov-card',{opacity:0,y:-10,duration:0.25,stagger:0.05},16.5);
+        tl.to(s4+' .slide-tag',{opacity:1,y:0,duration:0.4,ease:'power3.out'},17.2);
+        tl.to(s4+' .slide-title',{opacity:1,y:0,duration:0.5,ease:'power3.out'},17.5);
+        tl.to(s4+' .slide-desc',{opacity:1,y:0,duration:0.4,ease:'power3.out'},17.9);
+        tl.to(s4+' .a2a-tag',{opacity:1,scale:1,duration:0.3,stagger:0.06,ease:'back.out(1.3)'},18.3);
         window.__timelines=window.__timelines||{};window.__timelines["scene2-4-canvas"]=tl;
       })();
     </script>
