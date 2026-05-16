@@ -1,0 +1,36 @@
+<template id="scene5-logo-outro-template">
+  <div data-composition-id="scene5-logo-outro" data-width="1920" data-height="1080" data-duration="6">
+    <div class="canvas">
+      <div class="outro-content">
+        <div class="final-logo"><svg viewBox="0 0 80 80" width="64" height="64"><rect x="4" y="4" width="72" height="72" rx="16" fill="none" stroke="#3b82f6" stroke-width="3"/><path d="M28 40 L40 28 L52 40 L40 52Z" fill="#3b82f6" opacity="0.9"/><circle cx="40" cy="40" r="8" fill="#8b5cf6"/></svg></div>
+        <div class="final-title">Hash<span class="a2a">A2A</span></div>
+        <div class="final-tag">Your AI agents deserve real data.<br/>Buy intelligence with HBAR. Verified on Hedera.</div>
+        <div class="cta-row"><div class="cta-btn">github.com/ymiydev-prog/HashA2A</div></div>
+        <div class="footer-line"><span class="hedera-badge">⚡ Hedera Testnet</span><span class="dot">·</span><span>MCP · REST · WebSocket</span><span class="dot">·</span><span>HIP-991</span></div>
+      </div>
+    </div>
+    <style>
+      [data-composition-id="scene5-logo-outro"] .canvas{width:1920px;height:1080px;background:linear-gradient(135deg,#0a0a1a,#0f172a);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif}
+      [data-composition-id="scene5-logo-outro"] .outro-content{text-align:center;z-index:2}
+      [data-composition-id="scene5-logo-outro"] .final-logo{opacity:0;transform:scale(0.5);margin-bottom:20px}
+      [data-composition-id="scene5-logo-outro"] .final-title{font-size:64px;font-weight:800;letter-spacing:-0.03em;color:white;opacity:0;transform:translateY(15px)}
+      [data-composition-id="scene5-logo-outro"] .a2a{color:#8b5cf6}
+      [data-composition-id="scene5-logo-outro"] .final-tag{font-size:20px;color:#94a3b8;margin-top:16px;line-height:1.5;opacity:0;transform:translateY(10px)}
+      [data-composition-id="scene5-logo-outro"] .cta-row{margin-top:32px;opacity:0}
+      [data-composition-id="scene5-logo-outro"] .cta-btn{display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:12px;font-size:18px;font-weight:600;color:white;letter-spacing:-0.01em}
+      [data-composition-id="scene5-logo-outro"] .footer-line{margin-top:32px;font-size:14px;color:#475569;opacity:0}
+      [data-composition-id="scene5-logo-outro"] .hedera-badge{color:#3b82f6}
+      [data-composition-id="scene5-logo-outro"] .dot{margin:0 8px}
+    </style>
+    <script>
+      (function(){const tl=gsap.timeline({paused:true});const id='[data-composition-id="scene5-logo-outro"]';
+        tl.to(id+' .final-logo',{opacity:1,scale:1,duration:0.5,ease:'back.out(1.5)'},0);
+        tl.to(id+' .final-title',{opacity:1,y:0,duration:0.5,ease:'power3.out'},0.5);
+        tl.to(id+' .final-tag',{opacity:1,y:0,duration:0.4,ease:'power3.out'},1.0);
+        tl.to(id+' .cta-row',{opacity:1,y:0,duration:0.5,ease:'power3.out'},1.5);
+        tl.to(id+' .footer-line',{opacity:1,duration:0.4,ease:'power3.out'},2.2);
+        window.__timelines=window.__timelines||{};window.__timelines["scene5-logo-outro"]=tl;
+      })();
+    </script>
+  </div>
+</template>

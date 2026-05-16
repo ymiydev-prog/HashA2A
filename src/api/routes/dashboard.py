@@ -915,17 +915,8 @@ a { color: var(--blue); text-decoration: none; }
 
 /* Video */
 .video-section { padding: 0 0 60px; text-align: center; }
-.demo-flow { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
-.demo-step { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; min-width: 220px; animation: demoPulse 3s ease-in-out infinite; }
-@keyframes demoPulse { 0%, 100% { border-color: var(--border); } 50% { border-color: var(--blue); } }
-.demo-num { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
-.demo-content { flex: 1; text-align: left; }
-.demo-label { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-.demo-bar { height: 4px; border-radius: 2px; background: var(--blue); width: 60%; animation: demoBar 2s ease-in-out infinite alternate; }
-@keyframes demoBar { 0% { width: 40%; opacity: 0.5; } 100% { width: 80%; opacity: 1; } }
-.demo-bar-green { background: var(--green); }
-.demo-bar-purple { background: var(--purple); }
-.demo-arrow { font-size: 24px; color: var(--muted); }
+.video-container { max-width: 800px; margin: 0 auto; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: var(--card); }
+.video-container video { width: 100%; display: block; }
 
 /* Section titles */
 .section-title { font-size: 32px; font-weight: 700; text-align: center; margin-bottom: 8px; }
@@ -1031,32 +1022,11 @@ a { color: var(--blue); text-decoration: none; }
 
 <section class="video-section">
   <div class="container">
-    <div class="demo-flow">
-      <div class="demo-step">
-        <div class="demo-num">1</div>
-        <div class="demo-content">
-          <div class="demo-label">Agent requests data</div>
-          <div class="demo-bar"></div>
-        </div>
-      </div>
-      <div class="demo-arrow">→</div>
-      <div class="demo-step">
-        <div class="demo-num">2</div>
-        <div class="demo-content">
-          <div class="demo-label">Pays via HCS (HIP-991)</div>
-          <div class="demo-bar demo-bar-green"></div>
-        </div>
-      </div>
-      <div class="demo-arrow">→</div>
-      <div class="demo-step">
-        <div class="demo-num">3</div>
-        <div class="demo-content">
-          <div class="demo-label">AI analysis + proof</div>
-          <div class="demo-bar demo-bar-purple"></div>
-        </div>
-      </div>
+    <div class="video-container">
+      <video controls poster="" preload="metadata" playsinline>
+        <source src="/promo.mp4" type="video/mp4">
+      </video>
     </div>
-    <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:16px;">🎬 Add your promo video at <code style="color:var(--blue);">static/promo.mp4</code></p>
   </div>
 </section>
 
