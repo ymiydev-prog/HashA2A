@@ -1,4 +1,4 @@
-"""Deep research engine — investigates questions across web, news, and social media."""
+"""Deep research engine — investigates questions using OpenAI web_search tool."""
 
 import asyncio
 import json
@@ -6,7 +6,7 @@ import time
 from typing import Any
 
 import httpx
-from duckduckgo_search import DDGS
+from openai import OpenAI
 
 from core.config import Settings
 from core.ai_analyzer import AIAnalyzer
@@ -50,30 +50,20 @@ RESEARCH_PROMPT = """You are a world-class investigative analyst. Your task is t
 
 Question: {question}
 
-Sources consulted:
-- Web search results ({web_count} sources)
-- News articles ({news_count} sources)
-- Social media signals
-- Prediction market data (Polymarket, Kalshi, PredictIt, Manifold)
-
-Web findings:
+Web search results:
 {web_text}
 
-News findings:
-{news_text}
-
-Market data:
+Prediction market data:
 {market_text}
 
 Produce a structured analysis covering:
 
-1. **Context Investigation** — What do web and news sources reveal about this topic? Key facts, dates, announcements, controversies.
-2. **Social Sentiment** — What is the general sentiment on social media and forums? Bullish/bearish/neutral?
-3. **Market Comparison** — How do prediction market prices compare to the research findings? Is the market correctly priced?
-4. **Key Risks & Catalysts** — What events could move this market significantly?
-5. **Final Verdict** — Based on ALL evidence (not just market prices), what is your probability assessment?
+1. **Context Investigation** — What does the web search reveal? Key facts, dates, announcements, controversies.
+2. **Market Comparison** — How do prediction market prices compare to the research findings?
+3. **Key Risks & Catalysts** — What events could move this market significantly?
+4. **Final Verdict** — Based on ALL evidence, what is your probability assessment?
 
-Be specific, cite sources, and clearly distinguish between facts found in research vs market sentiment.
+Be specific, cite sources, and clearly distinguish between facts found in research vs market prices.
 """
 
 
@@ -82,60 +72,56 @@ class DeepResearchEngine:
         self.settings = settings
         self.providers = provider_registry
         self.analyzer = ai_analyzer
+        self._client: OpenAI | None = None
+
+    def _get_openai(self) -> OpenAI | None:
+        if self._client is None and self.settings.openai_api_key:
+            self._client = OpenAI(api_key=self.settings.openai_api_key)
+        return self._client
 
     async def research(self, request_id: str, question: str) -> DeepResearchReport:
         start = time.monotonic()
         report = DeepResearchReport(request_id, question)
 
-        web_results, news_results, market_data = await asyncio.gather(
-            self._search_web(question),
-            self._search_news(question),
-            self._fetch_market_data(question),
-        )
+        oai = self._get_openai()
+        if oai:
+            web_results, market_data = await asyncio.gather(
+                self._search_web_ai(oai, question),
+                self._fetch_market_data(question),
+            )
+        else:
+            web_results, market_data = [], {}
 
         report.web_results = web_results
-        report.news_results = news_results
         report.market_data = market_data
-
-        social = await self._analyze_social_signals(question, web_results)
-        report.social_signals = social
-
-        analysis = self._generate_analysis(question, report)
-        report.analysis = analysis
+        report.social_signals = self._analyze_social_signals(web_results)
+        report.analysis = self._generate_analysis(question, report)
 
         report.processing_time_ms = (time.monotonic() - start) * 1000
         report.status = RequestStatus.COMPLETED
         return report
 
-    async def _search_web(self, query: str) -> list[dict]:
+    async def _search_web_ai(self, client: OpenAI, query: str) -> list[dict]:
+        """Use OpenAI web_search tool to find and analyze content."""
         try:
-            loop = asyncio.get_running_loop()
-            results = await loop.run_in_executor(None, self._ddg_web, query)
-            return results[:8]
-        except Exception as e:
-            return [{"title": "Search failed", "body": str(e)}]
-
-    def _ddg_web(self, query: str) -> list[dict]:
-        try:
-            with DDGS() as ddgs:
-                return [{"title": r["title"], "body": r.get("body", ""), "href": r.get("href", "")}
-                        for r in ddgs.text(query, max_results=8)]
-        except Exception:
-            return []
-
-    async def _search_news(self, query: str) -> list[dict]:
-        try:
-            loop = asyncio.get_running_loop()
-            results = await loop.run_in_executor(None, self._ddg_news, query)
-            return results[:6]
-        except Exception:
-            return []
-
-    def _ddg_news(self, query: str) -> list[dict]:
-        try:
-            with DDGS() as ddgs:
-                return [{"title": r["title"], "body": r.get("body", ""), "date": r.get("date", "")}
-                        for r in ddgs.news(query, max_results=6)]
+            resp = await asyncio.to_thread(
+                client.responses.create,
+                model=self.settings.langchain_model,
+                input=f"Research this question thoroughly. Find recent news, facts, and evidence: {query}",
+                tools=[{"type": "web_search"}],
+            )
+            results = []
+            for item in resp.output:
+                if getattr(item, 'type', '') == 'message':
+                    for c in getattr(item, 'content', []):
+                        if hasattr(c, 'text') and c.text:
+                            results.append({
+                                "title": f"OpenAI web_search results for: {query[:50]}",
+                                "body": c.text[:1000],
+                                "href": "",
+                                "ai_generated": True,
+                            })
+            return results[:5]
         except Exception:
             return []
 
@@ -147,9 +133,7 @@ class DeepResearchEngine:
             try:
                 result = await p.get_data({"request_id": "research", "query": question, "limit": 3})
                 markets = (result.data or {}).get("markets", [])
-                if markets:
-                    return p.provider_id, {"name": p.name, "markets": markets[:3], "cost": p.cost_hbar}
-                return p.provider_id, {"name": p.name, "markets": [], "cost": p.cost_hbar}
+                return p.provider_id, {"name": p.name, "markets": markets[:3], "cost": p.cost_hbar}
             except Exception as e:
                 return p.provider_id, {"name": p.name, "error": str(e)}
 
@@ -158,38 +142,31 @@ class DeepResearchEngine:
             market_data[pid] = data
         return market_data
 
-    async def _analyze_social_signals(self, question: str, web_results: list[dict]) -> dict[str, Any]:
-        social = {"sentiment": "neutral", "mentions": 0, "key_themes": []}
+    def _analyze_social_signals(self, web_results: list[dict]) -> dict[str, Any]:
+        social = {"sentiment": "neutral", "mentions": 0}
         combined = " ".join(r.get("body", "") for r in web_results).lower()
-
         positive_words = ["bullish", "likely", "expected", "announced", "confirmed", "approved"]
         negative_words = ["unlikely", "doubtful", "delayed", "rejected", "cancelled", "denied"]
-
-        pos_count = sum(1 for w in positive_words if w in combined)
-        neg_count = sum(1 for w in negative_words if w in combined)
-
-        if pos_count > neg_count + 2:
+        pos = sum(1 for w in positive_words if w in combined)
+        neg = sum(1 for w in negative_words if w in combined)
+        if pos > neg + 2:
             social["sentiment"] = "positive"
-        elif neg_count > pos_count + 2:
+        elif neg > pos + 2:
             social["sentiment"] = "negative"
         else:
             social["sentiment"] = "mixed"
-
         social["mentions"] = len(web_results)
         return social
 
     def _generate_analysis(self, question: str, report: DeepResearchReport) -> str | None:
         api_key = self.settings.openai_api_key
         if not api_key:
-            return self._fallback_analysis(question, report)
+            return None
 
         web_text = "\n".join(
-            f"- {r['title']}: {r['body'][:200]}" for r in report.web_results if r.get("body")
+            f"- [{r['title']}]({r.get('href','')}): {r['body'][:400]}"
+            for r in report.web_results if r.get("body")
         ) or "No web results."
-        news_text = "\n".join(
-            f"- {r['title']} ({r.get('date','')}): {r['body'][:200]}"
-            for r in report.news_results if r.get("body")
-        ) or "No news results."
         market_text = json.dumps(report.market_data, indent=2, default=str)[:1500]
 
         try:
@@ -197,37 +174,13 @@ class DeepResearchEngine:
             from langchain_core.messages import SystemMessage, HumanMessage
             messages = [
                 SystemMessage(content=RESEARCH_PROMPT.format(
-                    question=question, web_count=len(report.web_results),
-                    news_count=len(report.news_results),
-                    web_text=web_text, news_text=news_text,
+                    question=question,
+                    web_text=web_text,
                     market_text=market_text,
                 )),
-                HumanMessage(content=f"Research the question: {question}"),
+                HumanMessage(content=f"Research: {question}"),
             ]
             response = llm.invoke(messages)
             return response.content.strip()
-        except Exception as e:
-            return self._fallback_analysis(question, report)
-
-    def _fallback_analysis(self, question: str, report: DeepResearchReport) -> str:
-        lines = [f"Research Report: {question}", ""]
-        if report.web_results:
-            lines.append("Web Findings:")
-            for r in report.web_results[:4]:
-                lines.append(f"  • {r.get('title', '')[:80]}")
-        lines.append("")
-        if report.news_results:
-            lines.append("Recent News:")
-            for r in report.news_results[:3]:
-                lines.append(f"  • {r.get('title', '')[:80]}")
-        lines.append("")
-        lines.append(f"Social Sentiment: {report.social_signals.get('sentiment', 'neutral')}")
-        lines.append("")
-        market_data = report.market_data or {}
-        for pid, data in market_data.items():
-            m = data.get("markets", [])
-            if m:
-                q = m[0].get("question", m[0].get("title", "?"))
-                p = m[0].get("yes_price", "?")
-                lines.append(f"  {data.get('name', pid)}: {q[:50]} → {p}")
-        return "\n".join(lines)
+        except Exception:
+            return None
