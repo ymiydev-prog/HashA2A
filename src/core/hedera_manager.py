@@ -105,7 +105,7 @@ class HederaManager:
             .set_memo(memo)
             .set_admin_key(self.operator_key.public_key())
         )
-        tx.transaction_fee = 5_000_000_000  # 5 HBAR max
+        tx.transaction_fee = 50_000_000  # 0.05 HBAR max (HIP-1261 Simple Fees)
         tx.freeze_with(self.client)
         tx.sign(self.operator_key)
 
@@ -134,7 +134,7 @@ class HederaManager:
                     .set_fee_collector_account_id(collector)
             ])
         )
-        tx.transaction_fee = 10_000_000_000  # 10 HBAR max for HIP-991 topic creation
+        tx.transaction_fee = 100_000_000  # 0.1 HBAR max for HIP-991 (HIP-1261 Simple Fees)
         tx.freeze_with(self.client)
         tx.sign(self.operator_key)
 
@@ -250,3 +250,19 @@ class HederaManager:
             "agent": profile,
         }
         return await self.submit_message_to_topic(topic_id, payload)
+
+    async def estimate_fee(self, tx) -> dict | None:
+        """Estimate fee via mirror node REST API before submission (HIP-1261)."""
+        import base64
+        import httpx
+        try:
+            tx_bytes = tx.to_bytes()
+            encoded = base64.b64encode(tx_bytes).decode()
+            url = f"{self.settings.mirror_node_url}/api/v1/network/fees"
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.post(url, json={"transactionBytes": encoded})
+                if resp.status_code == 200:
+                    return resp.json()
+        except Exception:
+            pass
+        return None

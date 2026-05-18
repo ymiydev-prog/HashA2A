@@ -17,6 +17,20 @@ from core.auction import AuctionManager
 from api.routes import requests, providers, agent, dashboard, auctions, staking, websocket, aggregate, research, tasks, auth, a2a_rpc
 
 
+async def _run_twitter_scheduler(scheduler, agent_registry, provider_registry):
+    """Periodically check schedule and post tweets."""
+    import asyncio
+    while True:
+        try:
+            total_tasks = getattr(agent_registry, "_total_requests_served", 0)
+            providers = len(provider_registry.list_all()) if provider_registry else 0
+            oracles = 3
+            await scheduler.run_scheduled(total_tasks, providers, oracles)
+        except Exception:
+            pass
+        await asyncio.sleep(300)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = Settings()
@@ -58,6 +72,18 @@ async def lifespan(app: FastAPI):
     research_engine = DeepResearchEngine(settings, provider_registry, ai_analyzer)
     app.state.research_engine = research_engine
 
+    from core.twitter_promoter import ContentScheduler
+    twitter_scheduler = ContentScheduler(
+        api_key=settings.twitter_api_key,
+        api_secret=settings.twitter_api_secret,
+        access_token=settings.twitter_access_token,
+        access_secret=settings.twitter_access_secret,
+        enabled=settings.twitter_enabled,
+    )
+    app.state.twitter_scheduler = twitter_scheduler
+    if twitter_scheduler.enabled:
+        print(f"🐦 Twitter auto-promotion enabled (@hasha2a)")
+
     async def on_payment(request_id: str):
         pending = payment_engine.get_pending(request_id)
         if not pending:
@@ -92,10 +118,12 @@ async def lifespan(app: FastAPI):
     try:
         await payment_engine.start()
         broadcast_task = asyncio.create_task(agent_registry.run_periodic_broadcast())
+        twitter_task = asyncio.create_task(_run_twitter_scheduler(twitter_scheduler, agent_registry, provider_registry))
         inbound = await hedera.get_or_create_inbound_topic()
         hedera_ok = True
     except Exception as e:
         broadcast_task = None
+        twitter_task = None
         print(f"⚠️  Hedera not configured: {e}")
         print(f"   Create .env with credentials or run with mock data")
 

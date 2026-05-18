@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     agent_name: str = "HashA2A Intelligence Oracle"
     agent_description: str = "Modular data oracle where agents buy AI-processed intelligence via HBAR micropayments"
-    agent_version: str = "0.1.0"
+    agent_version: str = "0.2.0"
     agent_tags: list[str] = ["data-oracle", "intelligence", "hedera", "ai", "prediction-markets"]
     agent_promotional_interval: int = 300
     agent_discovery_interval: int = 60
@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     twitter_access_token: str | None = None
     twitter_access_secret: str | None = None
     twitter_enabled: bool = False
+
+    x402_hedera_facilitator: str = ""
+    x402_hedera_network: str = "hedera:testnet"
 
     class Config:
         env_file = ".env"

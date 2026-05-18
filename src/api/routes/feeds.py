@@ -9,7 +9,7 @@ from core.payment_engine import PaymentEngine
 from core.oracle_hub import OracleHub
 from core.arbitrage_engine import ArbitrageEngine
 from core.pricing import PricingConverter
-from core.x402 import X402Handler
+from core.x402 import X402Handler, X402HederaHandler
 from api.deps import get_hedera_manager, get_payment_engine, get_settings
 from models.schemas import PaymentRequest, RequestStatus
 from pydantic import BaseModel, Field
@@ -22,15 +22,24 @@ _feed_pending: dict[str, str] = {}
 hub: OracleHub | None = None
 arb_engine: ArbitrageEngine | None = None
 x402: X402Handler | None = None
+x402_hedera: X402HederaHandler | None = None
 
 
 def init_feeds(settings: Settings):
-    global hub, arb_engine, x402
+    global hub, arb_engine, x402, x402_hedera
     hub = OracleHub()
     arb_engine = ArbitrageEngine(hub)
     x402 = X402Handler(
         treasury_address=settings.treasury_account or settings.hedera_operator_id,
     )
+    if settings.x402_hedera_facilitator:
+        x402_hedera = X402HederaHandler(
+            pay_to=settings.treasury_account or settings.hedera_operator_id,
+            fee_payer=settings.x402_hedera_facilitator,
+            asset="0.0.0",
+            network=settings.x402_hedera_network,
+            facilitator_url=settings.x402_hedera_facilitator,
+        )
 
 
 def _get_prices_key(asset: str, source: str | None) -> str:
@@ -133,21 +142,44 @@ async def verify_x402_payment(payload: dict):
     return {"status": "paid", "access_key": key}
 
 
+@router.post("/x402/hedera/verify")
+async def verify_x402_hedera_payment(payload: dict):
+    if not x402_hedera:
+        raise HTTPException(status_code=500, detail="x402 Hedera rail not configured")
+    verified, msg = await x402_hedera.verify_payment(payload)
+    if not verified:
+        raise HTTPException(status_code=402, detail=msg)
+    return {"status": "paid", "access_key": "verified", "rail": "hedera"}
+
+
 @router.get("/x402/manifest")
 async def x402_manifest():
     pricing = PricingConverter()
     prices = await pricing.get_prices()
-    return {
+    manifest = {
         "protocol": "x402 v2",
-        "network": "eip155:8453",
-        "asset": "USDC",
-        "pricing": {
-            "price_feed": f"${prices['products']['price_feed']['usdc']} USDC (~{prices['products']['price_feed']['hbar']} HBAR)",
-            "arbitrage_scan": f"${prices['products']['arbitrage_scan']['usdc']} USDC (~{prices['products']['arbitrage_scan']['hbar']} HBAR)",
-            "arbitrage_verify": f"${prices['products']['arbitrage_verify']['usdc']} USDC (~{prices['products']['arbitrage_verify']['hbar']} HBAR)",
+        "rails": {
+            "base_usdc": {
+                "network": "eip155:8453",
+                "asset": "USDC",
+                "pricing": {
+                    "price_feed": f"${prices['products']['price_feed']['usdc']} USDC",
+                    "arbitrage_scan": f"${prices['products']['arbitrage_scan']['usdc']} USDC",
+                    "arbitrage_verify": f"${prices['products']['arbitrage_verify']['usdc']} USDC",
+                },
+            },
         },
         "rate": prices["rates"],
     }
+    if x402_hedera:
+        manifest["rails"]["hedera"] = {
+            "network": x402_hedera.network,
+            "asset": "HBAR" if x402_hedera.asset == "0.0.0" else x402_hedera.asset,
+            "payTo": x402_hedera.pay_to,
+            "feePayer": x402_hedera.fee_payer,
+            "scheme": "exact",
+        }
+    return manifest
 
 
 @router.get("/pricing")
