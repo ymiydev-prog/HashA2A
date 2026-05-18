@@ -6,7 +6,7 @@ pydantic-settings>=2.0.0
 
 # Hedera
 hiero-sdk-python>=0.2.6
-hedera-agent-kit>=3.4.0
+# hedera-agent-kit>=3.4.0  # Bounty only — conflicts with hiero-sdk-python 0.2.6
 
 # HTTP & async
 httpx>=0.27.0
