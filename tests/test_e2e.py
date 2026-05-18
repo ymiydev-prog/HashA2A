@@ -235,3 +235,162 @@ class TestMandateE2E:
         m = mgr.create_mandate("cart", "agent-2", max_spend_usdc=5.0, ttl=86400)
         assert mgr.authorize(m.mandate_id, 5.0)
         assert not mgr.authorize(m.mandate_id, 1.0)
+
+
+import asyncio
+import base64
+import json
+import time
+
+
+class TestX402HederaSignature:
+    """Tests rule 4: signature validity verification."""
+
+    def test_rejects_no_signatures(self):
+        from core.x402 import X402HederaHandler
+
+        handler = X402HederaHandler(pay_to="0.0.12345", fee_payer="0.0.67890")
+        tx_json = {
+            "transactionID": {"accountID": "0.0.67890", "transactionValidStart": "1234567890.0"},
+            "transfers": [{"accountID": "0.0.12345", "amount": 5000000}],
+            "sigMap": {"sigPair": []},
+            "bodyBytes": base64.b64encode(b"test-body").decode(),
+        }
+        ok, msg = handler._verify_signature_validity(tx_json, {})
+        assert not ok
+        assert "No signatures" in msg
+
+    def test_rejects_no_body_bytes(self):
+        from core.x402 import X402HederaHandler
+
+        handler = X402HederaHandler(pay_to="0.0.12345", fee_payer="0.0.67890")
+        tx_json = {
+            "transactionID": {"accountID": "0.0.67890", "transactionValidStart": "1234567890.0"},
+            "transfers": [{"accountID": "0.0.12345", "amount": 5000000}],
+            "sigMap": {"sigPair": [{"ed25519": "abc123", "pubKeyPrefix": "xyz"}]},
+        }
+        ok, msg = handler._verify_signature_validity(tx_json, {})
+        assert not ok
+        assert "No bodyBytes" in msg
+
+    def test_accepts_valid_format_without_nacl(self):
+        from core.x402 import X402HederaHandler, NACL_AVAILABLE
+        import unittest.mock
+
+        handler = X402HederaHandler(pay_to="0.0.12345", fee_payer="0.0.67890")
+        tx_json = {
+            "transactionID": {"accountID": "0.0.67890", "transactionValidStart": "1234567890.0"},
+            "transfers": [{"accountID": "0.0.12345", "amount": 5000000}],
+            "sigMap": {"sigPair": [{"ed25519": "abc123", "pubKeyPrefix": "xyz"}]},
+            "bodyBytes": base64.b64encode(b"test-body").decode(),
+        }
+        with unittest.mock.patch("core.x402.NACL_AVAILABLE", False):
+            ok, msg = handler._verify_signature_validity(tx_json, {})
+        assert ok
+        assert "nacl not available" in msg
+
+
+class TestX402HederaNonce:
+    """Tests rule 5: double-spend / replay attack prevention."""
+
+    def test_accepts_first_transaction(self):
+        from core.x402 import X402HederaHandler
+
+        handler = X402HederaHandler(pay_to="0.0.12345", fee_payer="0.0.67890")
+        tx_json = {
+            "transactionID": {"accountID": "0.0.67890", "transactionValidStart": "1234567890.0"},
+            "transfers": [],
+        }
+        ok, msg = handler._verify_nonce_check(tx_json, {})
+        assert ok
+        assert "OK" in msg
+
+    def test_rejects_duplicate_nonce(self):
+        from core.x402 import X402HederaHandler
+
+        handler = X402HederaHandler(pay_to="0.0.12345", fee_payer="0.0.67890")
+        tx_json = {
+            "transactionID": {"accountID": "0.0.67890", "transactionValidStart": "1234567890.0"},
+            "transfers": [],
+        }
+        ok1, _ = handler._verify_nonce_check(tx_json, {})
+        assert ok1
+        ok2, msg = handler._verify_nonce_check(tx_json, {})
+        assert not ok2
+        assert "Duplicate" in msg
+
+    def test_rejects_missing_transaction_id(self):
+        from core.x402 import X402HederaHandler
+
+        handler = X402HederaHandler(pay_to="0.0.12345", fee_payer="0.0.67890")
+        tx_json = {"transactionID": {}, "transfers": []}
+        ok, msg = handler._verify_nonce_check(tx_json, {})
+        assert not ok
+        assert "Missing" in msg
+
+    def test_cleans_expired_nonces(self):
+        from core.x402 import X402HederaHandler
+
+        handler = X402HederaHandler(pay_to="0.0.12345", fee_payer="0.0.67890")
+        handler.NONCE_TTL = 1
+        tx_json = {
+            "transactionID": {"accountID": "0.0.67890", "transactionValidStart": "1234567890.0"},
+            "transfers": [],
+        }
+        handler._verify_nonce_check(tx_json, {})
+        assert len(handler._processed_nonces) == 1
+        time.sleep(1.1)
+        handler._clean_expired_nonces()
+        assert len(handler._processed_nonces) == 0
+
+
+class TestX402HederaAsset:
+    """Tests rule 6: HTS token verification."""
+
+    def test_skips_for_native_hbar(self):
+        from core.x402 import X402HederaHandler
+
+        handler = X402HederaHandler(pay_to="0.0.12345", fee_payer="0.0.67890", asset="0.0.0")
+        tx_json = {"transfers": []}
+        requirements = {"asset": "0.0.0"}
+        ok, msg = handler._verify_asset_token(tx_json, requirements)
+        assert ok
+        assert "HBAR native" in msg
+
+    def test_rejects_missing_token_transfers(self):
+        from core.x402 import X402HederaHandler
+
+        handler = X402HederaHandler(pay_to="0.0.12345", fee_payer="0.0.67890", asset="0.0.99999")
+        tx_json = {"transfers": []}
+        requirements = {"asset": "0.0.99999", "amount": "1000000", "payTo": "0.0.12345"}
+        ok, msg = handler._verify_asset_token(tx_json, requirements)
+        assert not ok
+        assert "No tokenTransfers" in msg
+
+    def test_rejects_wrong_token_amount(self):
+        from core.x402 import X402HederaHandler
+
+        handler = X402HederaHandler(pay_to="0.0.12345", fee_payer="0.0.67890", asset="0.0.99999")
+        tx_json = {
+            "tokenTransfers": {
+                "0.0.99999": {"0.0.12345": 500000, "0.0.67890": -500000}
+            }
+        }
+        requirements = {"asset": "0.0.99999", "amount": "1000000", "payTo": "0.0.12345"}
+        ok, msg = handler._verify_asset_token(tx_json, requirements)
+        assert not ok
+        assert "mismatch" in msg
+
+    def test_accepts_correct_token_transfer(self):
+        from core.x402 import X402HederaHandler
+
+        handler = X402HederaHandler(pay_to="0.0.12345", fee_payer="0.0.67890", asset="0.0.99999")
+        tx_json = {
+            "tokenTransfers": {
+                "0.0.99999": {"0.0.12345": 1000000, "0.0.67890": -1000000}
+            }
+        }
+        requirements = {"asset": "0.0.99999", "amount": "1000000", "payTo": "0.0.12345"}
+        ok, msg = handler._verify_asset_token(tx_json, requirements)
+        assert ok
+        assert "OK" in msg
