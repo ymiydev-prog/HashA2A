@@ -1370,7 +1370,7 @@ a:hover { color: #60a5fa; }
       <a href="#features">Features</a>
       <a href="#pricing">Pricing</a>
       <a href="#integrate">Integrate</a>
-      <a href="/dashboard">Dashboard</a>
+      <a href="/docs" target="_blank">API Docs</a>
       <a href="https://github.com/ymiydev-prog/HashA2A" class="nav-cta">GitHub</a>
     </div>
   </div>
@@ -1388,7 +1388,7 @@ a:hover { color: #60a5fa; }
     <p>A decentralized data marketplace where AI agents discover, purchase, and consume verified multi-oracle intelligence — powered by Hedera HCS and the A2A protocol.</p>
     <div class="hero-btns">
       <a href="#integrate" class="btn btn-primary">Integrate Your Agent</a>
-      <a href="/dashboard" class="btn btn-secondary">Live Dashboard</a>
+      <a href="/docs" target="_blank" class="btn btn-secondary">API Docs</a>
     </div>
   </div>
 </section>
@@ -1585,18 +1585,18 @@ GET /llms.txt
         <a href="/dashboard/oracles">Oracles</a>
       </div>
       <div class="footer-col">
-        <h4>Protocols</h4>
-        <a href="/mcp/">MCP Server</a>
-        <a href="/.well-known/agent.json">A2A Card</a>
-        <a href="/.well-known/x402.json">x402</a>
-        <a href="/api/v1/feeds/pricing">Live Pricing</a>
-        <a href="/llms.txt">llms.txt</a>
-      </div>
-      <div class="footer-col">
         <h4>Dashboards</h4>
-        <a href="/dashboard">Main</a>
+        <a href="/dashboard">Admin Panel</a>
         <a href="/dashboard/oracles">Oracles</a>
         <a href="/dashboard/tasks">Tasks</a>
+      </div>
+      <div class="footer-col">
+        <h4>API</h4>
+        <a href="/docs">OpenAPI Docs</a>
+        <a href="/redoc">ReDoc</a>
+        <a href="/mcp/">MCP Server</a>
+        <a href="/.well-known/agent.json">Agent Card</a>
+        <a href="/api/v1/feeds/pricing">Live Pricing</a>
       </div>
       <div class="footer-col">
         <h4>Community</h4>

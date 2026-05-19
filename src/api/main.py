@@ -252,9 +252,11 @@ def create_app() -> FastAPI:
                     "get_agent_profile", "analyze_market", "deep_research",
                     "aggregate_market_data", "verified_feed", "get_price",
                     "scan_arbitrage",
+                    "kit_setup", "kit_account_balance", "kit_transfer_hbar",
+                    "kit_create_topic", "kit_submit_message", "kit_get_account_info",
                 ],
                 "pricing": {
-                    "free": "list_providers, get_agent_profile, check_request",
+                    "free": "all tools (incl. enterprise plugin)",
                     "paid": "get_market_data (0.5 HBAR), deep_research (1 HBAR), get_price ($0.25 USDC), scan_arbitrage ($0.50 USDC)",
                 },
                 "discovery": {
