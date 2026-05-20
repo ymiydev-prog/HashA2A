@@ -251,7 +251,7 @@ def create_app() -> FastAPI:
                     "list_providers", "get_market_data", "check_request",
                     "get_agent_profile", "analyze_market", "deep_research",
                     "aggregate_market_data", "verified_feed", "get_price",
-                    "scan_arbitrage",
+                    "scan_arbitrage", "list_assets", "get_asset_profile",
                     "kit_setup", "kit_account_balance", "kit_transfer_hbar",
                     "kit_create_topic", "kit_submit_message", "kit_get_account_info",
                 ],

@@ -32,9 +32,9 @@ def create_mcp_server() -> FastMCP:
         name="HashA2A",
         instructions=(
             "Agent-to-Agent Intelligence Layer. "
-            "16 tools: prediction market data, multi-oracle price feeds, "
-            "cross-oracle arbitrage scanning, deep research with web+news+AI, "
-            "Hedera Agent Kit enterprise plugin (account/topic/tx management). "
+            "18 tools: multi-oracle price feeds, arbitrage scanning, asset profiles, "
+            "deep research, Hedera Agent Kit enterprise plugin. "
+            "36 assets across crypto (21), equities (7), commodities (2), forex (6). "
             "Pay per query via HBAR (HIP-991) or USDC (x402). "
             "Agent discovery: /.well-known/agent.json"
         ),
@@ -276,7 +276,7 @@ def create_mcp_server() -> FastMCP:
         ])
         return "\n".join(lines)
 
-    @mcp.tool(name="get_price", description="Get a verified price for any asset from MULTIPLE oracles simultaneously (Pyth + CoinGecko + DeFiLlama). Returns cross-verified price with spread detection.")
+    @mcp.tool(name="get_price", description="Get a verified price for any asset from MULTIPLE oracles. Returns JSON with prices, spread, confidence, 24h change, volume.")
     def get_price(asset: str = "BTC/USD") -> str:
         import asyncio
         loop = asyncio.new_event_loop()
@@ -288,20 +288,106 @@ def create_mcp_server() -> FastMCP:
         loop.run_until_complete(hub.close())
 
         if not prices:
-            return f"No prices available for {asset}"
+            return json.dumps({"asset": asset, "error": "No prices available"})
 
-        lines = [f"=== {asset.upper()} — Multi-Oracle Price ===", ""]
-        for p in prices:
-            lines.append(f"  {p.source_name:20s} ${p.price:>10.2f}")
-        lines.append("")
         vals = [p.price for p in prices]
         spread = max(vals) - min(vals)
         mid = sum(vals) / len(vals)
         spread_pct = (spread / mid) * 100
-        lines.append(f"  Spread: {spread_pct:.3f}%")
-        lines.append(f"  Oracles: {len(prices)}")
-        lines.append(f"  Timestamp: {prices[0].timestamp}")
+        conf = "HIGH" if spread_pct < 0.05 else "MEDIUM" if spread_pct < 0.2 else "LOW"
+
+        return json.dumps({
+            "asset": asset.upper(),
+            "oracles_consulted": len(prices),
+            "price_median": round(mid, 6),
+            "spread_pct": round(spread_pct, 4),
+            "confidence": conf,
+            "timestamp": prices[0].timestamp,
+            "sources": [p.to_dict() for p in prices],
+        }, indent=2)
+
+    @mcp.tool(name="list_assets", description="List all available assets with their oracle sources. 36 assets across crypto, equities, commodities, and forex.")
+    def list_assets() -> str:
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        from core.oracle_hub import OracleHub, PYTH_FEEDS, BINANCE_SYMBOLS, FOREX_ASSETS
+        hub = OracleHub()
+        assets = hub.all_assets
+        loop.run_until_complete(hub.close())
+
+        equities = {"AAPL/USD","MSFT/USD","NVDA/USD","GOOGL/USD","AMZN/USD","TSLA/USD","META/USD"}
+        commodities = {"XAU/USD","XAG/USD"}
+        forex = set(FOREX_ASSETS)
+        crypto = [a for a in assets if a not in equities and a not in commodities and a not in forex]
+
+        lines = ["=== Available Assets ===", ""]
+        lines.append("  Crypto")
+        for a in sorted(crypto):
+            srcs = []
+            if a in PYTH_FEEDS: srcs.append("Pyth")
+            if a in BINANCE_SYMBOLS: srcs.append("Binance")
+            lines.append(f"    {a:<12} {len(srcs)} oracles: {', '.join(srcs) if srcs else 'CoinGecko+DeFiLlama'}")
+
+        lines.append("")
+        lines.append("  Equities")
+        for a in sorted(equities):
+            lines.append(f"    {a:<12} 1 oracle: Pyth")
+
+        lines.append("")
+        lines.append("  Commodities")
+        for a in sorted(commodities):
+            lines.append(f"    {a:<12} 1 oracle: Pyth")
+
+        lines.append("")
+        lines.append("  Forex")
+        for a in sorted(forex):
+            lines.append(f"    {a:<12} 1 oracle: ForexAPI")
+
+        lines.append("")
+        lines.append(f"  Total: {len(assets)} assets across 5 sources")
         return "\n".join(lines)
+
+    @mcp.tool(name="get_asset_profile", description="Get complete profile for an asset: all oracle prices, spread analysis, 24h change, volume, market cap, and confidence score.")
+    def get_asset_profile(asset: str = "HBAR/USD") -> str:
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        from core.oracle_hub import OracleHub
+        hub = OracleHub()
+        prices = loop.run_until_complete(hub.get_price(asset.upper()))
+        loop.run_until_complete(hub.close())
+
+        if not prices:
+            return json.dumps({"asset": asset, "error": "No prices available"})
+
+        vals = [p.price for p in prices]
+        spread = max(vals) - min(vals)
+        mid = sum(vals) / len(vals)
+        spread_pct = (spread / mid) * 100
+        conf = "HIGH" if spread_pct < 0.05 else "MEDIUM" if spread_pct < 0.2 else "LOW"
+
+        # Aggregate enriched data
+        changes = [p.change_24h for p in prices if p.change_24h is not None]
+        volumes = [p.volume_24h for p in prices if p.volume_24h is not None]
+        caps = [p.market_cap for p in prices if p.market_cap is not None]
+
+        return json.dumps({
+            "asset": asset.upper(),
+            "oracles_consulted": len(prices),
+            "price_median": round(mid, 6),
+            "price_min": round(min(vals), 6),
+            "price_max": round(max(vals), 6),
+            "spread_pct": round(spread_pct, 4),
+            "confidence": conf,
+            "timestamp": prices[0].timestamp,
+            "change_24h": round(sum(changes) / len(changes), 2) if changes else None,
+            "volume_24h": round(sum(volumes), 2) if volumes else None,
+            "market_cap": round(sum(caps) / len(caps), 2) if caps else None,
+            "sources": [p.to_dict() for p in prices],
+        }, indent=2)
 
     @mcp.tool(name="scan_arbitrage", description="Scan all tracked assets for price discrepancies across oracles. Returns arbitrage opportunities ranked by spread percentage.")
     def scan_arbitrage(min_spread: float = 0.01) -> str:
