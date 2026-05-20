@@ -242,9 +242,12 @@ import base64
 import json
 import time
 
+import pytest
+
 
 class TestX402HederaSignature:
     """Tests rule 4: signature validity verification."""
+    pytestmark = pytest.mark.smoke
 
     def test_rejects_no_signatures(self):
         from core.x402 import X402HederaHandler
@@ -292,6 +295,7 @@ class TestX402HederaSignature:
 
 class TestX402HederaNonce:
     """Tests rule 5: double-spend / replay attack prevention."""
+    pytestmark = pytest.mark.smoke
 
     def test_accepts_first_transaction(self):
         from core.x402 import X402HederaHandler
@@ -346,6 +350,7 @@ class TestX402HederaNonce:
 
 class TestX402HederaAsset:
     """Tests rule 6: HTS token verification."""
+    pytestmark = pytest.mark.smoke
 
     def test_skips_for_native_hbar(self):
         from core.x402 import X402HederaHandler
