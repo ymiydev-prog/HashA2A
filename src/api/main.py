@@ -14,7 +14,7 @@ from core.agent_registry import AgentRegistry
 from core.provider_registry import ProviderRegistry
 from core.consensus_logger import ConsensusLogger
 from core.auction import AuctionManager
-from api.routes import requests, providers, agent, dashboard, auctions, staking, websocket, aggregate, research, tasks, auth, a2a_rpc
+from api.routes import requests, providers, agent, dashboard, auctions, staking, websocket, aggregate, research, tasks, auth, a2a_rpc, landing
 
 
 async def _run_twitter_scheduler(scheduler, agent_registry, provider_registry):
@@ -229,6 +229,7 @@ def create_app() -> FastAPI:
     app.include_router(auctions.router, prefix="/api/v1")
     app.include_router(staking.router, prefix="/api/v1")
     app.include_router(websocket.router)
+    app.include_router(landing.router)
     app.include_router(dashboard.router)
     app.include_router(aggregate.router)
     app.include_router(research.router)
