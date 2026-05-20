@@ -1,0 +1,26 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="brand-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+  <!-- glow -->
+  <rect x="18" y="18" width="84" height="84" rx="16" transform="rotate(45 60 60)" fill="url(#brand-glow)"/>
+  <!-- main diamond -->
+  <rect x="24" y="24" width="72" height="72" rx="12" transform="rotate(45 60 60)" fill="url(#brand)"/>
+  <!-- inner highlight -->
+  <rect x="30" y="30" width="60" height="60" rx="10" transform="rotate(45 60 60)" fill="none" stroke="white" stroke-opacity="0.15" stroke-width="1.5"/>
+  <!-- A2A dots -->
+  <circle cx="48" cy="48" r="4" fill="white" fill-opacity="0.9"/>
+  <circle cx="72" cy="72" r="4" fill="white" fill-opacity="0.9"/>
+  <line x1="48" y1="48" x2="72" y2="72" stroke="white" stroke-opacity="0.5" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- small node -->
+  <circle cx="60" cy="60" r="2" fill="white" fill-opacity="0.4"/>
+  <line x1="48" y1="48" x2="60" y2="60" stroke="white" stroke-opacity="0.3" stroke-width="1" stroke-linecap="round"/>
+  <line x1="60" y1="60" x2="72" y2="72" stroke="white" stroke-opacity="0.3" stroke-width="1" stroke-linecap="round"/>
+</svg>
