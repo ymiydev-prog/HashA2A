@@ -4,7 +4,7 @@
 
 ```bash
 python runner.py                           # sets PYTHONPATH=src; port 8080
-PYTHONPATH=src python -m pytest tests/ -v  # 38 tests
+PYTHONPATH=src python -m pytest tests/ -v  # 105 tests
 ```
 
 All commands must run from project root. Never run without `runner.py` or `PYTHONPATH=src` — imports break.
@@ -71,7 +71,7 @@ Import note: LangChain ≥1.2 moved message classes to `langchain_core.messages`
 
 ## MCP
 
-5 tools: `list_providers`, `get_market_data`, `check_request`, `get_agent_profile`, `analyze_market`.
+18 tools: `get_price`, `list_assets`, `get_asset_profile`, `scan_arbitrage`, `verified_feed`, `list_providers`, `get_market_data`, `check_request`, `get_agent_profile`, `analyze_market`, `deep_research`, `aggregate_market_data`, `kit_setup`, `kit_account_balance`, `kit_transfer_hbar`, `kit_create_topic`, `kit_submit_message`, `kit_get_account_info`.
 
 Streamable HTTP protocol requires `Accept: application/json, text/event-stream` header. After `initialize`, subsequent requests need `Mcp-Session-Id` header. Debug with:
 
@@ -81,4 +81,55 @@ npx -y @modelcontextprotocol/inspector http://localhost:8080/mcp
 
 ## README
 
-The README is partially outdated — lists "Coming Soon" for features already implemented (HIP-991, Kalshi, quality eval, auctions, staking, MCP, x402). Don't use it as a source of truth for what's done vs pending.
+READme está actualizado y refleja el estado real del proyecto (mainnet, 18 tools, 36 assets, 5 oracles, pricing dinámico, calidad, subastas, staking).
+
+## Package npm
+
+`packages/mcp-client/` — CLI tool `hasha2a-mcp-client` (publicado en npm registry).
+
+```bash
+npx hasha2a-mcp-client add
+```
+
+## Universal SKILL
+
+`skills/hasha2a/SKILL.md` — formato estándar `skills.sh` que enseña a cualquier agente (Claude Code, Gemini CLI, Codex CLI) cómo usar HashA2A.
+
+```bash
+npx skills add ymiydev-prog/HashA2A --skill hasha2a -g -y
+```
+
+## AI Prompts
+
+`docs/ai-prompts.md` — 15 prompts copia-pega para todos los 18 MCP tools, API REST, payment flows y operaciones Hedera.
+
+## Circle Agent Wallet Integration
+
+`X402CircleHandler` en `src/core/x402.py` — extiende `X402Handler` con Circle Gateway como facilitator.
+
+- **Manifiesto**: `/api/v1/feeds/x402/manifest` incluye `rails.circle_gateway`
+- **Skill para agentes**: `/.well-known/circle/skill.md`
+- **x402.json actualizado**: incluye `circle_gateway` block
+
+Los agentes Circle se autoconfiguran con:
+```bash
+curl -sL https://agents.circle.com/skills/setup.md | bash
+npx hasha2a-mcp-client add
+```
+
+## Checklist — Discoverability (pendiente)
+
+- [x] **Publicar npm package**: `hasha2a-mcp-client@0.1.0` en npm registry
+- [x] **Plugin n8n**: `packages/n8n-nodes-hasha2a/` — 6 operaciones, compila y testea OK
+- [x] **Publicar n8n node**: `hasha2a-n8n-nodes@0.1.0` en npm registry
+- [x] **Circle Gateway**: `X402CircleHandler` + skill + manifest
+- [ ] **Listar HashA2A en Circle Marketplace**: ir a `agents.circle.com/for-sellers` → registrar como seller
+- [ ] **Registrar en smithery.ai**: ir a https://smithery.ai/new → pegar URL pública del MCP
+- [ ] **Registrar en mcp.so**: ir a https://mcp.so → submit server info
+- [x] **OpenAPI spec**: `/openapi.json` generado automáticamente por FastAPI (57 paths, 15 schemas), copia estática en `static/openapi.json`
+- [ ] **Subir a APIS.guru**: hacer PR en https://github.com/APIs-guru/openapi-directory (requiere URL pública)
+- [x] **Artículo Dev.to/Medium**: draft en `docs/devto-article.md`
+- [ ] **Publicar artículo**: copiar/pegar `docs/devto-article.md` en Dev.to o Medium
+- [x] **Universal SKILL**: `skills/hasha2a/SKILL.md` + `skills/hasha2a/references/core.md` — `npx skills add ymiydev-prog/HashA2A --skill hasha2a`
+- [x] **AI Prompts**: `docs/ai-prompts.md` — 15 prompts para agentes
+- [ ] **Deploy VPS**: Hostinger + Traefik + Docker stack con URL pública
