@@ -11,6 +11,14 @@ services:
     restart: unless-stopped
     networks:
       - n8n_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=n8n_default"
+      - "traefik.http.routers.hasha2a.rule=Host(`hasha2a.com`)"
+      - "traefik.http.routers.hasha2a.entrypoints=websecure"
+      - "traefik.http.routers.hasha2a.tls=true"
+      - "traefik.http.routers.hasha2a.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.hasha2a.loadbalancer.server.port=8080"
 
 networks:
   n8n_default:
