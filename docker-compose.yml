@@ -10,15 +10,10 @@ services:
       - hasha2a_data:/data/cache
     restart: unless-stopped
     networks:
-      - n8n-traefik
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hasha2a.rule=Host(`hasha2a.com`)"
-      - "traefik.http.routers.hasha2a.tls.certresolver=mytlschallenge"
-      - "traefik.http.services.hasha2a.loadbalancer.server.port=8080"
+      - n8n_default
 
 networks:
-  n8n-traefik:
+  n8n_default:
     external: true
 
 volumes:
