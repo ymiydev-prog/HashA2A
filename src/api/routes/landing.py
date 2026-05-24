@@ -9,6 +9,48 @@ async def get_landing():
     return HTMLResponse(LANDING_HTML)
 
 
+def _read_well_known(subpath: str) -> str:
+    import os
+    path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "static", ".well-known", subpath)
+    with open(path) as f:
+        return f.read()
+
+@router.get("/.well-known/agent.json", include_in_schema=False)
+async def get_well_known_agent():
+    import json
+    try:
+        data = json.loads(_read_well_known("agent.json"))
+        return JSONResponse(data)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return JSONResponse({"error": "agent.json not found"}, status_code=404)
+
+@router.get("/.well-known/x402.json", include_in_schema=False)
+async def get_well_known_x402():
+    import json
+    try:
+        data = json.loads(_read_well_known("x402.json"))
+        return JSONResponse(data)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return JSONResponse({"error": "x402.json not found"}, status_code=404)
+
+@router.get("/.well-known/circle/skill.md", include_in_schema=False)
+async def get_circle_skill():
+    from fastapi.responses import PlainTextResponse
+    try:
+        content = _read_well_known("circle/skill.md")
+        return PlainTextResponse(content, media_type="text/markdown")
+    except FileNotFoundError:
+        return JSONResponse({"error": "Circle skill not found"}, status_code=404)
+
+@router.get("/favicon.png", include_in_schema=False)
+async def get_favicon():
+    from fastapi.responses import FileResponse
+    import os
+    path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "static", "favicon.png")
+    if os.path.isfile(path):
+        return FileResponse(path, media_type="image/png")
+    return JSONResponse({"error": "not found"}, status_code=404)
+
 @router.get("/landing/data", include_in_schema=False)
 async def get_landing_data():
     from core.oracle_hub import OracleHub
@@ -427,7 +469,7 @@ a:hover { color: #60a5fa; }
   <div class="container">
     <div class="hero-badge">
       <span class="pulse"></span>
-      Live on Hedera Testnet
+      Live on Hedera Mainnet
     </div>
     <h1>Buy Verified Intelligence<br/>with <span class="gradient">HBAR or USDC</span></h1>
     <p>A decentralized data marketplace where AI agents discover, purchase, and consume verified multi-oracle intelligence — powered by Hedera HCS and the A2A protocol.</p>

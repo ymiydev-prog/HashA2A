@@ -1,0 +1,53 @@
+{
+  "name": "hasha2a-n8n-nodes",
+  "version": "0.1.0",
+  "description": "n8n community node for HashA2A — multi-oracle prices, arbitrage, prediction markets, and deep research on Hedera",
+  "keywords": [
+    "hasha2a",
+    "n8n",
+    "n8n-community-node",
+    "n8n-node",
+    "hedera",
+    "oracle",
+    "micropayments",
+    "defi",
+    "prediction-markets"
+  ],
+  "homepage": "https://github.com/ymiydev-prog/HashA2A#readme",
+  "bugs": {
+    "url": "https://github.com/ymiydev-prog/HashA2A/issues"
+  },
+  "license": "MIT",
+  "author": "HashA2A",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ymiydev-prog/HashA2A.git",
+    "directory": "packages/n8n-nodes-hasha2a"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "credentials/HashA2aApi.credentials.js"
+    ],
+    "nodes": [
+      "nodes/HashA2aNode.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.41",
+    "n8n-workflow": "^2.16.0",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,46 @@
+<template id="scene-cta-template">
+  <div id="scene-cta" data-composition-id="scene-cta" data-width="1920" data-height="1080" data-duration="4">
+    <div class="canvas">
+      <div class="bg-grid"></div>
+      <div class="cta-content">
+        <div class="cta-icon">
+          <svg viewBox="0 0 80 80" width="56" height="56">
+            <rect x="4" y="4" width="72" height="72" rx="16" fill="none" stroke="#3b82f6" stroke-width="3"/>
+            <path d="M28 40 L40 28 L52 40 L40 52Z" fill="#3b82f6" opacity="0.9"/>
+            <circle cx="40" cy="40" r="8" fill="#8b5cf6"/>
+          </svg>
+        </div>
+        <div class="cta-title">Start Building Today</div>
+        <div class="cta-sub">MCP · x402 · A2A Protocol · Open Source</div>
+        <div class="cta-btn-wrap">
+          <div class="cta-btn">github.com/ymiydev-prog/HashA2A</div>
+        </div>
+        <div class="cta-tags">#Hedera #AI #MCP #x402 #A2A</div>
+      </div>
+    </div>
+    <style>
+      #scene-cta { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; }
+      #scene-cta .canvas{width:1920px;height:1080px;background:radial-gradient(ellipse at 50% 45%,#0f0f2a 0%,#0a0a1a 100%);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+      #scene-cta .bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(59,130,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.04) 1px,transparent 1px);background-size:60px 60px;opacity:0}
+      #scene-cta .cta-content{text-align:center;z-index:2}
+      #scene-cta .cta-icon{opacity:0;transform:scale(0.4);margin-bottom:18px}
+      #scene-cta .cta-title{font-size:42px;font-weight:800;letter-spacing:-0.02em;opacity:0;transform:translateY(20px)}
+      #scene-cta .cta-sub{font-size:17px;color:#7b8cae;margin-top:10px;opacity:0;transform:translateY(10px)}
+      #scene-cta .cta-btn-wrap{margin-top:28px;opacity:0;transform:translateY(10px)}
+      #scene-cta .cta-btn{display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:12px;font-size:17px;font-weight:600;color:white;letter-spacing:-0.01em}
+      #scene-cta .cta-tags{font-size:13px;color:#475569;margin-top:20px;opacity:0;letter-spacing:0.03em}
+    </style>
+    <script>
+      (function(){const tl=gsap.timeline({paused:true});const id='#scene-cta';
+        tl.to(id+' .bg-grid',{opacity:1,duration:0.5,ease:'power2.out'},0);
+        tl.to(id+' .cta-icon',{opacity:1,scale:1,duration:0.5,ease:'back.out(1.7)'},0.2);
+        tl.to(id+' .cta-title',{opacity:1,y:0,duration:0.45,ease:'power3.out'},0.6);
+        tl.to(id+' .cta-sub',{opacity:1,y:0,duration:0.35,ease:'power3.out'},1.0);
+        tl.to(id+' .cta-btn-wrap',{opacity:1,y:0,duration:0.4,ease:'power3.out'},1.4);
+        tl.to(id+' .cta-btn',{scale:1.04,duration:0.5,yoyo:true,repeat:1,ease:'sine.inOut'},2.0);
+        tl.to(id+' .cta-tags',{opacity:1,duration:0.35,ease:'power3.out'},2.0);
+        window.__timelines=window.__timelines||{};window.__timelines["scene-cta"]=tl;
+      })();
+    </script>
+  </div>
+</template>

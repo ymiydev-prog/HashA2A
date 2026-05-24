@@ -1,0 +1,57 @@
+<template id="scene-intro-template">
+  <div id="scene-intro" data-composition-id="scene-intro" data-width="1920" data-height="1080" data-duration="4.5">
+    <div class="canvas">
+      <div class="bg-glow" data-layout-allow-overflow></div>
+      <div class="grid-overlay"></div>
+      <div class="content">
+        <div class="logo-ring"></div>
+        <div class="logo-icon">
+          <svg viewBox="0 0 80 80" width="68" height="68">
+            <rect x="4" y="4" width="72" height="72" rx="16" fill="none" stroke="#3b82f6" stroke-width="3"/>
+            <path d="M28 40 L40 28 L52 40 L40 52Z" fill="#3b82f6" opacity="0.9"/>
+            <circle cx="40" cy="40" r="8" fill="#8b5cf6"/>
+          </svg>
+        </div>
+        <div class="title-line"><span class="t-hash">Hash</span><span class="t-a2a">A2A</span></div>
+        <div class="tagline">Verified Intelligence for AI Agents</div>
+        <div class="accent-line"></div>
+      </div>
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+    </div>
+    <style>
+      #scene-intro { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; }
+      #scene-intro .canvas{width:1920px;height:1080px;background:radial-gradient(ellipse at 50% 40%,#0f0f2a 0%,#0a0a1a 100%);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+      #scene-intro .bg-glow{position:absolute;width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,0.1),transparent 60%);top:30%;left:50%;transform:translate(-50%,-50%)}
+      #scene-intro .grid-overlay{position:absolute;inset:0;background-image:linear-gradient(rgba(59,130,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.04) 1px,transparent 1px);background-size:50px 50px;opacity:0}
+      #scene-intro .content{text-align:center;z-index:2}
+      #scene-intro .logo-ring{position:absolute;width:180px;height:180px;border-radius:50%;border:1px solid rgba(59,130,246,0.2);top:50%;left:50%;transform:translate(-50%,-50%) scale(0);pointer-events:none}
+      #scene-intro .logo-icon{opacity:0;transform:scale(0.3) rotate(-20deg);margin-bottom:14px}
+      #scene-intro .title-line{font-size:76px;font-weight:900;letter-spacing:-0.04em;opacity:0;transform:translateY(24px)}
+      #scene-intro .t-hash{color:white}
+      #scene-intro .t-a2a{color:#8b5cf6}
+      #scene-intro .tagline{font-size:20px;color:#7b8cae;margin-top:12px;opacity:0;transform:translateY(12px);letter-spacing:0.08em;font-weight:400}
+      #scene-intro .accent-line{width:0;height:2px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);margin:20px auto 0;border-radius:2px;opacity:0}
+      #scene-intro .orb{position:absolute;border-radius:50%;pointer-events:none}
+      #scene-intro .orb-1{width:280px;height:280px;background:radial-gradient(circle,rgba(59,130,246,0.08),transparent);top:12%;right:18%;opacity:0}
+      #scene-intro .orb-2{width:200px;height:200px;background:radial-gradient(circle,rgba(139,92,246,0.06),transparent);bottom:22%;left:12%;opacity:0}
+    </style>
+    <script>
+      (function(){const tl=gsap.timeline({paused:true});const id='#scene-intro';
+        tl.to(id+' .grid-overlay',{opacity:1,duration:0.7,ease:'power2.out'},0);
+        tl.to(id+' .logo-icon',{opacity:1,scale:1,rotation:0,duration:0.6,ease:'back.out(1.7)'},0.3);
+        tl.to(id+' .logo-ring',{scale:1.6,opacity:0.4,duration:0.9,ease:'power2.out'},0.3);
+        tl.to(id+' .logo-ring',{opacity:0,scale:2.0,duration:0.4,ease:'power2.in'},1.0);
+        tl.to(id+' .title-line',{opacity:1,y:0,duration:0.5,ease:'power3.out'},1.0);
+        tl.to(id+' .accent-line',{width:80,opacity:1,duration:0.4,ease:'power3.out'},1.5);
+        tl.to(id+' .tagline',{opacity:1,y:0,duration:0.4,ease:'power3.out'},1.7);
+        tl.to(id+' .orb-1',{opacity:1,duration:1.0,ease:'power2.out'},0.5);
+        tl.to(id+' .orb-2',{opacity:1,duration:1.2,ease:'power2.out'},0.8);
+        tl.to(id+' .orb-1',{y:-40,duration:2.5,ease:'sine.inOut'},0.5);
+        tl.to(id+' .orb-2',{y:30,duration:2.8,ease:'sine.inOut'},0.8);
+        tl.to(id+' .content',{opacity:0,y:-20,duration:0.3,ease:'power2.in'},4.1);
+        window.__timelines=window.__timelines||{};window.__timelines["scene-intro"]=tl;
+      })();
+    </script>
+  </div>
+</template>

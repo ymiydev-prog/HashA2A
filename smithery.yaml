@@ -1,0 +1,26 @@
+# Smithery.ai configuration for HashA2A MCP Server
+# https://smithery.ai/docs/config
+
+build:
+  dockerfile: Dockerfile
+  context: .
+
+startCommand:
+  type: http
+  port: 8080
+  healthEndpoint: /mcp/
+
+description:
+  en: |
+    HashA2A is an Agent-to-Agent Intelligence Layer on Hedera.
+    AI agents can buy verified multi-oracle prices, arbitrage signals,
+    prediction market data, and deep research via HBAR (HIP-991) or USDC (x402).
+    
+    18 MCP tools including: get_price, list_assets, scan_arbitrage,
+    get_asset_profile, deep_research, kit_account_balance, kit_transfer_hbar, kit_create_topic, kit_submit_message, kit_get_account_info
+
+deploy:
+  auto:
+    - type: docker
+      image: hasha2a
+      port: 8080

@@ -1,0 +1,39 @@
+{
+  "name": "hasha2a-mcp-client",
+  "version": "0.1.0",
+  "description": "One-command MCP client setup for HashA2A — the Agent-to-Agent Intelligence Layer on Hedera",
+  "keywords": [
+    "hasha2a",
+    "mcp",
+    "model-context-protocol",
+    "hedera",
+    "oracle",
+    "a2a",
+    "agent-to-agent",
+    "claude",
+    "cursor",
+    "windsurf",
+    "hbart",
+    "hcs",
+    "micropayments",
+    "defi"
+  ],
+  "homepage": "https://github.com/ymiydev-prog/HashA2A#readme",
+  "bugs": {
+    "url": "https://github.com/ymiydev-prog/HashA2A/issues"
+  },
+  "license": "MIT",
+  "author": "HashA2A (https://hasha2a.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ymiydev-prog/HashA2A.git",
+    "directory": "packages/mcp-client"
+  },
+  "type": "module",
+  "bin": {
+    "hasha2a": "bin/cli.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

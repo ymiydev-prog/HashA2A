@@ -23,7 +23,7 @@
   "interfaces": [
     {
       "type": "a2a",
-      "url": "http://localhost:8080/api/v1/a2a/rpc",
+      "url": "https://hasha2a.com/api/v1/a2a/rpc",
       "protocol_binding": "JSONRPC",
       "protocol_version": "0.3",
       "description": "A2A JSON-RPC 2.0 endpoint for task management. Supports message/send, tasks/get, tasks/list, tasks/cancel.",
@@ -31,7 +31,7 @@
     },
     {
       "type": "a2a-stream",
-      "url": "http://localhost:8080/api/v1/a2a/rpc/stream",
+      "url": "https://hasha2a.com/api/v1/a2a/rpc/stream",
       "protocol_binding": "JSONRPC+SSE",
       "protocol_version": "0.3",
       "description": "A2A JSON-RPC 2.0 with SSE streaming. Supports message/stream for real-time task progress.",
@@ -40,7 +40,7 @@
     },
     {
       "type": "mcp",
-      "url": "http://localhost:8080/mcp",
+      "url": "https://hasha2a.com/mcp",
       "protocol_binding": "MCP",
       "protocol_version": "1.0",
       "description": "MCP Streamable HTTP server with 10 tools"
@@ -65,29 +65,29 @@
 
   "endpoints": {
     "task_submission": {
-      "url": "http://localhost:8080/api/v1/tasks",
+      "url": "https://hasha2a.com/api/v1/tasks",
       "method": "POST",
       "contentType": "application/json"
     },
     "task_status": {
-      "url": "http://localhost:8080/api/v1/tasks/{task_id}",
+      "url": "https://hasha2a.com/api/v1/tasks/{task_id}",
       "method": "GET"
     },
     "health": {
-      "url": "http://localhost:8080/api/v1/agent/health",
+      "url": "https://hasha2a.com/api/v1/agent/health",
       "method": "GET"
     },
     "profile": {
-      "url": "http://localhost:8080/api/v1/agent/profile",
+      "url": "https://hasha2a.com/api/v1/agent/profile",
       "method": "GET"
     },
     "mcp": {
-      "url": "http://localhost:8080/mcp",
+      "url": "https://hasha2a.com/mcp",
       "method": "POST",
       "protocol": "MCP Streamable HTTP"
     },
     "token": {
-      "url": "http://localhost:8080/api/v1/auth/token",
+      "url": "https://hasha2a.com/api/v1/auth/token",
       "method": "POST",
       "description": "Request ephemeral JWT token for authenticated requests"
     }
@@ -96,7 +96,7 @@
   "payment": {
     "protocols": ["x402", "HIP-991", "AP2"],
     "currencies": ["USDC", "HBAR"],
-    "networks": ["eip155:8453", "hedera:testnet"],
+    "networks": ["eip155:8453", "hedera:mainnet"],
     "mandates": {
       "supported": true,
       "types": ["cart", "intent"],
@@ -115,9 +115,9 @@
     "protocols": ["mcp", "a2a", "rest"],
     "endpoints": {
       "agent_card": "/.well-known/agent.json",
-      "mcp": "http://localhost:8080/mcp",
-      "health": "http://localhost:8080/api/v1/agent/health",
-      "profile": "http://localhost:8080/api/v1/agent/profile"
+      "mcp": "https://hasha2a.com/mcp",
+      "health": "https://hasha2a.com/api/v1/agent/health",
+      "profile": "https://hasha2a.com/api/v1/agent/profile"
     },
     "hol_registry_topic": "0.0.29640405"
   },

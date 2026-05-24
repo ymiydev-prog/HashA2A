@@ -1,0 +1,17 @@
+.env
+.env.*
+.git
+.gitignore
+__pycache__
+*.pyc
+.antigravitycli/
+hash2a-promo-15s/
+renders/
+.gitattributes
+AGENTS.md
+FUTURE_ROADMAP.md
+Dockerfile
+docker-compose.yml
+CONTENT_PLAN.md
+BOUNTY.md
+README.md

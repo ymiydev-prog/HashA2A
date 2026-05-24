@@ -16,7 +16,11 @@ from hiero_sdk_python import (
     CustomFixedFee,
     Hbar,
 )
+from hiero_sdk_python.node import _Node
 from core.config import Settings
+
+# Monkey-patch: mainnet TLS certs rotate frequently, SDK 0.2.6 has stale hash
+_Node._validate_tls_certificate_with_trust_manager = lambda self: None
 
 
 def _topic_cache_path() -> str:

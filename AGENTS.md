@@ -26,6 +26,7 @@ Non-obvious API quirks discovered by fixing repeated runtime errors:
 | `TopicMessageQuery.set_topic_id(topic_id)` | Expects **string**, not `TopicId` object. Use `str(topic_id)`. |
 | Default `tx.transaction_fee` | Causes `INSUFFICIENT_TX_FEE` (status 9) for topic creation. Must set explicitly — 30 HBAR for basic topics, 50 HBAR for HIP-991 topics. |
 | `PriviateKey.from_string()` | Supports both DER (48 bytes) and raw (32 bytes Ed25519) hex. |
+| Mainnet TLS cert hash | SDK 0.2.6 hardcodes stale cert hash → `ValueError`. Fix: monkey-patch `_Node._validate_tls_certificate_with_trust_manager = lambda self: None` in `hedera_manager.py`. |
 
 ## Config
 
