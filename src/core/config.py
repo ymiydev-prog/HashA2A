@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     x402_hedera_facilitator: str = ""
     x402_hedera_network: str = "hedera:testnet"
 
+    dashboard_password: str = ""
+    """Optional password to protect /dashboard routes. Empty = public access."""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

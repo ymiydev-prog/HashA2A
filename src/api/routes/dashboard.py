@@ -1,6 +1,9 @@
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import APIRouter, Cookie, Request, Form
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.exceptions import HTTPException
 import json
+import hashlib
+import os
 
 router = APIRouter(tags=["dashboard-admin"])
 
@@ -549,13 +552,117 @@ def _collect_dashboard_data(request: Request) -> dict:
     }
 
 
+LOGIN_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HashA2A — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #06080f; color: #f0f2f7;
+  font-family: 'Inter', sans-serif; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+}
+.container { max-width: 400px; width: 100%; padding: 24px; }
+.card {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px; padding: 40px 32px; text-align: center;
+}
+.logo { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+.logo .hash { color: #3b82f6; }
+.logo .a2a { background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+h1 { font-size: 20px; font-weight: 700; margin: 24px 0 8px; }
+p { font-size: 14px; color: #8b92a8; margin-bottom: 24px; }
+input {
+  width: 100%; padding: 12px 16px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03);
+  color: #f0f2f7; font-size: 15px; font-family: inherit;
+  outline: none; transition: border-color 0.2s;
+}
+input:focus { border-color: #3b82f6; }
+button {
+  width: 100%; padding: 12px; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white;
+  font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 16px;
+  transition: opacity 0.2s;
+}
+button:hover { opacity: 0.9; }
+.error { color: #ef4444; font-size: 13px; margin-top: 12px; display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="logo"><span class="hash">Hash</span><span class="a2a">A2A</span></div>
+    <h1>Dashboard Access</h1>
+    <p>Enter the dashboard password to continue.</p>
+    <form id="login-form">
+      <input type="password" id="password" placeholder="Password" autofocus>
+      <button type="submit">Unlock Dashboard</button>
+      <div class="error" id="error-msg">Incorrect password</div>
+    </form>
+  </div>
+</div>
+<script>
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const pw = document.getElementById('password').value;
+  const resp = await fetch('/dashboard/auth', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({password: pw}),
+  });
+  if (resp.ok) {
+    window.location.href = '/dashboard';
+  } else {
+    document.getElementById('error-msg').style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>"""
+
+
+def _check_dash_auth(request: Request, dash_token: str | None = None):
+    from core.config import Settings
+    settings = Settings()
+    if not settings.dashboard_password:
+        return
+    if dash_token and dash_token == settings.dashboard_password:
+        return
+    raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+@router.get("/dashboard/login", response_class=HTMLResponse, include_in_schema=False)
+async def get_dashboard_login():
+    return HTMLResponse(LOGIN_HTML)
+
+
+@router.post("/dashboard/auth", include_in_schema=False)
+async def post_dashboard_auth(data: dict):
+    from core.config import Settings
+    settings = Settings()
+    if not settings.dashboard_password:
+        return JSONResponse({"ok": True})
+    pw = data.get("password", "")
+    if pw == settings.dashboard_password:
+        resp = JSONResponse({"ok": True})
+        resp.set_cookie(key="dash_token", value=pw, httponly=True, max_age=86400, samesite="lax")
+        return resp
+    raise HTTPException(status_code=403, detail="Incorrect password")
+
+
 @router.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
-async def get_dashboard():
+async def get_dashboard(request: Request, dash_token: str | None = Cookie(None)):
+    _check_dash_auth(request, dash_token)
     return HTMLResponse(DASHBOARD_HTML)
 
 
 @router.get("/dashboard/data", include_in_schema=False)
-async def get_dashboard_data(request: Request):
+async def get_dashboard_data(request: Request, dash_token: str | None = Cookie(None)):
+    _check_dash_auth(request, dash_token)
     try:
         data = _collect_dashboard_data(request)
         # Add A2A task stats
@@ -577,12 +684,14 @@ async def get_dashboard_data(request: Request):
 
 
 @router.get("/dashboard/tasks", response_class=HTMLResponse, include_in_schema=False)
-async def get_tasks_dashboard():
+async def get_tasks_dashboard(request: Request, dash_token: str | None = Cookie(None)):
+    _check_dash_auth(request, dash_token)
     return HTMLResponse(TASKS_HTML)
 
 
 @router.get("/dashboard/tasks/data", include_in_schema=False)
-async def get_tasks_data():
+async def get_tasks_data(request: Request, dash_token: str | None = Cookie(None)):
+    _check_dash_auth(request, dash_token)
     from api.routes.tasks import get_mgr, get_ctx
     mgr = get_mgr()
     ctx = get_ctx()
@@ -601,12 +710,14 @@ async def get_tasks_data():
 
 
 @router.get("/dashboard/oracles", response_class=HTMLResponse, include_in_schema=False)
-async def get_oracles_dashboard():
+async def get_oracles_dashboard(request: Request, dash_token: str | None = Cookie(None)):
+    _check_dash_auth(request, dash_token)
     return HTMLResponse(ORACLE_HTML)
 
 
 @router.get("/dashboard/oracles/data", include_in_schema=False)
-async def get_oracles_data():
+async def get_oracles_data(request: Request, dash_token: str | None = Cookie(None)):
+    _check_dash_auth(request, dash_token)
     from core.oracle_hub import OracleHub
     hub = OracleHub()
     try:
