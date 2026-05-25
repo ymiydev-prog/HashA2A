@@ -521,11 +521,23 @@ a:hover { color: #60a5fa; }
 <nav class="nav">
   <div class="nav-inner">
     <a href="/" class="nav-logo" style="display:flex;align-items:center;gap:10px;">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
-        <rect x="5" y="5" width="18" height="18" rx="4" transform="rotate(45 14 14)" fill="url(#lg-l)"/>
-        <circle cx="11" cy="11" r="1.2" fill="white" fill-opacity="0.9"/>
-        <circle cx="17" cy="17" r="1.2" fill="white" fill-opacity="0.9"/>
-        <defs><linearGradient id="lg-l" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
+      <svg width="28" height="28" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <polygon points="30,4 52,16 52,40 30,52 8,40 8,16" fill="none" stroke="url(#lg-hex)" stroke-width="3" stroke-linejoin="round"/>
+        <polygon points="30,14 44,22 44,36 30,44 16,36 16,22" fill="url(#lg-hex)" opacity="0.12"/>
+        <circle cx="30" cy="14" r="3.5" fill="#3b82f6"/>
+        <circle cx="44" cy="22" r="3.5" fill="#6366f1"/>
+        <circle cx="44" cy="36" r="3.5" fill="#8b5cf6"/>
+        <circle cx="30" cy="44" r="3.5" fill="#06b6d4"/>
+        <circle cx="16" cy="36" r="3.5" fill="#3b82f6"/>
+        <circle cx="16" cy="22" r="3.5" fill="#6366f1"/>
+        <circle cx="30" cy="28" r="4.5" fill="white" opacity="0.9"/>
+        <line x1="30" y1="14" x2="30" y2="23.5" stroke="white" stroke-opacity="0.35" stroke-width="1.5"/>
+        <line x1="44" y1="22" x2="34" y2="26" stroke="white" stroke-opacity="0.35" stroke-width="1.5"/>
+        <line x1="44" y1="36" x2="34" y2="30" stroke="white" stroke-opacity="0.35" stroke-width="1.5"/>
+        <line x1="30" y1="44" x2="30" y2="32.5" stroke="white" stroke-opacity="0.35" stroke-width="1.5"/>
+        <line x1="16" y1="36" x2="26" y2="30" stroke="white" stroke-opacity="0.35" stroke-width="1.5"/>
+        <line x1="16" y1="22" x2="26" y2="26" stroke="white" stroke-opacity="0.35" stroke-width="1.5"/>
+        <defs><linearGradient id="lg-hex" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
       </svg>
       <span class="hash">Hash</span><span class="a2a">A2A</span>
       <span class="dot"></span>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" role="img" aria-labelledby="c4h-title c4h-desc">
+  <title id="c4h-title">HashA2A Logo — Concept 4 Horizontal</title>
+  <desc id="c4h-desc">Refined diamond mark with HashA2A wordmark</desc>
+  <defs>
+    <linearGradient id="c4-main" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="50%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="c4-inner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <filter id="c4-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <radialGradient id="c4-bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.05"/>
+    </radialGradient>
+  </defs>
+  <g id="icon">
+    <rect x="6" y="6" width="48" height="48" rx="10" transform="rotate(45 30 30)" fill="url(#c4-bg)"/>
+    <rect x="10" y="10" width="40" height="40" rx="8" transform="rotate(45 30 30)" fill="url(#c4-main)" filter="url(#c4-glow)"/>
+    <rect x="14" y="14" width="32" height="32" rx="6" transform="rotate(45 30 30)" fill="none" stroke="white" stroke-opacity="0.2" stroke-width="1"/>
+    <circle cx="22" cy="22" r="3.5" fill="white" fill-opacity="0.95"/>
+    <circle cx="38" cy="38" r="3.5" fill="white" fill-opacity="0.95"/>
+    <circle cx="30" cy="30" r="2" fill="#06b6d4" fill-opacity="0.8"/>
+    <line x1="22" y1="22" x2="30" y2="30" stroke="white" stroke-opacity="0.4" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="30" y1="30" x2="38" y2="38" stroke="white" stroke-opacity="0.4" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="22" y1="22" x2="38" y2="38" stroke="white" stroke-opacity="0.15" stroke-width="1" stroke-linecap="round" stroke-dasharray="2 2"/>
+  </g>
+  <g id="wordmark">
+    <text x="68" y="36" font-family="'Inter', -apple-system, sans-serif" font-size="22" font-weight="800" letter-spacing="-0.02em">
+      <tspan fill="#3b82f6">Hash</tspan><tspan fill="#8b5cf6">A2A</tspan>
+    </text>
+  </g>
+</svg>

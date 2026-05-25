@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" role="img" aria-labelledby="c1i-title c1i-desc">
+  <title id="c1i-title">HashA2A Icon — Concept 1</title>
+  <desc id="c1i-desc">Hexagonal network icon only</desc>
+  <defs>
+    <linearGradient id="c1i-brand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <polygon points="30,4 52,16 52,40 30,52 8,40 8,16" fill="none" stroke="url(#c1i-brand)" stroke-width="2.5" stroke-linejoin="round"/>
+  <polygon points="30,14 44,22 44,36 30,44 16,36 16,22" fill="url(#c1i-brand)" opacity="0.12"/>
+  <circle cx="30" cy="14" r="3" fill="#3b82f6"/>
+  <circle cx="44" cy="22" r="3" fill="#6366f1"/>
+  <circle cx="44" cy="36" r="3" fill="#8b5cf6"/>
+  <circle cx="30" cy="44" r="3" fill="#06b6d4"/>
+  <circle cx="16" cy="36" r="3" fill="#3b82f6"/>
+  <circle cx="16" cy="22" r="3" fill="#6366f1"/>
+  <circle cx="30" cy="28" r="4" fill="white" opacity="0.9"/>
+  <line x1="30" y1="14" x2="30" y2="24" stroke="white" stroke-opacity="0.4" stroke-width="1.5"/>
+  <line x1="44" y1="22" x2="34" y2="26" stroke="white" stroke-opacity="0.4" stroke-width="1.5"/>
+  <line x1="44" y1="36" x2="34" y2="30" stroke="white" stroke-opacity="0.4" stroke-width="1.5"/>
+  <line x1="30" y1="44" x2="30" y2="32" stroke="white" stroke-opacity="0.4" stroke-width="1.5"/>
+  <line x1="16" y1="36" x2="26" y2="30" stroke="white" stroke-opacity="0.4" stroke-width="1.5"/>
+  <line x1="16" y1="22" x2="26" y2="26" stroke="white" stroke-opacity="0.4" stroke-width="1.5"/>
+</svg>

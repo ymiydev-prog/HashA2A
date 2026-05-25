@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" role="img" aria-labelledby="c4i-title c4i-desc">
+  <title id="c4i-title">HashA2A Icon — Concept 4</title>
+  <desc id="c4i-desc">Refined diamond icon</desc>
+  <defs>
+    <linearGradient id="c4i-main" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="50%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <filter id="c4i-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <radialGradient id="c4i-bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.05"/>
+    </radialGradient>
+  </defs>
+  <rect x="6" y="6" width="48" height="48" rx="10" transform="rotate(45 30 30)" fill="url(#c4i-bg)"/>
+  <rect x="10" y="10" width="40" height="40" rx="8" transform="rotate(45 30 30)" fill="url(#c4i-main)" filter="url(#c4i-glow)"/>
+  <rect x="14" y="14" width="32" height="32" rx="6" transform="rotate(45 30 30)" fill="none" stroke="white" stroke-opacity="0.2" stroke-width="1"/>
+  <circle cx="22" cy="22" r="3.5" fill="white" fill-opacity="0.95"/>
+  <circle cx="38" cy="38" r="3.5" fill="white" fill-opacity="0.95"/>
+  <circle cx="30" cy="30" r="2" fill="#06b6d4" fill-opacity="0.8"/>
+  <line x1="22" y1="22" x2="30" y2="30" stroke="white" stroke-opacity="0.4" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="30" y1="30" x2="38" y2="38" stroke="white" stroke-opacity="0.4" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="22" y1="22" x2="38" y2="38" stroke="white" stroke-opacity="0.15" stroke-width="1" stroke-linecap="round" stroke-dasharray="2 2"/>
+</svg>

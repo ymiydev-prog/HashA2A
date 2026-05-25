@@ -197,10 +197,16 @@ body {
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:16px;">
       <div class="topbar-logo" style="display:flex;align-items:center;gap:10px;">
-        <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
-          <rect x="5" y="5" width="18" height="18" rx="4" transform="rotate(45 14 14)" fill="url(#lg-d1)"/>
-          <circle cx="11" cy="11" r="1.2" fill="white" fill-opacity="0.9"/>
-          <circle cx="17" cy="17" r="1.2" fill="white" fill-opacity="0.9"/>
+        <svg width="24" height="24" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+          <polygon points="30,4 52,16 52,40 30,52 8,40 8,16" fill="none" stroke="url(#lg-d1)" stroke-width="3" stroke-linejoin="round"/>
+          <polygon points="30,14 44,22 44,36 30,44 16,36 16,22" fill="url(#lg-d1)" opacity="0.12"/>
+          <circle cx="30" cy="4" r="3.5" fill="#3b82f6"/>
+          <circle cx="52" cy="16" r="3.5" fill="#6366f1"/>
+          <circle cx="52" cy="40" r="3.5" fill="#8b5cf6"/>
+          <circle cx="30" cy="52" r="3.5" fill="#06b6d4"/>
+          <circle cx="8" cy="40" r="3.5" fill="#3b82f6"/>
+          <circle cx="8" cy="16" r="3.5" fill="#6366f1"/>
+          <circle cx="30" cy="28" r="4.5" fill="white" opacity="0.9"/>
           <defs><linearGradient id="lg-d1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
         </svg>
         <span class="hash">Hash</span><span class="a2a">A2A</span></div>
@@ -820,10 +826,16 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', system-u
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:16px;">
       <div class="topbar-logo" style="display:flex;align-items:center;gap:10px;">
-        <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
-          <rect x="5" y="5" width="18" height="18" rx="4" transform="rotate(45 14 14)" fill="url(#lg-d2)"/>
-          <circle cx="11" cy="11" r="1.2" fill="white" fill-opacity="0.9"/>
-          <circle cx="17" cy="17" r="1.2" fill="white" fill-opacity="0.9"/>
+        <svg width="24" height="24" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+          <polygon points="30,4 52,16 52,40 30,52 8,40 8,16" fill="none" stroke="url(#lg-d2)" stroke-width="3" stroke-linejoin="round"/>
+          <polygon points="30,14 44,22 44,36 30,44 16,36 16,22" fill="url(#lg-d2)" opacity="0.12"/>
+          <circle cx="30" cy="4" r="3.5" fill="#3b82f6"/>
+          <circle cx="52" cy="16" r="3.5" fill="#6366f1"/>
+          <circle cx="52" cy="40" r="3.5" fill="#8b5cf6"/>
+          <circle cx="30" cy="52" r="3.5" fill="#06b6d4"/>
+          <circle cx="8" cy="40" r="3.5" fill="#3b82f6"/>
+          <circle cx="8" cy="16" r="3.5" fill="#6366f1"/>
+          <circle cx="30" cy="28" r="4.5" fill="white" opacity="0.9"/>
           <defs><linearGradient id="lg-d2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
         </svg>
         <span class="hash">Hash</span><span class="a2a">A2A</span></div>
@@ -1002,10 +1014,16 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', system-u
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:16px;">
       <div class="topbar-logo" style="display:flex;align-items:center;gap:10px;">
-        <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
-          <rect x="5" y="5" width="18" height="18" rx="4" transform="rotate(45 14 14)" fill="url(#lg-d3)"/>
-          <circle cx="11" cy="11" r="1.2" fill="white" fill-opacity="0.9"/>
-          <circle cx="17" cy="17" r="1.2" fill="white" fill-opacity="0.9"/>
+        <svg width="24" height="24" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+          <polygon points="30,4 52,16 52,40 30,52 8,40 8,16" fill="none" stroke="url(#lg-d3)" stroke-width="3" stroke-linejoin="round"/>
+          <polygon points="30,14 44,22 44,36 30,44 16,36 16,22" fill="url(#lg-d3)" opacity="0.12"/>
+          <circle cx="30" cy="4" r="3.5" fill="#3b82f6"/>
+          <circle cx="52" cy="16" r="3.5" fill="#6366f1"/>
+          <circle cx="52" cy="40" r="3.5" fill="#8b5cf6"/>
+          <circle cx="30" cy="52" r="3.5" fill="#06b6d4"/>
+          <circle cx="8" cy="40" r="3.5" fill="#3b82f6"/>
+          <circle cx="8" cy="16" r="3.5" fill="#6366f1"/>
+          <circle cx="30" cy="28" r="4.5" fill="white" opacity="0.9"/>
           <defs><linearGradient id="lg-d3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
         </svg>
         <span class="hash">Hash</span><span class="a2a">A2A</span></div>

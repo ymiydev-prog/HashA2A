@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" role="img" aria-labelledby="c2i-title c2i-desc">
+  <title id="c2i-title">HashA2A Icon — Concept 2</title>
+  <desc id="c2i-desc">Interlocking A2A geometric mark</desc>
+  <defs>
+    <linearGradient id="c2i-blue" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="c2i-purple" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="c2i-cyan" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="52" height="52" rx="12" fill="#0a0e1a" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <g transform="translate(10, 12)">
+    <path d="M16,0 L28,36 L22,36 L19,28 L13,28 L10,36 L4,36 Z" fill="url(#c2i-blue)"/>
+    <path d="M16,8 L14,22 L18,22 Z" fill="#0a0e1a"/>
+    <path d="M36,4 L36,10 L42,10 L42,16 L36,16 L36,22 L42,22 L42,28 L36,28 L36,36 L30,36 L30,28 L24,28 L24,22 L30,22 L30,16 L24,16 L24,10 L30,10 L30,4 Z" fill="url(#c2i-purple)"/>
+    <path d="M48,0 L60,36 L54,36 L51,28 L45,28 L42,36 L36,36 Z" fill="url(#c2i-cyan)"/>
+    <path d="M48,8 L46,22 L50,22 Z" fill="#0a0e1a"/>
+    <rect x="28" y="14" width="4" height="4" rx="1" fill="white" opacity="0.6"/>
+  </g>
+</svg>

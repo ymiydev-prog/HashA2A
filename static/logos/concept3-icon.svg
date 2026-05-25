@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" role="img" aria-labelledby="c3i-title c3i-desc">
+  <title id="c3i-title">HashA2A Icon — Concept 3</title>
+  <desc id="c3i-desc">Orbital consensus ring icon</desc>
+  <defs>
+    <linearGradient id="c3i-ring1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="c3i-ring2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="c3i-ring3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <circle cx="30" cy="30" r="26" fill="none" stroke="url(#c3i-ring1)" stroke-width="2" opacity="0.3"/>
+  <circle cx="30" cy="30" r="18" fill="none" stroke="url(#c3i-ring2)" stroke-width="2" opacity="0.5"/>
+  <circle cx="30" cy="30" r="10" fill="url(#c3i-ring3)" opacity="0.15"/>
+  <circle cx="30" cy="4" r="4" fill="#3b82f6"/>
+  <circle cx="52" cy="18" r="3.5" fill="#6366f1"/>
+  <circle cx="48" cy="44" r="3.5" fill="#8b5cf6"/>
+  <circle cx="12" cy="44" r="3.5" fill="#06b6d4"/>
+  <circle cx="8" cy="18" r="3.5" fill="#3b82f6"/>
+  <circle cx="30" cy="30" r="5" fill="white" opacity="0.9"/>
+  <circle cx="30" cy="30" r="2.5" fill="#3b82f6"/>
+  <path d="M30,25 L52,18" stroke="white" stroke-opacity="0.2" stroke-width="1"/>
+  <path d="M30,25 L48,44" stroke="white" stroke-opacity="0.2" stroke-width="1"/>
+  <path d="M30,25 L12,44" stroke="white" stroke-opacity="0.2" stroke-width="1"/>
+  <path d="M30,25 L8,18" stroke="white" stroke-opacity="0.2" stroke-width="1"/>
+  <path d="M30,25 L30,4" stroke="white" stroke-opacity="0.2" stroke-width="1"/>
+</svg>

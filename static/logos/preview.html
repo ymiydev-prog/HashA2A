@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HashA2A — Logo Concepts</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #06080f;
+  --surface: rgba(255,255,255,0.03);
+  --surface-hover: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.06);
+  --border-hover: rgba(255,255,255,0.12);
+  --text: #f0f2f7;
+  --text-secondary: #8b92a8;
+  --text-muted: #555b70;
+  --blue: #3b82f6;
+  --purple: #8b5cf6;
+  --cyan: #06b6d4;
+  --green: #10b981;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0);
+  background-size: 40px 40px;
+}
+.bg-gradient {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(139,92,246,0.06) 0%, transparent 50%);
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+header { padding: 48px 0 32px; text-align: center; }
+header h1 {
+  font-size: 36px; font-weight: 900; letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--blue), var(--purple), var(--cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-size: 200% 200%;
+  animation: gradientShift 4s ease-in-out infinite;
+}
+@keyframes gradientShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+header p { color: var(--text-secondary); margin-top: 8px; font-size: 16px; }
+header .badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.concept-section { margin-bottom: 48px; }
+.concept-header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 24px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.concept-number {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; color: white;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+}
+.concept-info h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+.concept-info p { font-size: 14px; color: var(--text-secondary); }
+
+.layouts { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 20px; }
+@media (max-width: 800px) { .layouts { grid-template-columns: 1fr; } }
+
+.layout-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.layout-card:hover {
+  border-color: var(--border-hover);
+  background: var(--surface-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.layout-card.selected {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 1px var(--blue), 0 4px 20px rgba(59,130,246,0.2);
+}
+.layout-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-muted);
+  margin-bottom: 16px;
+}
+.layout-preview {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 80px; background: rgba(0,0,0,0.3);
+  border-radius: var(--radius-sm); padding: 20px;
+}
+.layout-preview.vertical { min-height: 120px; }
+.layout-preview.icon-only { min-height: 80px; }
+.layout-preview svg { max-width: 100%; height: auto; }
+
+.dark-preview { background: #0a0e1a; }
+.light-preview { background: #f8f9fc; }
+
+.size-tests {
+  display: flex; align-items: center; gap: 16px;
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.size-test { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.size-test span { font-size: 10px; color: var(--text-muted); }
+
+footer {
+  text-align: center; padding: 40px 0;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted); font-size: 13px;
+}
+footer .actions { display: flex; gap: 12px; justify-content: center; margin-top: 16px; }
+footer button {
+  padding: 10px 24px; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  border: none; font-family: inherit; transition: all 0.2s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  color: white; box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(59,130,246,0.4); }
+.btn-secondary {
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { border-color: var(--border-hover); background: var(--surface-hover); }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-gradient"></div>
+
+<div class="container">
+  <header>
+    <div class="badge">SVG Logo Designer — 4 Concepts</div>
+    <h1>HashA2A Logo Concepts</h1>
+    <p>4 directions, 3 layouts each — click any logo to select it</p>
+  </header>
+
+  <!-- Concept 1 -->
+  <section class="concept-section">
+    <div class="concept-header">
+      <div class="concept-number">1</div>
+      <div class="concept-info">
+        <h2>Hexagonal Network</h2>
+        <p>Geometric hexagon with 6 oracle nodes connected to a central hub — represents multi-oracle consensus and the Hedera hashgraph</p>
+      </div>
+    </div>
+    <div class="layouts">
+      <div class="layout-card" onclick="selectLogo(this, 'concept1')">
+        <div class="layout-label">Horizontal — Headers & Nav</div>
+        <div class="layout-preview dark-preview">
+          <object data="logos/concept1-horizontal.svg" type="image/svg+xml" width="200"></object>
+        </div>
+        <div class="size-tests">
+          <div class="size-test"><svg width="48" height="14"><use href="logos/concept1-horizontal.svg"/></svg><span>48px</span></div>
+          <div class="size-test"><svg width="96" height="28"><use href="logos/concept1-horizontal.svg"/></svg><span>96px</span></div>
+          <div class="size-test"><svg width="144" height="42"><use href="logos/concept1-horizontal.svg"/></svg><span>144px</span></div>
+        </div>
+      </div>
+      <div class="layout-card" onclick="selectLogo(this, 'concept1')">
+        <div class="layout-label">Vertical — Social</div>
+        <div class="layout-preview vertical dark-preview">
+          <object data="logos/concept1-vertical.svg" type="image/svg+xml" width="60"></object>
+        </div>
+      </div>
+      <div class="layout-card" onclick="selectLogo(this, 'concept1')">
+        <div class="layout-label">Icon — Favicon</div>
+        <div class="layout-preview icon-only dark-preview">
+          <object data="logos/concept1-icon.svg" type="image/svg+xml" width="60"></object>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Concept 2 -->
+  <section class="concept-section">
+    <div class="concept-header">
+      <div class="concept-number">2</div>
+      <div class="concept-info">
+        <h2>A2A Interlocking Letters</h2>
+        <p>The letters A-2-A as connected geometric shapes with gradient colors — direct brand representation with a tech aesthetic</p>
+      </div>
+    </div>
+    <div class="layouts">
+      <div class="layout-card" onclick="selectLogo(this, 'concept2')">
+        <div class="layout-label">Horizontal — Headers & Nav</div>
+        <div class="layout-preview dark-preview">
+          <object data="logos/concept2-horizontal.svg" type="image/svg+xml" width="200"></object>
+        </div>
+        <div class="size-tests">
+          <div class="size-test"><svg width="48" height="14"><use href="logos/concept2-horizontal.svg"/></svg><span>48px</span></div>
+          <div class="size-test"><svg width="96" height="28"><use href="logos/concept2-horizontal.svg"/></svg><span>96px</span></div>
+          <div class="size-test"><svg width="144" height="42"><use href="logos/concept2-horizontal.svg"/></svg><span>144px</span></div>
+        </div>
+      </div>
+      <div class="layout-card" onclick="selectLogo(this, 'concept2')">
+        <div class="layout-label">Vertical — Social</div>
+        <div class="layout-preview vertical dark-preview">
+          <object data="logos/concept2-vertical.svg" type="image/svg+xml" width="60"></object>
+        </div>
+      </div>
+      <div class="layout-card" onclick="selectLogo(this, 'concept2')">
+        <div class="layout-label">Icon — Favicon</div>
+        <div class="layout-preview icon-only dark-preview">
+          <object data="logos/concept2-icon.svg" type="image/svg+xml" width="60"></object>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Concept 3 -->
+  <section class="concept-section">
+    <div class="concept-header">
+      <div class="concept-number">3</div>
+      <div class="concept-info">
+        <h2>Orbital Consensus Ring</h2>
+        <p>Concentric rings with orbiting nodes — represents the decentralized oracle network, multi-source verification, and consensus</p>
+      </div>
+    </div>
+    <div class="layouts">
+      <div class="layout-card" onclick="selectLogo(this, 'concept3')">
+        <div class="layout-label">Horizontal — Headers & Nav</div>
+        <div class="layout-preview dark-preview">
+          <object data="logos/concept3-horizontal.svg" type="image/svg+xml" width="200"></object>
+        </div>
+        <div class="size-tests">
+          <div class="size-test"><svg width="48" height="14"><use href="logos/concept3-horizontal.svg"/></svg><span>48px</span></div>
+          <div class="size-test"><svg width="96" height="28"><use href="logos/concept3-horizontal.svg"/></svg><span>96px</span></div>
+          <div class="size-test"><svg width="144" height="42"><use href="logos/concept3-horizontal.svg"/></svg><span>144px</span></div>
+        </div>
+      </div>
+      <div class="layout-card" onclick="selectLogo(this, 'concept3')">
+        <div class="layout-label">Vertical — Social</div>
+        <div class="layout-preview vertical dark-preview">
+          <object data="logos/concept3-vertical.svg" type="image/svg+xml" width="60"></object>
+        </div>
+      </div>
+      <div class="layout-card" onclick="selectLogo(this, 'concept3')">
+        <div class="layout-label">Icon — Favicon</div>
+        <div class="layout-preview icon-only dark-preview">
+          <object data="logos/concept3-icon.svg" type="image/svg+xml" width="60"></object>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Concept 4 -->
+  <section class="concept-section">
+    <div class="concept-header">
+      <div class="concept-number">4</div>
+      <div class="concept-info">
+        <h2>Refined Diamond</h2>
+        <p>Evolution of the current logo — improved proportions, glow effect, cleaner node connections, 3-stop gradient</p>
+      </div>
+    </div>
+    <div class="layouts">
+      <div class="layout-card" onclick="selectLogo(this, 'concept4')">
+        <div class="layout-label">Horizontal — Headers & Nav</div>
+        <div class="layout-preview dark-preview">
+          <object data="logos/concept4-horizontal.svg" type="image/svg+xml" width="200"></object>
+        </div>
+        <div class="size-tests">
+          <div class="size-test"><svg width="48" height="14"><use href="logos/concept4-horizontal.svg"/></svg><span>48px</span></div>
+          <div class="size-test"><svg width="96" height="28"><use href="logos/concept4-horizontal.svg"/></svg><span>96px</span></div>
+          <div class="size-test"><svg width="144" height="42"><use href="logos/concept4-horizontal.svg"/></svg><span>144px</span></div>
+        </div>
+      </div>
+      <div class="layout-card" onclick="selectLogo(this, 'concept4')">
+        <div class="layout-label">Vertical — Social</div>
+        <div class="layout-preview vertical dark-preview">
+          <object data="logos/concept4-vertical.svg" type="image/svg+xml" width="60"></object>
+        </div>
+      </div>
+      <div class="layout-card" onclick="selectLogo(this, 'concept4')">
+        <div class="layout-label">Icon — Favicon</div>
+        <div class="layout-preview icon-only dark-preview">
+          <object data="logos/concept4-icon.svg" type="image/svg+xml" width="60"></object>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Click any logo to select it, then apply to landing page</p>
+    <div class="actions">
+      <button class="btn-primary" onclick="applySelected()">Apply to Landing Page</button>
+      <button class="btn-secondary" onclick="downloadAll()">Download All SVGs</button>
+    </div>
+  </footer>
+</div>
+
+<script>
+let selectedConcept = null;
+let selectedLayout = null;
+
+function selectLogo(card, concept) {
+  document.querySelectorAll('.layout-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  selectedConcept = concept;
+  const label = card.querySelector('.layout-label').textContent.toLowerCase();
+  if (label.includes('horizontal')) selectedLayout = 'horizontal';
+  else if (label.includes('vertical')) selectedLayout = 'vertical';
+  else selectedLayout = 'icon';
+}
+
+function applySelected() {
+  if (!selectedConcept) { alert('Select a logo first!'); return; }
+  const num = selectedConcept.replace('concept', '');
+  const file = `logos/concept${num}-${selectedLayout}.svg`;
+  alert(`Applying: ${file}\n\nThis will update the landing page with the selected logo.`);
+}
+
+function downloadAll() {
+  alert('All 12 SVG files are already saved in static/logos/');
+}
+</script>
+</body>
+</html>

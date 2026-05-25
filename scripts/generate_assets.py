@@ -1,15 +1,20 @@
 """Generate favicon.png and og-image.png for HashA2A brand assets."""
 import math
+import io
 from PIL import Image, ImageDraw, ImageFont
+import cairosvg
 
 # Brand colors
 BLUE = (59, 130, 246)
 PURPLE = (139, 92, 246)
+CYAN = (6, 182, 212)
+INDIGO = (99, 102, 241)
 BG = (6, 8, 15)
 WHITE = (240, 242, 247)
 MUTED = (139, 146, 168)
 
 STATIC = __import__("pathlib").Path(__file__).resolve().parent.parent / "static"
+SVG_LOGO = STATIC / "logo.svg"
 
 
 def _gradient(draw, x1, y1, x2, y2, c1, c2, steps=128):
@@ -28,60 +33,18 @@ def _rounded_rect(draw, xy, r, fill, width=0, outline=None):
     draw.rounded_rectangle(xy, radius=r, fill=fill, width=width, outline=outline)
 
 
-def draw_diamond_mark(draw, cx, cy, size):
-    """Draw the brand diamond mark at center (cx, cy) with given size."""
-    half = size / 2
-    r = size * 0.18  # corner radius proportional
+def _load_logo_svg(output_size):
+    """Load and render the hexagonal network logo SVG."""
+    png_bytes = cairosvg.svg2png(url=str(SVG_LOGO), output_width=output_size, output_height=output_size)
+    return Image.open(io.BytesIO(png_bytes)).convert("RGBA")
 
-    # The diamond is a square rotated 45 degrees
-    # We draw it with Pillow by drawing a diamond shape (not a rotated rect)
-    # Points of a diamond: top, right, bottom, left
-    top = (cx, cy - half)
-    right = (cx + half, cy)
-    bottom = (cx, cy + half)
-    left = (cx - half, cy)
 
-    # Draw gradient fill
-    # We'll approximate by drawing the gradient vertically within the diamond
-    # Create a square mask
-    mask_size = int(size * 1.5)
-    mask = Image.new("L", (mask_size, mask_size), 0)
-    mask_draw = ImageDraw.Draw(mask)
-    mask_draw.polygon([top, right, bottom, left], fill=255)
-
-    # Create gradient image the same size
-    grad = Image.new("RGBA", (mask_size, mask_size), (0, 0, 0, 0))
-    grad_draw = ImageDraw.Draw(grad)
-    # Draw vertical gradient
-    for i in range(mask_size):
-        t = i / (mask_size - 1)
-        r_val = int(BLUE[0] + (PURPLE[0] - BLUE[0]) * t)
-        g_val = int(BLUE[1] + (PURPLE[1] - BLUE[1]) * t)
-        b_val = int(BLUE[2] + (PURPLE[2] - BLUE[2]) * t)
-        grad_draw.line([(0, i), (mask_size - 1, i)], fill=(r_val, g_val, b_val))
-
-    # Composite using mask
-    offset = (cx - half, cy - half)  # not exact for diamond but close enough
-    # Better: paste centered
-    px = int(cx - mask_size / 2)
-    py = int(cy - mask_size / 2)
-    draw.bitmap((px, py), mask, fill=BLUE)  # fallback
-
-    # Simple approach: draw a diamond with solid gradient approximation
-    # Actually let me just use a simpler approach
-    # Draw the diamond as filled polygon with best effort color
-    # We'll do a two-tone diamond: top half blue, bottom half purple
-    # Midpoint
-    mid = (cx, cy)
-    # Upper triangle (blue)
-    draw.polygon([top, right, mid], fill=BLUE)
-    draw.polygon([top, left, mid], fill=BLUE)
-    # Lower triangle (purple)
-    draw.polygon([bottom, right, mid], fill=PURPLE)
-    draw.polygon([bottom, left, mid], fill=PURPLE)
-
-    # Highlight border (thin)
-    draw.polygon([top, right, bottom, left], outline=WHITE, width=2)
+def generate_favicon():
+    """Generate 64x64 favicon PNG from the hexagonal network logo."""
+    logo = _load_logo_svg(64)
+    path = STATIC / "favicon.png"
+    logo.save(path, "PNG")
+    print(f"  ✓ favicon.png  ({path.stat().st_size / 1024:.1f} KB)")
 
 
 def _find_font(size, bold=False):
@@ -99,19 +62,8 @@ def _find_font(size, bold=False):
     return ImageFont.load_default()
 
 
-def generate_favicon():
-    """Generate 64x64 favicon PNG."""
-    size = 64
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-    draw_diamond_mark(draw, size // 2, size // 2, size * 0.75)
-    path = STATIC / "favicon.png"
-    img.save(path, "PNG")
-    print(f"  ✓ favicon.png  ({path.stat().st_size / 1024:.1f} KB)")
-
-
 def generate_og_image():
-    """Generate 1200x630 Open Graph image."""
+    """Generate 1200x630 Open Graph image with hexagonal network logo."""
     w, h = 1200, 630
     img = Image.new("RGBA", (w, h), BG)
     draw = ImageDraw.Draw(img)
@@ -130,9 +82,9 @@ def generate_og_image():
         b = int(BG[2] + (BLUE[2] - BG[2]) * t * 0.08)
         draw.line([(0, i), (w, i)], fill=(r, g, b))
 
-    # Diamond mark (center-left)
-    diamond_size = 180
-    draw_diamond_mark(draw, 300, h // 2, diamond_size)
+    # Hexagonal network logo (center-left)
+    logo = _load_logo_svg(180)
+    img.paste(logo, (210, h // 2 - 90), logo)
 
     # "HashA2A" text
     font_large = _find_font(72, bold=True)
