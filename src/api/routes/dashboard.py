@@ -447,7 +447,7 @@ function renderWallet(wallet) {
   content.innerHTML =
     '<div class="wallet-balance">' + (wallet.balance_hbar || '0.00') + ' <span class="unit">HBAR</span></div>' +
     '<div class="wallet-row"><span class="wallet-label">Account</span></div>' +
-    '<div class="wallet-address" onclick="copyWalletId(\'' + (wallet.account_id || '') + '\')" title="Click to copy">' +
+    '<div class="wallet-address" onclick="copyWalletId(\\'' + (wallet.account_id || '') + '\\')" title="Click to copy">' +
     '<span class="wallet-value">' + shortId + '</span>' +
     '<span class="wallet-copy">📋</span></div>' +
     '<div class="wallet-row"><span class="wallet-label">Network</span><span class="wallet-value" style="color:' + networkColor + '">' + wallet.network + '</span></div>' +
