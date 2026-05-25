@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Cookie, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.exceptions import HTTPException
+import asyncio
 import json
 import hashlib
 import os
@@ -769,9 +770,11 @@ async def get_dashboard_data(request: Request, dash_token: str | None = Cookie(N
             }
         except Exception:
             data["a2a"] = {"tasks_by_status": {}, "total_tasks": 0, "total_contexts": 0}
-        # Add wallet info
+        # Add wallet info (with short timeout to avoid blocking dashboard)
         try:
-            data["wallet"] = await _collect_wallet_data(request)
+            data["wallet"] = await asyncio.wait_for(
+                _collect_wallet_data(request), timeout=5
+            )
         except Exception:
             data["wallet"] = None
         return JSONResponse(data)
