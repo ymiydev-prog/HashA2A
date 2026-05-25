@@ -676,6 +676,46 @@ def _collect_dashboard_data(request: Request) -> dict:
     }
 
 
+_hbar_price_cache = {"price": None, "ts": 0, "source": None}
+_HBAR_PRICE_CACHE_TTL = 120
+
+async def _fetch_hbar_price() -> tuple[float, str]:
+    import time as _time
+    now = _time.time()
+    c = _hbar_price_cache
+    if c["price"] is not None and (now - c["ts"]) < _HBAR_PRICE_CACHE_TTL:
+        return c["price"], c["source"] or "cache"
+    import httpx
+    price = None
+    source = None
+    async with httpx.AsyncClient(timeout=5) as client:
+        try:
+            resp = await client.get("https://api.binance.com/api/v3/ticker/price?symbol=HBARUSDT")
+            if resp.status_code == 200:
+                data = resp.json()
+                price = float(data.get("price", 0))
+                source = "binance"
+        except Exception:
+            pass
+    if price is None:
+        try:
+            async with httpx.AsyncClient(timeout=5) as client:
+                resp = await client.get("https://api.coingecko.com/api/v3/simple/price?ids=hedera-hashgraph&vs_currencies=usd")
+                if resp.status_code == 200:
+                    price = float(resp.json().get("hedera-hashgraph", {}).get("usd", 0))
+                    source = "coingecko"
+        except Exception:
+            pass
+    if price is not None:
+        _hbar_price_cache["price"] = price
+        _hbar_price_cache["ts"] = now
+        _hbar_price_cache["source"] = source
+        return price, source
+    if c["price"] is not None:
+        return c["price"], c["source"] or "stale"
+    return 0.0, "none"
+
+
 async def _collect_wallet_data(request: Request) -> dict:
     import httpx
     settings = getattr(request.app.state, "settings", None)
@@ -698,19 +738,13 @@ async def _collect_wallet_data(request: Request) -> dict:
                     public_key = key_info.get("key", "")
     except Exception:
         pass
-    hbar_price = 0.0
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.get("https://api.coingecko.com/api/v3/simple/price?ids=hedera-hashgraph&vs_currencies=usd")
-            if resp.status_code == 200:
-                hbar_price = resp.json().get("hedera-hashgraph", {}).get("usd", 0)
-    except Exception:
-        pass
+    hbar_price, price_source = await _fetch_hbar_price()
     return {
         "account_id": account_id,
         "public_key": public_key,
         "balance_hbar": f"{balance_hbar:.4f}",
         "hbar_price": f"{hbar_price:.4f}" if hbar_price else "—",
+        "hbar_price_source": price_source,
         "network": network,
         "mirror_url": mirror_url,
         "usd_value": f"{balance_hbar * hbar_price:.2f}" if hbar_price else "0.00",
@@ -1531,7 +1565,7 @@ function renderWallet(data) {
     '<div class="stats-grid">' +
       '<div class="stat-card blue"><div class="stat-label">Network</div><div class="stat-value"><span class="network-badge ' + netClass + '">' + w.network + '</span></div><div class="stat-sub">Hedera ' + w.network + '</div></div>' +
       '<div class="stat-card purple"><div class="stat-label">Account ID</div><div class="stat-value" style="font-size:16px;font-family:JetBrains Mono,monospace;">' + shortId + '</div><div class="stat-sub">Operator account</div></div>' +
-      '<div class="stat-card green"><div class="stat-label">HBAR Price</div><div class="stat-value" style="color:var(--cyan)">$' + (w.hbar_price || '—') + '</div><div class="stat-sub">via CoinGecko</div></div>' +
+      '<div class="stat-card green"><div class="stat-label">HBAR Price</div><div class="stat-value" style="color:var(--cyan)">$' + (w.hbar_price || '—') + '</div><div class="stat-sub">via ' + (w.hbar_price_source || 'market') + '</div></div>' +
     '</div>' +
 
     '<div class="account-card">' +
