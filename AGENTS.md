@@ -48,11 +48,12 @@ Default settings in `Settings` class work with empty `.env` (graceful degradatio
 
 ## Providers
 
-4 real-API providers, all in `src/providers/`:
+5 real-API providers, all in `src/providers/`:
 - `polymarket` (0.5 HBAR) — Polymarket Gamma API
 - `kalshi` (0.3 HBAR) — Kalshi external-api
 - `predictit` (0.4 HBAR) — PredictIt marketdata
 - `manifold` (0.3 HBAR) — Manifold v0 API
+- `hyperliquid` (0.3 HBAR) — Hyperliquid HIP-4 Info API
 
 New providers extend `BettingDataProvider` (`providers/base_betting.py`), register in `lifespan` in `main.py`.
 

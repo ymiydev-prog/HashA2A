@@ -46,10 +46,12 @@ async def lifespan(app: FastAPI):
     from providers.kalshi import KalshiBettingProvider
     from providers.predictit import PredictItProvider
     from providers.manifold import ManifoldMarketsProvider
+    from providers.hyperliquid import HyperliquidProvider
     provider_registry.register(PolymarketEdgeProvider())
     provider_registry.register(KalshiBettingProvider())
     provider_registry.register(PredictItProvider())
     provider_registry.register(ManifoldMarketsProvider())
+    provider_registry.register(HyperliquidProvider())
 
     discovered = provider_registry.discover()
     if discovered:

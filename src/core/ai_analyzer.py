@@ -29,10 +29,19 @@ PROVIDER_CONTEXTS = {
         "For binary markets, price represents probability (0-100%). "
         "Analyze the market consensus and trader activity."
     ),
+    "hyperliquid": (
+        "Hyperliquid HIP-4 is an on-chain binary outcome market protocol on HyperCore. "
+        "Markets are fully-collateralized YES/NO binary contracts that settle to 0 or 1 "
+        "against an authorized oracle at expiry. Prices represent implied probability. "
+        "Covers crypto price targets and CPI forecasts. "
+        "Trades on an on-chain central limit order book (CLOB) with USDH settlement. "
+        "Analyze on-chain liquidity, order book depth, and implied probabilities."
+    ),
     "aggregated": (
         "This is aggregated intelligence from MULTIPLE prediction market platforms: "
         "Polymarket (decentralized), Kalshi (CFTC-regulated), PredictIt (academic), "
-        "and Manifold (play-money). Data has been cross-validated across sources. "
+        "Manifold (play-money), and Hyperliquid HIP-4 (on-chain CLOB). "
+        "Data has been cross-validated across sources. "
         "Compare prices across platforms, identify arbitrage opportunities, "
         "and assess the overall market consensus. When sources agree, confidence is high. "
         "When they diverge, highlight the spread and possible reasons."

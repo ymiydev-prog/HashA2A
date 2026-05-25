@@ -127,7 +127,7 @@ class QueryRequest(BaseModel):
     @field_validator("provider_id")
     @classmethod
     def validate_provider(cls, v: str) -> str:
-        allowed = {"polymarket", "kalshi", "predictit", "manifold", "aggregated", "research", "feed"}
+        allowed = {"polymarket", "kalshi", "predictit", "manifold", "hyperliquid", "aggregated", "research", "feed"}
         if v and v not in allowed:
             from warnings import warn
             warn(f"Unknown provider '{v}'. Known: {allowed}")
