@@ -345,7 +345,6 @@ function renderDashboard(data) {
   renderQuickProviders(providers);
   renderAgents(window._agents);
   renderA2AStats(data);
-  renderWallet(data);
 }
 
 function renderTrustChart(providers) {
@@ -439,10 +438,9 @@ function renderA2AStats(data) {
     '<div style="margin-top:10px;text-align:center"><a href="/dashboard/tasks" style="color:var(--blue);font-size:12px;">Manage tasks →</a></div>';
 }
 
-function renderWallet(data) {
+function renderWallet(wallet) {
   const content = document.getElementById('wallet-content');
   if (!content) return;
-  const wallet = data.wallet;
   if (!wallet) { content.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No wallet configured</div>'; return; }
   const networkColor = wallet.network === 'mainnet' ? 'var(--green)' : wallet.network === 'testnet' ? 'var(--amber)' : 'var(--cyan)';
   const shortId = wallet.account_id ? wallet.account_id.substring(0, 8) + '…' + wallet.account_id.substring(wallet.account_id.length - 4) : '—';
@@ -454,7 +452,7 @@ function renderWallet(data) {
     '<span class="wallet-copy">📋</span></div>' +
     '<div class="wallet-row"><span class="wallet-label">Network</span><span class="wallet-value" style="color:' + networkColor + '">' + wallet.network + '</span></div>' +
     '<div class="wallet-row"><span class="wallet-label">USD Value</span><span class="wallet-value" style="color:var(--cyan)">$' + (wallet.usd_value || '0.00') + '</span></div>' +
-    '<div style="margin-top:10px;text-align:center"><a href="https://hashscan.io/' + wallet.network + '/account/' + (wallet.account_id || '') + '" target="_blank" style="color:var(--blue);font-size:12px;">View on HashScan →</a></div>';
+    '<div style="margin-top:10px;text-align:center"><a href="/dashboard/wallet" style="color:var(--blue);font-size:12px;">Full wallet details →</a></div>';
 }
 
 function copyWalletId(id) {
@@ -525,6 +523,17 @@ async function fetchData() {
   }
 }
 
+async function fetchWalletData() {
+  try {
+    const resp = await fetch('/dashboard/wallet/data');
+    const data = await resp.json();
+    renderWallet(data.wallet || null);
+  } catch (e) {
+    const content = document.getElementById('wallet-content');
+    if (content) content.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Wallet unavailable</div>';
+  }
+}
+
 function connectWebSocket() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const ws = new WebSocket(protocol + '//' + window.location.host + '/ws/dashboard');
@@ -549,6 +558,8 @@ function connectWebSocket() {
 
 fetchData();
 setInterval(fetchData, 10000);
+fetchWalletData();
+setInterval(fetchWalletData, 30000);
 connectWebSocket();
 </script>
 </body>
@@ -770,13 +781,6 @@ async def get_dashboard_data(request: Request, dash_token: str | None = Cookie(N
             }
         except Exception:
             data["a2a"] = {"tasks_by_status": {}, "total_tasks": 0, "total_contexts": 0}
-        # Add wallet info (with short timeout to avoid blocking dashboard)
-        try:
-            data["wallet"] = await asyncio.wait_for(
-                _collect_wallet_data(request), timeout=5
-            )
-        except Exception:
-            data["wallet"] = None
         return JSONResponse(data)
     except Exception as e:
         return JSONResponse({"error": str(e)})
