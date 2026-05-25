@@ -1227,10 +1227,12 @@ async def get_wallet(request: Request, dash_token: str | None = Cookie(None)):
 async def get_wallet_data(request: Request, dash_token: str | None = Cookie(None)):
     _check_dash_auth(request, dash_token)
     try:
-        data = await _collect_wallet_data(request)
+        data = await asyncio.wait_for(_collect_wallet_data(request), timeout=5)
         if data is None:
             return JSONResponse({"error": "No wallet configured. Set HEDERA_OPERATOR_ID."})
         return JSONResponse({"wallet": data})
+    except asyncio.TimeoutError:
+        return JSONResponse({"error": "Wallet data timeout"})
     except Exception as e:
         return JSONResponse({"error": str(e)})
 
