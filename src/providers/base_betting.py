@@ -1,3 +1,4 @@
+import asyncio
 import time
 from abc import abstractmethod
 from typing import Any
@@ -31,6 +32,17 @@ class BettingDataProvider(BaseDataProvider):
     @abstractmethod
     async def get_market(self, market_id: str) -> BettingMarket | None:
         ...
+
+    async def health_check(self, timeout: float = 5.0) -> tuple[bool, float]:
+        query = BettingQuery(limit=1, include_analysis=False)
+        start = time.monotonic()
+        try:
+            await asyncio.wait_for(self.list_markets(query), timeout=timeout)
+            latency = round((time.monotonic() - start) * 1000)
+            return True, latency
+        except Exception:
+            latency = round((time.monotonic() - start) * 1000)
+            return False, latency
 
     async def get_data(self, params: dict[str, Any]) -> DataResponse:
         start = time.monotonic()

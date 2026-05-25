@@ -142,6 +142,16 @@ body {
 .data-table tbody tr:hover { background: var(--surface-hover); }
 .score-bar { height: 4px; border-radius: 2px; margin-top: 6px; }
 .mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.health-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
+.health-dot.green { background: #10b981; box-shadow: 0 0 4px rgba(16,185,129,0.5); }
+.health-dot.red { background: #ef4444; box-shadow: 0 0 4px rgba(239,68,68,0.5); }
+.health-dot.gray { background: #4b5563; box-shadow: 0 0 4px rgba(75,85,99,0.3); }
+.health-dot.checking { background: #f59e0b; box-shadow: 0 0 4px rgba(245,158,11,0.5); animation: pulse-dot 1.5s ease-in-out infinite; }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.api-status-text { font-size: 11px; margin-left: 4px; }
+.api-status-text.up { color: #10b981; }
+.api-status-text.down { color: #ef4444; }
+.api-latency { font-size: 10px; color: var(--text-muted); }
 
 /* Sidebar */
 .sidebar-left, .sidebar-right { display: flex; flex-direction: column; gap: 16px; }
@@ -398,7 +408,12 @@ function renderQuickProviders(providers) {
   container.innerHTML = providers.map(p => {
     const ts = p.trust_score || 0;
     const color = ts >= 70 ? '#10b981' : ts >= 50 ? '#f59e0b' : '#ef4444';
-    return '<div class="provider-item"><div class="name">' + p.name + '</div><div class="meta"><span>' + p.cost_hbar + ' HBAR</span><span style="color:' + color + '">' + ts.toFixed(0) + '</span></div><div class="mini-bar"><div class="mini-bar-fill" style="width:' + ts + '%;background:' + color + ';"></div></div></div>';
+    let healthDot = '';
+    if (p.api_up === true) healthDot = '<span class="health-dot green" title="API OK · ' + (p.api_latency_ms || '?') + 'ms"></span>';
+    else if (p.api_up === false) healthDot = '<span class="health-dot red" title="API DOWN"></span>';
+    else if (p.api_up === null) healthDot = '<span class="health-dot checking" title="Checking…"></span>';
+    else healthDot = '<span class="health-dot gray" title="Not checked"></span>';
+    return '<div class="provider-item"><div class="name">' + healthDot + p.name + '</div><div class="meta"><span>' + p.cost_hbar + ' HBAR</span><span style="color:' + color + '">' + ts.toFixed(0) + '</span></div><div class="mini-bar"><div class="mini-bar-fill" style="width:' + ts + '%;background:' + color + ';"></div></div></div>';
   }).join('');
 }
 
@@ -502,7 +517,12 @@ function renderTable(providers) {
     const ts = p.trust_score || 0;
     const color = ts >= 70 ? 'var(--green)' : ts >= 50 ? 'var(--amber)' : 'var(--red)';
     const barColor = ts >= 70 ? '#10b981' : ts >= 50 ? '#f59e0b' : '#ef4444';
-    return '<tr><td><strong>' + p.name + '</strong><br><span class="mono" style="color:var(--text-muted);">' + p.provider_id + '</span></td><td><span style="color:' + color + ';font-weight:600;">' + ts.toFixed(0) + '</span><div class="score-bar" style="width:' + ts + '%;background:' + barColor + ';"></div></td><td>' + p.cost_hbar + ' HBAR</td><td>' + (p.staked_hbar || 0).toFixed(0) + ' HBAR</td><td>' + ((p.success_rate || 0) * 100).toFixed(0) + '%</td></tr>';
+    let healthHtml = '';
+    if (p.api_up === true) healthHtml = '<span class="health-dot green" title="API reachable · ' + (p.api_latency_ms || '?') + 'ms"></span>';
+    else if (p.api_up === false) healthHtml = '<span class="health-dot red" title="API unreachable"></span>';
+    else if (p.api_up === null) healthHtml = '<span class="health-dot checking" title="Checking…"></span>';
+    else healthHtml = '<span class="health-dot gray" title="Not checked"></span>';
+    return '<tr><td>' + healthHtml + '<strong>' + p.name + '</strong><br><span class="mono" style="color:var(--text-muted);">' + p.provider_id + '</span></td><td><span style="color:' + color + ';font-weight:600;">' + ts.toFixed(0) + '</span><div class="score-bar" style="width:' + ts + '%;background:' + barColor + ';"></div></td><td>' + p.cost_hbar + ' HBAR</td><td>' + (p.staked_hbar || 0).toFixed(0) + ' HBAR</td><td>' + ((p.success_rate || 0) * 100).toFixed(0) + '%</td></tr>';
   }).join('');
 }
 
@@ -534,6 +554,32 @@ async function fetchWalletData() {
   }
 }
 
+async function fetchHealthData() {
+  if (!window._allProviders) return;
+  for (const p of window._allProviders) p.api_up = null;
+  try {
+    const tbody = document.getElementById('table-body');
+    if (tbody) renderTable(window._allProviders);
+    const qp = document.getElementById('quick-providers');
+    if (qp) renderQuickProviders(window._allProviders);
+  } catch (e) {}
+  try {
+    const resp = await fetch('/dashboard/health');
+    const data = await resp.json();
+    if (!data.providers) return;
+    for (const p of window._allProviders) {
+      const h = data.providers[p.provider_id];
+      if (h) { p.api_up = h.up; p.api_latency_ms = h.latency_ms; }
+    }
+  } catch (e) { console.error('Health check error:', e); }
+  try {
+    const tbody = document.getElementById('table-body');
+    if (tbody) renderTable(window._allProviders);
+    const qp = document.getElementById('quick-providers');
+    if (qp) renderQuickProviders(window._allProviders);
+  } catch (e) {}
+}
+
 function connectWebSocket() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const ws = new WebSocket(protocol + '//' + window.location.host + '/ws/dashboard');
@@ -560,6 +606,8 @@ fetchData();
 setInterval(fetchData, 10000);
 fetchWalletData();
 setInterval(fetchWalletData, 30000);
+setTimeout(fetchHealthData, 2000);
+setInterval(fetchHealthData, 60000);
 connectWebSocket();
 </script>
 </body>
@@ -583,6 +631,8 @@ def _collect_dashboard_data(request: Request) -> dict:
                 "staked_hbar": r.staked_hbar,
                 "success_rate": round(r.successful_requests / r.total_requests, 3) if r.total_requests > 0 else 1.0,
                 "total_requests": r.total_requests,
+                "api_up": None,
+                "api_latency_ms": None,
             })
 
     agents = []
@@ -782,6 +832,28 @@ async def get_dashboard_data(request: Request, dash_token: str | None = Cookie(N
         except Exception:
             data["a2a"] = {"tasks_by_status": {}, "total_tasks": 0, "total_contexts": 0}
         return JSONResponse(data)
+    except Exception as e:
+        return JSONResponse({"error": str(e)})
+
+
+@router.get("/dashboard/health", include_in_schema=False)
+async def get_provider_health(request: Request, dash_token: str | None = Cookie(None)):
+    _check_dash_auth(request, dash_token)
+    import asyncio as aio
+    try:
+        provider_registry = getattr(request.app.state, "provider_registry", None)
+        if not provider_registry:
+            return JSONResponse({"providers": {}, "error": "no registry"})
+        providers = provider_registry.list_all()
+        tasks = {p.provider_id: p.health_check(timeout=5.0) for p in providers}
+        results = {}
+        for pid, coro in tasks.items():
+            try:
+                up, latency = await aio.wait_for(coro, timeout=8.0)
+                results[pid] = {"up": up, "latency_ms": latency}
+            except Exception:
+                results[pid] = {"up": False, "latency_ms": 0}
+        return JSONResponse({"providers": results})
     except Exception as e:
         return JSONResponse({"error": str(e)})
 
