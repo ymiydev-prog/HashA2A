@@ -348,6 +348,12 @@ function renderDashboard(data) {
 
   window._allProviders = providers;
   window._agents = data.agents || [];
+  if (window._apiHealth) {
+    for (const p of window._allProviders) {
+      const h = window._apiHealth[p.provider_id];
+      if (h) { p.api_up = h.up; p.api_latency_ms = h.latency_ms; }
+    }
+  }
   applyTableFilter();
   renderTrustChart(providers);
   renderCostChart(providers);
@@ -567,9 +573,13 @@ async function fetchHealthData() {
     const resp = await fetch('/dashboard/health');
     const data = await resp.json();
     if (!data.providers) return;
+    window._apiHealth = {};
     for (const p of window._allProviders) {
       const h = data.providers[p.provider_id];
-      if (h) { p.api_up = h.up; p.api_latency_ms = h.latency_ms; }
+      if (h) {
+        p.api_up = h.up; p.api_latency_ms = h.latency_ms;
+        window._apiHealth[p.provider_id] = h;
+      }
     }
   } catch (e) { console.error('Health check error:', e); }
   try {
