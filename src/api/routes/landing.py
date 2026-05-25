@@ -111,22 +111,22 @@ LANDING_HTML = """<!DOCTYPE html>
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
-  --bg: #06080f;
-  --surface: rgba(255,255,255,0.03);
-  --surface-hover: rgba(255,255,255,0.06);
-  --border: rgba(255,255,255,0.06);
-  --border-hover: rgba(255,255,255,0.12);
+  --bg: #000000;
+  --surface: rgba(255,255,255,0.04);
+  --surface-hover: rgba(255,255,255,0.07);
+  --border: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.15);
   --text: #f0f2f7;
   --text-secondary: #8b92a8;
   --text-muted: #555b70;
   --blue: #3b82f6;
-  --blue-glow: rgba(59,130,246,0.15);
+  --blue-glow: rgba(59,130,246,0.12);
   --purple: #8b5cf6;
-  --purple-glow: rgba(139,92,246,0.15);
+  --purple-glow: rgba(139,92,246,0.12);
   --cyan: #06b6d4;
-  --cyan-glow: rgba(6,182,212,0.15);
+  --cyan-glow: rgba(6,182,212,0.12);
   --green: #10b981;
-  --green-glow: rgba(16,185,129,0.15);
+  --green-glow: rgba(16,185,129,0.12);
   --amber: #f59e0b;
   --red: #ef4444;
   --radius: 16px;
@@ -157,9 +157,9 @@ a:hover { color: #60a5fa; }
 .bg-gradient {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(139,92,246,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(6,182,212,0.05) 0%, transparent 50%);
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(139,92,246,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(6,182,212,0.03) 0%, transparent 50%);
 }
 .bg-gradient::after {
   content: ''; position: absolute; inset: 0;
@@ -171,7 +171,7 @@ a:hover { color: #60a5fa; }
   position: sticky; top: 0; z-index: 100;
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  background: rgba(6,8,15,0.8);
+  background: rgba(0,0,0,0.85);
   border-bottom: 1px solid var(--border);
 }
 .nav-inner {
@@ -225,7 +225,7 @@ a:hover { color: #60a5fa; }
   .nav-toggle { display: block; }
   .nav-links {
     display: none; position: absolute; top: 64px; left: 0; right: 0;
-    flex-direction: column; background: rgba(6,8,15,0.97);
+    flex-direction: column; background: rgba(0,0,0,0.95);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     padding: 16px 24px; border-bottom: 1px solid var(--border);
     gap: 4px;

@@ -19,11 +19,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
-  --bg: #06080f;
-  --surface: rgba(255,255,255,0.03);
-  --surface-hover: rgba(255,255,255,0.06);
-  --border: rgba(255,255,255,0.06);
-  --border-hover: rgba(255,255,255,0.12);
+  --bg: #000000;
+  --surface: rgba(255,255,255,0.04);
+  --surface-hover: rgba(255,255,255,0.07);
+  --border: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.15);
   --text: #f0f2f7;
   --text-secondary: #8b92a8;
   --text-muted: #555b70;
@@ -50,8 +50,8 @@ body {
 }
 .bg-gradient {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background: radial-gradient(ellipse 70% 50% at 30% 0%, rgba(59,130,246,0.06) 0%, transparent 60%),
-              radial-gradient(ellipse 50% 40% at 80% 10%, rgba(139,92,246,0.04) 0%, transparent 50%);
+  background: radial-gradient(ellipse 70% 50% at 30% 0%, rgba(59,130,246,0.04) 0%, transparent 60%),
+              radial-gradient(ellipse 50% 40% at 80% 10%, rgba(139,92,246,0.03) 0%, transparent 50%);
 }
 
 /* Layout */
@@ -180,6 +180,18 @@ body {
 .a2a-label { color: var(--text-muted); }
 .a2a-value { font-weight: 600; }
 
+/* Wallet */
+.wallet-card { border-left: 2px solid var(--blue); }
+.wallet-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+.wallet-row:last-child { border-bottom: none; }
+.wallet-label { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+.wallet-value { font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.wallet-balance { font-size: 22px; font-weight: 800; color: var(--green); margin: 8px 0; }
+.wallet-balance .unit { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+.wallet-address { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.wallet-address:hover .wallet-value { color: var(--blue); }
+.wallet-copy { font-size: 10px; color: var(--text-muted); }
+
 /* Loading */
 .loading { text-align: center; padding: 60px; color: var(--text-muted); }
 .loading::after { content: ''; display: block; width: 28px; height: 28px; margin: 16px auto; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -215,6 +227,7 @@ body {
         <a href="/dashboard/oracles">Oracles</a>
         <a href="/dashboard/tasks">Tasks</a>
         <a href="/mcp/">MCP</a>
+        <a href="/dashboard/wallet">Wallet</a>
       </nav>
     </div>
     <div class="topbar-right">
@@ -306,6 +319,10 @@ function renderDashboard(data) {
       </div>
 
       <div class="sidebar-right">
+        <div class="card wallet-card">
+          <h3>Wallet</h3>
+          <div id="wallet-content"><div style="color:var(--text-muted);font-size:12px;">Loading…</div></div>
+        </div>
         <div class="card agent-list">
           <h3>Agents <span id="agent-count" style="color:var(--green);font-size:11px;"></span></h3>
           <div id="agent-items"><div style="color:var(--text-muted);font-size:12px;">Scanning…</div></div>
@@ -327,6 +344,7 @@ function renderDashboard(data) {
   renderQuickProviders(providers);
   renderAgents(window._agents);
   renderA2AStats(data);
+  renderWallet(data);
 }
 
 function renderTrustChart(providers) {
@@ -418,6 +436,32 @@ function renderA2AStats(data) {
     '<div class="a2a-row"><span class="a2a-label">Completed</span><span class="a2a-value" style="color:var(--green)">' + completed + '</span></div>' +
     '<div class="a2a-row"><span class="a2a-label">Success</span><span class="a2a-value" style="color:var(--' + (successRate >= 80 ? 'green' : successRate >= 50 ? 'amber' : 'red') + ')">' + successRate + '%</span></div>' +
     '<div style="margin-top:10px;text-align:center"><a href="/dashboard/tasks" style="color:var(--blue);font-size:12px;">Manage tasks →</a></div>';
+}
+
+function renderWallet(data) {
+  const content = document.getElementById('wallet-content');
+  if (!content) return;
+  const wallet = data.wallet;
+  if (!wallet) { content.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No wallet configured</div>'; return; }
+  const networkColor = wallet.network === 'mainnet' ? 'var(--green)' : wallet.network === 'testnet' ? 'var(--amber)' : 'var(--cyan)';
+  const shortId = wallet.account_id ? wallet.account_id.substring(0, 8) + '…' + wallet.account_id.substring(wallet.account_id.length - 4) : '—';
+  content.innerHTML =
+    '<div class="wallet-balance">' + (wallet.balance_hbar || '0.00') + ' <span class="unit">HBAR</span></div>' +
+    '<div class="wallet-row"><span class="wallet-label">Account</span></div>' +
+    '<div class="wallet-address" onclick="copyWalletId(\'' + (wallet.account_id || '') + '\')" title="Click to copy">' +
+    '<span class="wallet-value">' + shortId + '</span>' +
+    '<span class="wallet-copy">📋</span></div>' +
+    '<div class="wallet-row"><span class="wallet-label">Network</span><span class="wallet-value" style="color:' + networkColor + '">' + wallet.network + '</span></div>' +
+    '<div class="wallet-row"><span class="wallet-label">USD Value</span><span class="wallet-value" style="color:var(--cyan)">$' + (wallet.usd_value || '0.00') + '</span></div>' +
+    '<div style="margin-top:10px;text-align:center"><a href="https://hashscan.io/' + wallet.network + '/account/' + (wallet.account_id || '') + '" target="_blank" style="color:var(--blue);font-size:12px;">View on HashScan →</a></div>';
+}
+
+function copyWalletId(id) {
+  if (!id) return;
+  navigator.clipboard.writeText(id).then(() => {
+    const copyEl = document.querySelector('.wallet-copy');
+    if (copyEl) { copyEl.textContent = '✓'; setTimeout(() => { copyEl.textContent = '📋'; }, 1500); }
+  });
 }
 
 let _sortCol = 'trust_score', _sortDir = 'desc';
@@ -558,6 +602,47 @@ def _collect_dashboard_data(request: Request) -> dict:
     }
 
 
+async def _collect_wallet_data(request: Request) -> dict:
+    import httpx
+    settings = getattr(request.app.state, "settings", None)
+    hedera_manager = getattr(request.app.state, "hedera_manager", None)
+    if not settings or not settings.hedera_operator_id:
+        return None
+    account_id = settings.hedera_operator_id
+    network = settings.hedera_network
+    mirror_url = settings.mirror_node_url
+    balance_hbar = 0.0
+    public_key = ""
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(f"{mirror_url}/api/v1/accounts/{account_id}")
+            if resp.status_code == 200:
+                acc = resp.json()
+                balance_hbar = round(int(acc.get("balance", {}).get("balance", 0)) / 100_000_000, 4)
+                key_info = acc.get("key", {})
+                if key_info:
+                    public_key = key_info.get("key", "")
+    except Exception:
+        pass
+    hbar_price = 0.0
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get("https://api.coingecko.com/api/v3/simple/price?ids=hedera-hashgraph&vs_currencies=usd")
+            if resp.status_code == 200:
+                hbar_price = resp.json().get("hedera-hashgraph", {}).get("usd", 0)
+    except Exception:
+        pass
+    return {
+        "account_id": account_id,
+        "public_key": public_key,
+        "balance_hbar": f"{balance_hbar:.4f}",
+        "hbar_price": f"{hbar_price:.4f}" if hbar_price else "—",
+        "network": network,
+        "mirror_url": mirror_url,
+        "usd_value": f"{balance_hbar * hbar_price:.2f}" if hbar_price else "0.00",
+    }
+
+
 LOGIN_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -568,13 +653,13 @@ LOGIN_HTML = """<!DOCTYPE html>
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  background: #06080f; color: #f0f2f7;
+  background: #000000; color: #f0f2f7;
   font-family: 'Inter', sans-serif; min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
 }
 .container { max-width: 400px; width: 100%; padding: 24px; }
 .card {
-  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
   border-radius: 16px; padding: 40px 32px; text-align: center;
 }
 .logo { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
@@ -584,7 +669,7 @@ h1 { font-size: 20px; font-weight: 700; margin: 24px 0 8px; }
 p { font-size: 14px; color: #8b92a8; margin-bottom: 24px; }
 input {
   width: 100%; padding: 12px 16px; border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04);
   color: #f0f2f7; font-size: 15px; font-family: inherit;
   outline: none; transition: border-color 0.2s;
 }
@@ -684,6 +769,11 @@ async def get_dashboard_data(request: Request, dash_token: str | None = Cookie(N
             }
         except Exception:
             data["a2a"] = {"tasks_by_status": {}, "total_tasks": 0, "total_contexts": 0}
+        # Add wallet info
+        try:
+            data["wallet"] = await _collect_wallet_data(request)
+        except Exception:
+            data["wallet"] = None
         return JSONResponse(data)
     except Exception as e:
         return JSONResponse({"error": str(e)})
@@ -765,8 +855,8 @@ ORACLE_HTML = """<!DOCTYPE html>
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
-  --bg: #06080f; --surface: rgba(255,255,255,0.03); --surface-hover: rgba(255,255,255,0.06);
-  --border: rgba(255,255,255,0.06); --border-hover: rgba(255,255,255,0.12);
+  --bg: #000000; --surface: rgba(255,255,255,0.04); --surface-hover: rgba(255,255,255,0.07);
+  --border: rgba(255,255,255,0.08); --border-hover: rgba(255,255,255,0.15);
   --text: #f0f2f7; --text-secondary: #8b92a8; --text-muted: #555b70;
   --blue: #3b82f6; --purple: #8b5cf6; --cyan: #06b6d4; --green: #10b981; --amber: #f59e0b; --red: #ef4444;
   --radius: 14px; --radius-sm: 10px;
@@ -844,6 +934,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', system-u
         <a href="/dashboard/oracles" class="active">Oracles</a>
         <a href="/dashboard/tasks">Tasks</a>
         <a href="/mcp/">MCP</a>
+        <a href="/dashboard/wallet">Wallet</a>
       </nav>
     </div>
     <div style="display:flex;gap:12px;align-items:center;">
@@ -944,8 +1035,8 @@ TASKS_HTML = """<!DOCTYPE html>
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
-  --bg: #06080f; --surface: rgba(255,255,255,0.03); --surface-hover: rgba(255,255,255,0.06);
-  --border: rgba(255,255,255,0.06); --border-hover: rgba(255,255,255,0.12);
+  --bg: #000000; --surface: rgba(255,255,255,0.04); --surface-hover: rgba(255,255,255,0.07);
+  --border: rgba(255,255,255,0.08); --border-hover: rgba(255,255,255,0.15);
   --text: #f0f2f7; --text-secondary: #8b92a8; --text-muted: #555b70;
   --blue: #3b82f6; --purple: #8b5cf6; --cyan: #06b6d4; --green: #10b981; --amber: #f59e0b; --red: #ef4444;
   --radius: 14px; --radius-sm: 10px;
@@ -1032,6 +1123,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', system-u
         <a href="/dashboard/oracles">Oracles</a>
         <a href="/dashboard/tasks" class="active">Tasks</a>
         <a href="/mcp/">MCP</a>
+        <a href="/dashboard/wallet">Wallet</a>
       </nav>
     </div>
     <span class="badge" id="status-badge">Loading...</span>
@@ -1113,10 +1205,270 @@ function showDetail(taskId) {
 }
 
 fetchData();
-setInterval(fetchData, 15000);
+setInterval(fetchData, 30000);
 </script>
 </body>
 </html>"""
 
 
+# ── Wallet Routes ──────────────────────────────────────────────
+
+
+@router.get("/dashboard/wallet", response_class=HTMLResponse, include_in_schema=False)
+async def get_wallet(request: Request, dash_token: str | None = Cookie(None)):
+    _check_dash_auth(request, dash_token)
+    return HTMLResponse(WALLET_HTML)
+
+
+@router.get("/dashboard/wallet/data", include_in_schema=False)
+async def get_wallet_data(request: Request, dash_token: str | None = Cookie(None)):
+    _check_dash_auth(request, dash_token)
+    try:
+        data = await _collect_wallet_data(request)
+        if data is None:
+            return JSONResponse({"error": "No wallet configured. Set HEDERA_OPERATOR_ID."})
+        return JSONResponse({"wallet": data})
+    except Exception as e:
+        return JSONResponse({"error": str(e)})
+
+
+WALLET_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HashA2A — Wallet</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #000000; --surface: rgba(255,255,255,0.04); --surface-hover: rgba(255,255,255,0.07);
+  --border: rgba(255,255,255,0.08); --border-hover: rgba(255,255,255,0.15);
+  --text: #f0f2f7; --text-secondary: #8b92a8; --text-muted: #555b70;
+  --blue: #3b82f6; --purple: #8b5cf6; --cyan: #06b6d4;
+  --green: #10b981; --amber: #f59e0b; --red: #ef4444;
+  --radius: 14px; --radius-sm: 10px;
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased; min-height: 100vh;
+}
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.025) 1px, transparent 0);
+  background-size: 36px 36px;
+}
+.bg-gradient {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse 70% 50% at 30% 0%, rgba(59,130,246,0.04) 0%, transparent 60%),
+              radial-gradient(ellipse 50% 40% at 80% 10%, rgba(139,92,246,0.03) 0%, transparent 50%);
+}
+.app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 16px; }
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 24px; margin-bottom: 24px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); backdrop-filter: blur(12px);
+}
+.topbar-logo { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; display:flex; align-items:center; gap:10px; }
+.topbar-logo .hash { color: var(--blue); }
+.topbar-logo .a2a { color: var(--purple); }
+.topbar-nav { display: flex; gap: 4px; }
+.topbar-nav a {
+  padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  color: var(--text-secondary); transition: all 0.2s;
+}
+.topbar-nav a:hover, .topbar-nav a.active { color: var(--text); background: var(--surface-hover); }
+
+/* Balance Hero */
+.balance-hero {
+  background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.06));
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 48px 40px; text-align: center; margin-bottom: 24px;
+  position: relative; overflow: hidden;
+}
+.balance-hero::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--blue), var(--purple), var(--cyan));
+}
+.balance-label { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.balance-amount {
+  font-size: 56px; font-weight: 900; letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin: 12px 0 4px;
+}
+.balance-unit { font-size: 18px; color: var(--text-muted); font-weight: 500; }
+.balance-usd { font-size: 20px; color: var(--text-secondary); margin-top: 8px; }
+
+/* Account Info */
+.account-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; margin-bottom: 24px;
+}
+.account-card h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.06em; }
+.account-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.account-row:last-child { border-bottom: none; }
+.account-label { font-size: 13px; color: var(--text-muted); }
+.account-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; }
+.copy-btn {
+  background: var(--surface-hover); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px; font-size: 11px; color: var(--text-secondary);
+  cursor: pointer; margin-left: 10px; transition: all 0.2s;
+}
+.copy-btn:hover { background: var(--border-hover); color: var(--text); }
+
+/* Network Badge */
+.network-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+}
+.network-badge.mainnet { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+.network-badge.testnet { background: rgba(245,158,11,0.1); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+.network-badge.previewnet { background: rgba(6,182,212,0.1); color: var(--cyan); border: 1px solid rgba(6,182,212,0.2); }
+.network-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+/* Stats Grid */
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 700px) { .stats-grid { grid-template-columns: 1fr; } }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 24px; position: relative; overflow: hidden;
+}
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.stat-card.blue::before { background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+.stat-card.purple::before { background: linear-gradient(90deg, var(--purple), var(--blue)); }
+.stat-card.green::before { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+.stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 8px; }
+.stat-value { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+.stat-sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+/* Transactions */
+.tx-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+}
+.tx-card h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.06em; }
+.tx-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.tx-item:last-child { border-bottom: none; }
+.tx-type { font-size: 13px; font-weight: 600; }
+.tx-type.in { color: var(--green); }
+.tx-type.out { color: var(--red); }
+.tx-type.fee { color: var(--amber); }
+.tx-detail { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.tx-amount { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; }
+.tx-amount.positive { color: var(--green); }
+.tx-amount.negative { color: var(--red); }
+
+.loading { text-align: center; padding: 60px; color: var(--text-muted); }
+.loading::after { content: ''; display: block; width: 28px; height: 28px; margin: 16px auto; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.footer { text-align: center; padding: 24px; color: var(--text-muted); font-size: 12px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-gradient"></div>
+
+<div class="app">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="topbar-logo">
+        <svg width="24" height="24" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+          <polygon points="30,4 52,16 52,40 30,52 8,40 8,16" fill="none" stroke="url(#lg-w)" stroke-width="3" stroke-linejoin="round"/>
+          <polygon points="30,14 44,22 44,36 30,44 16,36 16,22" fill="url(#lg-w)" opacity="0.12"/>
+          <circle cx="30" cy="4" r="3.5" fill="#3b82f6"/>
+          <circle cx="52" cy="16" r="3.5" fill="#6366f1"/>
+          <circle cx="52" cy="40" r="3.5" fill="#8b5cf6"/>
+          <circle cx="30" cy="52" r="3.5" fill="#06b6d4"/>
+          <circle cx="8" cy="40" r="3.5" fill="#3b82f6"/>
+          <circle cx="8" cy="16" r="3.5" fill="#6366f1"/>
+          <circle cx="30" cy="28" r="4.5" fill="white" opacity="0.9"/>
+          <defs><linearGradient id="lg-w" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
+        </svg>
+        <span class="hash">Hash</span><span class="a2a">A2A</span></div>
+      <nav class="topbar-nav">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/dashboard/oracles">Oracles</a>
+        <a href="/dashboard/tasks">Tasks</a>
+        <a href="/dashboard/wallet" class="active">Wallet</a>
+      </nav>
+    </div>
+  </div>
+
+  <div id="wallet-content">
+    <div class="loading">Loading wallet data…</div>
+  </div>
+
+  <div class="footer">
+    HashA2A Wallet · Powered by Hedera Hashgraph
+  </div>
+</div>
+
+<script>
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+}
+
+function renderWallet(data) {
+  const container = document.getElementById('wallet-content');
+  if (!data || data.error) { container.innerHTML = '<div class="loading" style="color:var(--red)">' + (data?.error || 'No wallet data') + '</div>'; return; }
+  const w = data.wallet;
+  if (!w) { container.innerHTML = '<div class="loading">No wallet configured. Set HEDERA_OPERATOR_ID in .env</div>'; return; }
+
+  const netClass = w.network === 'mainnet' ? 'mainnet' : w.network === 'testnet' ? 'testnet' : 'previewnet';
+  const shortId = w.account_id.substring(0, 10) + '…' + w.account_id.substring(w.account_id.length - 6);
+  const shortKey = w.public_key ? w.public_key.substring(0, 12) + '…' + w.public_key.substring(w.public_key.length - 6) : '—';
+
+  container.innerHTML =
+    '<div class="balance-hero">' +
+      '<div class="balance-label">Total Balance</div>' +
+      '<div class="balance-amount">' + w.balance_hbar + '</div>' +
+      '<div class="balance-unit">HBAR</div>' +
+      '<div class="balance-usd">≈ $' + w.usd_value + ' USD</div>' +
+    '</div>' +
+
+    '<div class="stats-grid">' +
+      '<div class="stat-card blue"><div class="stat-label">Network</div><div class="stat-value"><span class="network-badge ' + netClass + '">' + w.network + '</span></div><div class="stat-sub">Hedera ' + w.network + '</div></div>' +
+      '<div class="stat-card purple"><div class="stat-label">Account ID</div><div class="stat-value" style="font-size:16px;font-family:JetBrains Mono,monospace;">' + shortId + '</div><div class="stat-sub">Operator account</div></div>' +
+      '<div class="stat-card green"><div class="stat-label">HBAR Price</div><div class="stat-value" style="color:var(--cyan)">$' + (w.hbar_price || '—') + '</div><div class="stat-sub">via CoinGecko</div></div>' +
+    '</div>' +
+
+    '<div class="account-card">' +
+      '<h3>Account Details</h3>' +
+      '<div class="account-row"><span class="account-label">Account ID</span><span><span class="account-value">' + w.account_id + '</span><button class="copy-btn" onclick="copyToClipboard(\\'' + w.account_id + '\\', this)">Copy</button></span></div>' +
+      '<div class="account-row"><span class="account-label">Public Key</span><span><span class="account-value">' + shortKey + '</span><button class="copy-btn" onclick="copyToClipboard(\\'' + (w.public_key || '') + '\\', this)">Copy</button></span></div>' +
+      '<div class="account-row"><span class="account-label">Network</span><span class="account-value"><span class="network-badge ' + netClass + '">' + w.network + '</span></span></div>' +
+      '<div class="account-row"><span class="account-label">Mirror Node</span><span class="account-value" style="font-size:11px;color:var(--text-muted)">' + w.mirror_url + '</span></div>' +
+    '</div>' +
+
+    '<div style="text-align:center;margin-top:24px">' +
+      '<a href="https://hashscan.io/' + w.network + '/account/' + w.account_id + '" target="_blank" style="color:var(--blue);font-size:14px;font-weight:600;">View on HashScan →</a>' +
+      '&nbsp;&nbsp;&nbsp;' +
+      '<a href="' + w.mirror_url + '/api/v1/accounts/' + w.account_id + '" target="_blank" style="color:var(--cyan);font-size:14px;font-weight:600;">Mirror Node API →</a>' +
+    '</div>';
+}
+
+async function fetchData() {
+  try {
+    const resp = await fetch('/dashboard/wallet/data');
+    const data = await resp.json();
+    renderWallet(data);
+  } catch (e) {
+    document.getElementById('wallet-content').innerHTML = '<div class="loading" style="color:var(--red)">Connection error: ' + e.message + '</div>';
+  }
+}
+
+fetchData();
+setInterval(fetchData, 30000);
+</script>
+</body>
+</html>"""
 
