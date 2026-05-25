@@ -487,7 +487,7 @@ a:hover { color: #60a5fa; }
   position: relative; z-index: 1;
   border-top: 1px solid var(--border); padding: 64px 0 32px; margin-top: 40px;
 }
-.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 40px; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
 @media (max-width: 900px) { .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; } }
 @media (max-width: 600px) { .footer-grid { grid-template-columns: 1fr; } }
 .footer-brand h3 { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
@@ -776,13 +776,6 @@ GET /llms.txt
         <a href="#features">Features</a>
         <a href="#pricing">Pricing</a>
         <a href="#integrate">Integration</a>
-        <a href="/dashboard/oracles">Oracles</a>
-      </div>
-      <div class="footer-col">
-        <h4>Dashboards</h4>
-        <a href="/dashboard">Admin Panel</a>
-        <a href="/dashboard/oracles">Oracles</a>
-        <a href="/dashboard/tasks">Tasks</a>
       </div>
       <div class="footer-col">
         <h4>API</h4>
