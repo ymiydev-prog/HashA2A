@@ -252,6 +252,24 @@ a:hover { color: #60a5fa; }
 /* Feature Icons */
 .feature-icon svg { width: 28px; height: 28px; stroke-width: 1.5; }
 
+/* Code block with copy button */
+.code-block { position: relative; }
+.copy-btn {
+  position: absolute; top: 12px; right: 12px;
+  width: 32px; height: 32px; padding: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-xs); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); transition: all 0.2s;
+  opacity: 0; z-index: 2;
+}
+.integrate-card:hover .copy-btn { opacity: 1; }
+.copy-btn:hover { background: var(--surface-hover); border-color: var(--border-hover); color: var(--text); }
+.copy-btn svg { width: 16px; height: 16px; }
+.copy-btn .check-icon { display: none; color: var(--green); }
+.copy-btn.copied .copy-icon { display: none; }
+.copy-btn.copied .check-icon { display: block; }
+
 /* Video autoplay indicator */
 .video-wrapper .play-overlay {
   position: absolute; inset: 0; display: flex;
@@ -661,6 +679,11 @@ a:hover { color: #60a5fa; }
       <div class="glass integrate-card">
         <div class="integrate-header"><h3>MCP Server</h3><span class="integrate-badge">Recommended</span></div>
         <div class="integrate-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">
+              <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
 <pre>{
   "mcpServers": {
     "hasha2a": {
@@ -671,11 +694,17 @@ a:hover { color: #60a5fa; }
 
 # 10 tools: get_price, scan_arbitrage,
 # list_providers, deep_research, and more</pre>
+          </div>
         </div>
       </div>
       <div class="glass integrate-card">
         <div class="integrate-header"><h3>REST API</h3><span class="integrate-badge">Universal</span></div>
         <div class="integrate-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">
+              <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
 <pre><code>curl -X POST</code> http://localhost:8080/api/v1/feeds/prices \\
   -H <code>"Content-Type: application/json"</code> \\
   -d <code>'{"asset":"BTC/USD"}'</code>
@@ -683,11 +712,17 @@ a:hover { color: #60a5fa; }
 <code>curl -X POST</code> http://localhost:8080/api/v1/requests \\
   -H <code>"Content-Type: application/json"</code> \\
   -d <code>'{"provider_id":"polymarket"}'</code></pre>
+          </div>
         </div>
       </div>
       <div class="glass integrate-card">
         <div class="integrate-header"><h3>A2A JSON-RPC 2.0</h3><span class="integrate-badge">Standard</span></div>
         <div class="integrate-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">
+              <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
 <pre><code>POST /api/v1/a2a/rpc</code>
 <code>{"jsonrpc":"2.0","id":"1",
   "method":"message/send",
@@ -700,11 +735,17 @@ a:hover { color: #60a5fa; }
 → task/submitted → task/working
 → task/progress → "Consulting oracles..."
 → task/completed → ✅</pre>
+          </div>
         </div>
       </div>
       <div class="glass integrate-card">
         <div class="integrate-header"><h3>Agent Discovery</h3><span class="integrate-badge">Autonomous</span></div>
         <div class="integrate-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">
+              <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
 <pre>GET /.well-known/agent.json
   → 6 interfaces (JSONRPC, SSE, MCP)
   → 5 skills with I/O schemas
@@ -714,6 +755,7 @@ a:hover { color: #60a5fa; }
 GET /llms.txt
   → Full API documentation
   → Pricing in both currencies</pre>
+          </div>
         </div>
       </div>
     </div>
@@ -767,6 +809,16 @@ GET /llms.txt
 </footer>
 
 <script>
+// Copy code button
+function copyCode(btn) {
+  const pre = btn.nextElementSibling;
+  const text = pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    setTimeout(() => btn.classList.remove('copied'), 2000);
+  });
+}
+
 // Mobile nav toggle
 const navToggle = document.getElementById('nav-toggle');
 const navLinks = document.getElementById('nav-links');
