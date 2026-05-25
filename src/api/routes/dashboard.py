@@ -361,6 +361,7 @@ function renderDashboard(data) {
   renderQuickProviders(providers);
   renderAgents(window._agents);
   renderA2AStats(data);
+  if (window._walletData) renderWallet(window._walletData);
 }
 
 function renderTrustChart(providers) {
@@ -553,7 +554,8 @@ async function fetchWalletData() {
   try {
     const resp = await fetch('/dashboard/wallet/data');
     const data = await resp.json();
-    renderWallet(data.wallet || null);
+    window._walletData = data.wallet || null;
+    renderWallet(window._walletData);
   } catch (e) {
     const content = document.getElementById('wallet-content');
     if (content) content.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Wallet unavailable</div>';
