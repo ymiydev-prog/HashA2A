@@ -203,7 +203,66 @@ a:hover { color: #60a5fa; }
 }
 .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(59,130,246,0.35); }
 
-/* Hero */
+/* Mobile Nav Toggle */
+.nav-toggle {
+  display: none; cursor: pointer;
+  width: 32px; height: 32px; padding: 4px;
+  background: none; border: none; color: var(--text);
+}
+.nav-toggle svg { width: 24px; height: 24px; }
+.nav-toggle .bar {
+  display: block; width: 100%; height: 2px;
+  background: var(--text); border-radius: 2px;
+  transition: all 0.3s ease;
+}
+.nav-toggle .bar:nth-child(2) { margin: 6px 0; }
+.nav-toggle.active .bar:nth-child(1) { transform: rotate(45deg) translate(5px, 6px); }
+.nav-toggle.active .bar:nth-child(2) { opacity: 0; }
+.nav-toggle.active .bar:nth-child(3) { transform: rotate(-45deg) translate(5px, -6px); }
+
+/* Mobile Nav */
+@media (max-width: 768px) {
+  .nav-toggle { display: block; }
+  .nav-links {
+    display: none; position: absolute; top: 64px; left: 0; right: 0;
+    flex-direction: column; background: rgba(6,8,15,0.97);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+    gap: 4px;
+  }
+  .nav-links.open { display: flex; }
+  .nav-links a { padding: 12px 16px; border-radius: var(--radius-xs); }
+  .nav-cta { text-align: center; margin-top: 8px; }
+}
+
+/* Hero Mobile */
+@media (max-width: 768px) {
+  .hero { padding: 80px 0 60px; }
+  .hero h1 { font-size: clamp(28px, 8vw, 48px); }
+  .hero p { font-size: 16px; }
+  .hero-btns { flex-direction: column; gap: 12px; align-items: center; }
+  .btn { width: 100%; max-width: 280px; justify-content: center; }
+  .container { padding: 0 16px; }
+  .section { padding: 60px 0; }
+  .section-title { font-size: clamp(24px, 6vw, 32px); }
+  .live-price { font-size: 40px; }
+  .pricing-amount { font-size: 28px; }
+}
+
+/* Feature Icons */
+.feature-icon svg { width: 28px; height: 28px; stroke-width: 1.5; }
+
+/* Video autoplay indicator */
+.video-wrapper .play-overlay {
+  position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center;
+  background: rgba(6,8,15,0.4); cursor: pointer;
+  transition: opacity 0.3s;
+}
+.video-wrapper .play-overlay:hover { opacity: 0.8; }
+.video-wrapper .play-overlay svg { width: 64px; height: 64px; }
+.video-wrapper video[autoplay] + .play-overlay,
+.video-wrapper video.playing + .play-overlay { display: none; }
 .hero {
   position: relative; z-index: 1;
   padding: 120px 0 80px; text-align: center;
@@ -453,7 +512,10 @@ a:hover { color: #60a5fa; }
       <span class="hash">Hash</span><span class="a2a">A2A</span>
       <span class="dot"></span>
     </a>
-    <div class="nav-links">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </button>
+    <div class="nav-links" id="nav-links">
       <a href="#features">Features</a>
       <a href="#pricing">Pricing</a>
       <a href="#integrate">Integrate</a>
@@ -483,9 +545,12 @@ a:hover { color: #60a5fa; }
 <section class="section video-section">
   <div class="container">
     <div class="video-wrapper">
-      <video controls preload="metadata" playsinline>
+      <video id="promo-video" autoplay muted loop playsinline preload="metadata">
         <source src="/promo.mp4" type="video/mp4">
       </video>
+      <div class="play-overlay" id="play-overlay">
+        <svg viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      </div>
     </div>
   </div>
 </section>
@@ -499,34 +564,34 @@ a:hover { color: #60a5fa; }
     </div>
     <div class="features-grid">
       <div class="glass feature-card">
-        <div class="feature-icon">🔮</div>
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
         <h3>OracleHub</h3>
         <p>Multi-oracle price aggregation from Pyth, CoinGecko, and DeFiLlama. 19 assets across crypto, commodities, and forex with median-price IQR confidence scoring.</p>
       </div>
       <div class="glass feature-card">
-        <div class="feature-icon">📊</div>
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
         <h3>Arbitrage Engine</h3>
         <p>Real-time cross-oracle spread detection. Identifies profitable opportunities across 6+ assets, ranking by confidence and spread percentage.</p>
       </div>
       <div class="glass feature-card">
-        <div class="feature-icon">🔄</div>
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></div>
         <h3>A2A Protocol</h3>
         <p>Full Google A2A compliance: JSON-RPC 2.0, SSE streaming, 7-state task lifecycle, context passing, artifact storage, AP2 mandates, and JWT auth.</p>
       </div>
       <div class="glass feature-card">
-        <div class="feature-icon">🧠</div>
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div>
         <h3>Deep Research</h3>
         <p>Web search + news + social signals + prediction market data combined with AI analysis. Premium intelligence delivered via A2A tasks.</p>
       </div>
       <div class="glass feature-card">
-        <div class="feature-icon">🔐</div>
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
         <h3>Auth + Payments</h3>
         <p>Ephemeral JWT tokens, AP2 cryptographic mandates with spending limits. Pay per query via USDC (x402), HBAR (HIP-991), or pre-authorized budgets.</p>
       </div>
       <div class="glass feature-card">
-        <div class="feature-icon">🔌</div>
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/></svg></div>
         <h3>MCP + A2A + REST</h3>
-        <p>10 MCP tools, Google A2A JSON-RPC, SSE streaming, REST API, WebSocket. Works with Claude, Cursor, LangChain, and any A2A agent.</p>
+        <p>18 MCP tools, Google A2A JSON-RPC, SSE streaming, REST API, WebSocket. Works with Claude, Cursor, LangChain, and any A2A agent.</p>
       </div>
     </div>
   </div>
@@ -702,6 +767,31 @@ GET /llms.txt
 </footer>
 
 <script>
+// Mobile nav toggle
+const navToggle = document.getElementById('nav-toggle');
+const navLinks = document.getElementById('nav-links');
+if (navToggle && navLinks) {
+  navToggle.addEventListener('click', () => {
+    navToggle.classList.toggle('active');
+    navLinks.classList.toggle('open');
+  });
+  navLinks.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      navToggle.classList.remove('active');
+      navLinks.classList.remove('open');
+    });
+  });
+}
+
+// Video autoplay + play overlay
+const video = document.getElementById('promo-video');
+const overlay = document.getElementById('play-overlay');
+if (video && overlay) {
+  video.addEventListener('play', () => { video.classList.add('playing'); overlay.style.display = 'none'; });
+  video.addEventListener('pause', () => { video.classList.remove('playing'); overlay.style.display = 'flex'; });
+  overlay.addEventListener('click', () => { video.muted = false; video.play(); });
+}
+
 // Scroll animations
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
