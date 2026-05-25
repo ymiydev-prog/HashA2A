@@ -253,8 +253,9 @@ def create_app() -> FastAPI:
                     "get_agent_profile", "analyze_market", "deep_research",
                     "aggregate_market_data", "verified_feed", "get_price",
                     "scan_arbitrage", "list_assets", "get_asset_profile",
-                    "kit_setup", "kit_account_balance", "kit_transfer_hbar",
-                    "kit_create_topic", "kit_submit_message", "kit_get_account_info",
+                    "kit_setup", "kit_account_balance", "kit_account_info",
+                    "kit_transfer_hbar", "kit_create_topic", "kit_submit_message",
+                    "kit_topic_messages",
                 ],
                 "pricing": {
                     "free": "all tools (incl. enterprise plugin)",

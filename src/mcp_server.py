@@ -413,98 +413,85 @@ def create_mcp_server() -> FastMCP:
         return "\n".join(lines)
 
     # ── Hedera Agent Kit Plugin Tools (Enterprise) ──────────────────────
+    # Lazy-init: auto-setup on first use, no manual kit_setup required.
 
+    import asyncio as _asyncio
+
+    _kit_loop = None
     _kit_plugin = None
 
-    @mcp.tool(name="kit_setup", description="[Enterprise Plugin] Set up the Hedera Agent Kit in an isolated environment. Run once before using other kit_* tools.")
-    def kit_setup() -> str:
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    def _ensure_kit_plugin() -> tuple:
+        nonlocal _kit_loop, _kit_plugin
+        if _kit_plugin is not None and getattr(_kit_plugin, '_ready', False):
+            return _kit_loop, _kit_plugin
+        if _kit_loop is None or _kit_loop.is_closed():
+            _kit_loop = _asyncio.new_event_loop()
+            _asyncio.set_event_loop(_kit_loop)
         try:
             from plugins.hedera_kit_bridge import HederaKitPlugin
-            _kit_plugin = HederaKitPlugin(
+            p = HederaKitPlugin(
                 settings.hedera_operator_id,
                 settings.hedera_operator_key,
                 settings.hedera_network,
             )
-            _kit_plugin.setup()
-            _kit_plugin.start()
-            mcp._kit_plugin = _kit_plugin
-            return "✅ Hedera Agent Kit plugin installed and running in isolated venv."
+            if not p.is_setup:
+                p.setup()
+            p.start()
+            _kit_plugin = p
+            return _kit_loop, p
+        except Exception as e:
+            raise RuntimeError(f"Kit plugin init: {e}")
+
+    def _run_kit(method: str, **kwargs) -> str:
+        try:
+            loop, plugin = _ensure_kit_plugin()
+            coro = getattr(plugin, method)(**kwargs)
+            result = loop.run_until_complete(coro)
+            return json.dumps(result, indent=2)
+        except RuntimeError as e:
+            return f"❌ {e}"
+        except Exception as e:
+            return f"❌ {method} failed: {e}"
+
+    @mcp.tool(name="kit_setup",
+              description="[Enterprise Plugin] Set up the Hedera Agent Kit isolated venv. Normally auto-called on first kit_* use.")
+    def kit_setup() -> str:
+        try:
+            _ensure_kit_plugin()
+            return "✅ Hedera Agent Kit plugin ready."
         except Exception as e:
             return f"❌ Setup failed: {e}"
 
-    @mcp.tool(name="kit_account_balance", description="[Enterprise Plugin] Get HBAR balance of a Hedera account via Hedera Agent Kit.")
+    @mcp.tool(name="kit_account_balance",
+              description="[Enterprise Plugin] Get HBAR balance of a Hedera account.")
     def kit_account_balance(account_id: str = "") -> str:
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        plugin = getattr(mcp, "_kit_plugin", None)
-        if not plugin or not plugin._ready:
-            return "❌ Kit plugin not running. Call kit_setup first."
-        try:
-            aid = account_id or settings.hedera_operator_id
-            result = loop.run_until_complete(plugin.get_account_balance(aid))
-            return json.dumps(result, indent=2)
-        except Exception as e:
-            return f"❌ Error: {e}"
+        aid = account_id or settings.hedera_operator_id
+        return _run_kit("get_account_balance", account_id=aid)
 
-    @mcp.tool(name="kit_transfer_hbar", description="[Enterprise Plugin] Transfer HBAR to another account via Hedera Agent Kit. Requires kit_setup first.")
+    @mcp.tool(name="kit_account_info",
+              description="[Enterprise Plugin] Get detailed Hedera account info.")
+    def kit_account_info(account_id: str = "") -> str:
+        aid = account_id or settings.hedera_operator_id
+        return _run_kit("get_account_info", account_id=aid)
+
+    @mcp.tool(name="kit_transfer_hbar",
+              description="[Enterprise Plugin] Transfer HBAR to another account.")
     def kit_transfer_hbar(to: str, amount: int) -> str:
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        plugin = getattr(mcp, "_kit_plugin", None)
-        if not plugin or not plugin._ready:
-            return "❌ Kit plugin not running. Call kit_setup first."
-        try:
-            result = loop.run_until_complete(plugin.transfer_hbar(to, amount))
-            return json.dumps(result, indent=2)
-        except Exception as e:
-            return f"❌ Error: {e}"
+        return _run_kit("transfer_hbar", to=to, amount=amount)
 
-    @mcp.tool(name="kit_create_topic", description="[Enterprise Plugin] Create an HCS topic via Hedera Agent Kit. Requires kit_setup first.")
+    @mcp.tool(name="kit_create_topic",
+              description="[Enterprise Plugin] Create an HCS topic.")
     def kit_create_topic(memo: str = "HashA2A Enterprise Topic") -> str:
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        plugin = getattr(mcp, "_kit_plugin", None)
-        if not plugin or not plugin._ready:
-            return "❌ Kit plugin not running. Call kit_setup first."
-        try:
-            result = loop.run_until_complete(plugin.create_topic(memo))
-            return json.dumps(result, indent=2)
-        except Exception as e:
-            return f"❌ Error: {e}"
+        return _run_kit("create_topic", memo=memo)
 
-    @mcp.tool(name="kit_submit_message", description="[Enterprise Plugin] Submit a message to an HCS topic via Hedera Agent Kit. Requires kit_setup first.")
+    @mcp.tool(name="kit_submit_message",
+              description="[Enterprise Plugin] Submit a message to an HCS topic.")
     def kit_submit_message(topic_id: str, message: str) -> str:
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        plugin = getattr(mcp, "_kit_plugin", None)
-        if not plugin or not plugin._ready:
-            return "❌ Kit plugin not running. Call kit_setup first."
-        try:
-            result = loop.run_until_complete(plugin.submit_message(topic_id, message))
-            return json.dumps(result, indent=2)
-        except Exception as e:
-            return f"❌ Error: {e}"
+        return _run_kit("submit_message", topic_id=topic_id, message=message)
 
-    @mcp.tool(name="kit_get_account_info", description="[Enterprise Plugin] Get detailed account information via Hedera Agent Kit. Requires kit_setup first.")
-    def kit_get_account_info(account_id: str = "") -> str:
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        plugin = getattr(mcp, "_kit_plugin", None)
-        if not plugin or not plugin._ready:
-            return "❌ Kit plugin not running. Call kit_setup first."
-        try:
-            aid = account_id or settings.hedera_operator_id
-            result = loop.run_until_complete(plugin.get_account_info(aid))
-            return json.dumps(result, indent=2)
-        except Exception as e:
-            return f"❌ Error: {e}"
+    @mcp.tool(name="kit_topic_messages",
+              description="[Enterprise Plugin] Get messages from an HCS topic (Mirror Node).")
+    def kit_topic_messages(topic_id: str, limit: int = 10) -> str:
+        return _run_kit("get_topic_messages", topic_id=topic_id, limit=limit)
 
     return mcp
