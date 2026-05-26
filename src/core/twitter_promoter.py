@@ -48,7 +48,7 @@ class ContentScheduler:
         "📈 Top arbitrage del día\n━━━━━━━━━━━━━━━━━━━━\n{top}\n━━━━━━━━━━━━━━━━━━━━\nDetected by HashA2A Arbitrage Engine",
     ]
     TUTORIAL_TEMPLATES = [
-        "🧵 How your AI agent gets verified prices in 3 steps:\n\n1. Connect to MCP:\n{{\n  \"mcpServers\": {{\n    \"hasha2a\": {{\"url\": \"localhost:8080/mcp\"}}\n  }}\n}}\n\n2. Call get_price(\"BTC/USD\")\n3. Get verified multi-oracle price\n\nNo API keys. No subscription.",
+        "🧵 How your AI agent gets verified prices in 3 steps:\n\n1. Connect to MCP:\n{{\n  \"mcpServers\": {{\n    \"hasha2a\": {{\"url\": \"https://hasha2a.com/mcp\"}}\n  }}\n}}\n\n2. Call get_price(\"BTC/USD\")\n3. Get verified multi-oracle price\n\nNo API keys. No subscription.",
         "🔌 HashA2A is now Google A2A Protocol compatible\n\nAny A2A agent can:\n• Send tasks via JSON-RPC 2.0\n• Receive SSE streaming\n• Pay with USDC (x402) or HBAR (HIP-991)\n• Pass context between sessions\n\nSpec: /.well-known/agent.json",
         "🚀 New: Arbitrage Scanner\n\nHashA2A detects price differences BETWEEN oracles.\nIf Pyth says $50,100 and CoinGecko says $50,050...\nwe tell you where to buy/sell.\n\nReal-time. No polling. Pay-per-query.",
         "🧠 What is OracleHub?\n\nHashA2A queries 3 sources SIMULTANEOUSLY:\n• Pyth (first-party exchanges, 400ms)\n• CoinGecko (200+ exchanges)\n• DeFiLlama/Chainlink (11 nodes)\n\n→ Median + IQR + confidence score\n\nVerified data, not a random number.",

@@ -9,7 +9,7 @@
 ![A2A](https://img.shields.io/badge/A2A-Compliant-8B5CF6)
 ![MCP](https://img.shields.io/badge/MCP-18%20Tools-3B82F6)
 ![License](https://img.shields.io/badge/license-MIT-F7DF1E)
-![Tests](https://img.shields.io/badge/tests-105%2F105-brightgreen)
+![Tests](https://img.shields.io/badge/tests-115%2F115-brightgreen)
 
 ---
 
@@ -31,12 +31,13 @@
 | 🔍 **Deep Research** | Web search + news + social signals + prediction markets + AI |
 | 💳 **x402 Triple Rail** | USDC on Base + HBAR/HTS on Hedera + **Circle Gateway** (gasless USDC via Agent Wallet, **6/6 verification rules**: layout, amount, fee payer safety, signature, nonce, asset) |
 | 🔐 **JWT Auth** | Ephemeral tokens (60s-3600s TTL) with scope-based authorization |
-| 🎯 **Prediction Markets** | Polymarket, Kalshi, PredictIt, Manifold — cross-validated probabilities |
+| 🎯 **Prediction Markets** | Polymarket, Kalshi, PredictIt, Manifold, Hyperliquid — cross-validated probabilities |
 | ⭐ **Quality Evaluation** | Auto-score every provider response — latency, completeness, accuracy, outlier detection |
 | 🏢 **Enterprise Plugin** | Isolated `hedera-agent-kit` bridge — 6 additional MCP tools for account/topic/tx management |
 | 📈 **Dashboards** | Live oracle prices, spread history, A2A tasks, **wallet balance/transactions** |
 | 🔄 **Reverse Auctions** | Providers bid on requests — agents get the best price/quality |
 | 🥩 **Staking & Slashing** | Provider reputation with stake-based slashing for bad data |
+| 💚 **Health Checks** | Live API health indicators (green/red) per provider — auto-detects outages |
 | 🐳 **Docker** | One-command deployment with docker-compose → **mainnet live** |
 
 ## Quick Start
@@ -231,7 +232,7 @@ Add to `.vscode/mcp.json` or VS Code MCP settings:
 
 ## Pricing
 
-USDC prices are **fixed**. HBAR prices update in **real-time** from CoinGecko.
+USDC prices are **fixed**. HBAR prices update in **real-time** from Binance + CoinGecko fallback.
 
 | Product | USDC | HBAR (live) |
 |---------|------|-------------|
@@ -317,7 +318,7 @@ submitted → working → input-required → completed
 ## Testing
 
 ```bash
-# All tests (105 passing)
+# All tests (115 passing)
 PYTHONPATH=src python -m pytest tests/ -v
 
 # Smoke tests only (no credentials needed)
@@ -380,10 +381,11 @@ PYTHONPATH=src python -m pytest tests/ -m e2e -v
 | Path | Description |
 |------|-------------|
 | `/` | Landing page with live BTC price |
-| `/dashboard` | Main admin dashboard |
+| `/dashboard` | Main admin dashboard — provider cards, wallet, health status |
 | `/dashboard/oracles` | Oracle prices + spread history charts |
 | `/dashboard/tasks` | A2A task management dashboard |
 | `/dashboard/wallet` | Wallet balance, USD equivalent, transactions |
+| `/dashboard/health` | Provider health check API (JSON) |
 
 ## Quick Start (Local Dev)
 
