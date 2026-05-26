@@ -1,12 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 router = APIRouter(tags=["landing"])
 
 
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def get_landing():
-    return HTMLResponse(LANDING_HTML)
+async def get_landing(request: Request):
+    base_url = str(request.base_url).rstrip("/")
+    html = LANDING_HTML.replace("http://localhost:8080", base_url)
+    return HTMLResponse(html)
 
 
 def _read_well_known(subpath: str) -> str:
