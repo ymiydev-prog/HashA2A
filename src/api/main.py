@@ -242,6 +242,7 @@ def create_app() -> FastAPI:
     app.include_router(feeds_router, prefix="/api/v1")
 
     @app.get("/mcp", include_in_schema=False)
+    @app.get("/mcp/", include_in_schema=False)
     async def mcp_get_info():
         return JSONResponse({
             "name": "HashA2A MCP Server",
@@ -271,8 +272,7 @@ def create_app() -> FastAPI:
             },
         })
 
-    @app.post("/mcp", include_in_schema=False)
-    async def mcp_post_handler(request: Request):
+    async def _mcp_post_delegate(request: Request):
         mcp_app = app.state.mcp_app
         scope = dict(request.scope)
         scope["path"] = "/"
@@ -293,6 +293,11 @@ def create_app() -> FastAPI:
         body = b"".join(chunks)
         content_type = resp_headers.get("content-type", "text/event-stream")
         return Response(content=body, status_code=status, media_type=content_type, headers=resp_headers)
+
+    @app.post("/mcp", include_in_schema=False)
+    @app.post("/mcp/", include_in_schema=False)
+    async def mcp_post_handler(request: Request):
+        return await _mcp_post_delegate(request)
 
     @app.get("/mcp/{path:path}", include_in_schema=False)
     async def mcp_get_sub(path: str):
