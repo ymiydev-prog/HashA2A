@@ -1,7 +1,4 @@
-<div align="center">
-
-# 🤖 HashA2A 
-## *The Agent-to-Agent Intelligence Layer*
+# 🤖 HashA2A — The Agent-to-Agent Intelligence Layer
 
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
 ![Hedera](https://img.shields.io/badge/Hedera-Mainnet-00B4D8?logo=hedera&logoColor=white)
@@ -11,13 +8,7 @@
 ![License](https://img.shields.io/badge/license-MIT-F7DF1E)
 ![Tests](https://img.shields.io/badge/tests-115%2F115-brightgreen)
 
----
-
 > **HashA2A** is a decentralized **agent-to-agent data marketplace** running on **Hedera mainnet**. AI agents buy verified multi-oracle intelligence via **HBAR (HIP-991)** or **USDC (x402/AP2)** micropayments.
-
----
-
-</div>
 
 ## What it does
 
