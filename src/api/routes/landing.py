@@ -701,12 +701,13 @@ a:hover { color: #60a5fa; }
 <pre>{
   "mcpServers": {
     "hasha2a": {
-      "url": "http://localhost:8080/mcp"
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:8080/mcp"]
     }
   }
 }
 
-# 10 tools: get_price, scan_arbitrage,
+# 19 tools: get_price, list_assets, scan_arbitrage,
 # list_providers, deep_research, and more</pre>
           </div>
         </div>
