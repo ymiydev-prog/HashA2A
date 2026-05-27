@@ -109,7 +109,7 @@ class HederaManager:
             .set_memo(memo)
             .set_admin_key(self.operator_key.public_key())
         )
-        tx.transaction_fee = 50_000_000  # 0.05 HBAR max (HIP-1261 Simple Fees)
+        tx.transaction_fee = 3_000_000_000  # 30 HBAR max (HIP-1261 Simple Fees)
         tx.freeze_with(self.client)
         tx.sign(self.operator_key)
 
@@ -138,7 +138,7 @@ class HederaManager:
                     .set_fee_collector_account_id(collector)
             ])
         )
-        tx.transaction_fee = 100_000_000  # 0.1 HBAR max for HIP-991 (HIP-1261 Simple Fees)
+        tx.transaction_fee = 5_000_000_000  # 50 HBAR max for HIP-991 (HIP-1261 Simple Fees)
         tx.freeze_with(self.client)
         tx.sign(self.operator_key)
 
