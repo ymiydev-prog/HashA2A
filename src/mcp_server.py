@@ -35,7 +35,7 @@ def create_mcp_server() -> FastMCP:
         name="HashA2A",
         instructions=(
             "Agent-to-Agent Intelligence Layer. "
-            "18 tools: multi-oracle price feeds, arbitrage scanning, asset profiles, "
+            "19 tools: multi-oracle price feeds, arbitrage scanning, asset profiles, "
             "deep research, Hedera Agent Kit enterprise plugin. "
             "36 assets across crypto (21), equities (7), commodities (2), forex (6). "
             "Pay per query via HBAR (HIP-991) or USDC (x402). "
@@ -61,7 +61,7 @@ def create_mcp_server() -> FastMCP:
             lines.append("")
         return "\n".join(lines)
 
-    @mcp.tool(name="get_market_data", description="Request processed market data from a provider. Returns payment instructions with the HCS topic ID where the agent must submit a message (HIP-991 auto-collects the fee).")
+    @mcp.tool(name="get_market_data", description="Request prediction market data from a provider (Polymarket, Kalshi, PredictIt, Manifold, Hyperliquid). Returns HCS topic ID for payment submission.")
     def get_market_data(provider_id: str, query: str = "", limit: int = 10) -> str:
         import asyncio
         loop = asyncio.new_event_loop()
@@ -120,7 +120,7 @@ def create_mcp_server() -> FastMCP:
             return f"Status: {pending.status.value}\nRequest ID: {request_id}"
         return f"Status: not_found\nRequest ID: {request_id} not found or expired"
 
-    @mcp.tool(name="get_agent_profile", description="View the HashA2A agent profile including all supported providers, active HCS topics, and total requests served.")
+    @mcp.tool(name="get_agent_profile", description="View agent profile: providers, HCS topics, trust scores, and request history.")
     def get_agent_profile() -> str:
         profile_data = {
             "name": settings.agent_name,
@@ -142,7 +142,7 @@ def create_mcp_server() -> FastMCP:
 
         return json.dumps(profile_data, indent=2)
 
-    @mcp.tool(name="analyze_market", description="Run AI-powered analysis on a provider's market data using LangChain + OpenAI. Returns natural language insights about current probabilities, sentiment, and market conditions.")
+    @mcp.tool(name="analyze_market", description="AI analysis of prediction market data (LangChain + GPT-5-nano). Returns probabilities, sentiment, and market insights.")
     def analyze_market(provider_id: str) -> str:
         from core.ai_analyzer import AIAnalyzer
 
@@ -162,7 +162,7 @@ def create_mcp_server() -> FastMCP:
             return f"AI Analysis for {provider.name}:\n\n{analysis}"
         return "Analysis unavailable (no API key or no data)."
 
-    @mcp.tool(name="aggregate_market_data", description="Collect data from ALL prediction market providers simultaneously, cross-validate prices, and produce a unified intelligence report with verification score. Costs more but provides higher-quality verified data.")
+    @mcp.tool(name="aggregate_market_data", description="Aggregate data from all 5 providers, cross-validate prices, produce unified intelligence report with verification score.")
     def aggregate_market_data(query: str = "latest markets") -> str:
         from core.ai_analyzer import AIAnalyzer
         from core.data_aggregator import DataAggregator
@@ -200,7 +200,7 @@ def create_mcp_server() -> FastMCP:
             lines.append(result.analysis)
         return "\n".join(lines)
 
-    @mcp.tool(name="deep_research", description="Perform deep research on a question: searches the web, news, social signals, AND prediction markets. Returns a comprehensive intelligence report with cited sources. This is the premium product — real research, not just API proxying.")
+    @mcp.tool(name="deep_research", description="Deep research: web + news + social signals + prediction markets. Returns comprehensive report with cited sources.")
     def deep_research(question: str) -> str:
         from core.ai_analyzer import AIAnalyzer
         from core.deep_research import DeepResearchEngine
@@ -247,7 +247,7 @@ def create_mcp_server() -> FastMCP:
             lines.append(d["analysis"])
         return "\n".join(lines)
 
-    @mcp.tool(name="verified_feed", description="Request a verified data feed — aggregates prices from ALL prediction market providers, computes median with confidence intervals (IQR-based), and returns a cryptographically-style verified price point with audit proof. Best product for agents that need reliable, verified market data.")
+    @mcp.tool(name="verified_feed", description="Verified price feed: median with IQR confidence intervals from all providers. Includes audit proof.")
     def verified_feed(topic: str = "general") -> str:
         from core.verified_feed import VerifiedFeedEngine
 

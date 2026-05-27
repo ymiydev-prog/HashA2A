@@ -135,7 +135,8 @@ Detectado por HashA2A Arbitrage Engine
 {
   "mcpServers": {
     "hasha2a": {
-      "url": "http://localhost:8080/mcp"
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://hasha2a.com/mcp"]
     }
   }
 }

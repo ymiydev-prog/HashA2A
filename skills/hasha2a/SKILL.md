@@ -135,6 +135,6 @@ Load the relevant reference file based on what the user is asking for.
 - MCP server is mounted at `/mcp/` — use Streamable HTTP protocol.
 - REST API is at `/api/v1/...`.
 - 36 assets across 5 oracle sources: Pyth, CoinGecko, DeFiLlama, Binance, ForexAPI.
-- 18 MCP tools available.
+- 19 MCP tools available.
 - 3 payment rails: HBAR (HIP-991), USDC (x402/AP2), Circle Gateway.
 - x402 Hedera has 6 verification rules: layout, amount exactness, fee payer safety, signature, nonce, asset.

@@ -7,7 +7,7 @@
 ![Hedera](https://img.shields.io/badge/Hedera-Mainnet-00B4D8?logo=hedera&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)
 ![A2A](https://img.shields.io/badge/A2A-Compliant-8B5CF6)
-![MCP](https://img.shields.io/badge/MCP-18%20Tools-3B82F6)
+![MCP](https://img.shields.io/badge/MCP-19%20Tools-3B82F6)
 ![License](https://img.shields.io/badge/license-MIT-F7DF1E)
 ![Tests](https://img.shields.io/badge/tests-115%2F115-brightgreen)
 
@@ -35,12 +35,12 @@ AI agents, trading bots, DeFi protocols, and enterprise teams that need verified
 
 - **Server URL:** `https://hasha2a.com/mcp`
 - **Auth:** HBAR (HIP-991 auto-fees) or USDC (x402/Circle Gateway, gasless)
-- **Transport:** Streamable HTTP, remote hosted
+- **Transport:** Streamable HTTP (remote) or stdio via `mcp-remote`
 - **Install:** `npx hasha2a-mcp-client add`
 
 ## Trust
 
-- **18 MCP tools**, 5 oracle sources (36 assets), 5 prediction market providers
+- **19 MCP tools**, 5 oracle sources (36 assets), 5 prediction market providers
 - **115 tests passing**, mainnet live on **Hedera**
 - **HIP-991** fee collection, **HIP-1261** simple fees
 - **x402 6-rule verification**: layout, amount, fee payer, signature, nonce, asset
@@ -94,7 +94,7 @@ curl http://localhost:8080/api/v1/agent/health
 ```
 Agent Client (Claude, LangChain, Google A2A, MCP)
        │
-       ├── MCP  ───── http://localhost:8080/mcp        (18 tools)
+        ├── MCP  ───── http://localhost:8080/mcp        (19 tools)
        ├── A2A  ───── http://localhost:8080/api/v1/a2a/rpc
        ├── SSE  ───── http://localhost:8080/api/v1/a2a/rpc/stream
        ├── REST ───── http://localhost:8080/api/v1/...
@@ -150,13 +150,14 @@ curl -fsSL https://raw.githubusercontent.com/ymiydev-prog/HashA2A/main/scripts/i
 {
   "mcpServers": {
     "hasha2a": {
-      "url": "http://localhost:8080/mcp"
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://hasha2a.com/mcp"]
     }
   }
 }
 ```
 
-### Tools (18)
+### Tools (19)
 
 #### Oracle & Data
 | Tool | Description |
@@ -186,6 +187,7 @@ curl -fsSL https://raw.githubusercontent.com/ymiydev-prog/HashA2A/main/scripts/i
 | `kit_transfer_hbar` | Transfer HBAR to another account |
 | `kit_create_topic` | Create an HCS topic |
 | `kit_submit_message` | Submit message to HCS topic |
+| `kit_topic_messages` | Get messages from HCS topic (Mirror Node) |
 | `kit_get_account_info` | Get detailed account information |
 
 ## AI Agent SKILL
@@ -208,7 +210,7 @@ Source: [`skills/hasha2a/SKILL.md`](skills/hasha2a/SKILL.md) + [`skills/hasha2a/
 
 ### AI Prompts
 
-Copy-paste ready prompts at [`docs/ai-prompts.md`](docs/ai-prompts.md) — 15 prompts covering all 18 MCP tools, REST API, payment flows, and Hedera operations.
+Copy-paste ready prompts at [`docs/ai-prompts.md`](docs/ai-prompts.md) — 15 prompts covering all 19 MCP tools, REST API, payment flows, and Hedera operations.
 
 ## IDE Setup
 
@@ -239,7 +241,7 @@ npx skills add ymiydev-prog/HashA2A --skill hasha2a -g -y
 ```bash
 npx hasha2a-mcp-client add
 # Or manually add to .cursor/mcp.json:
-# { "mcpServers": { "hasha2a": { "url": "http://localhost:8080/mcp" } } }
+# { "mcpServers": { "hasha2a": { "command": "npx", "args": ["-y", "mcp-remote", "https://hasha2a.com/mcp"] } } }
 ```
 
 ### Windsurf
@@ -262,7 +264,7 @@ npx skills add ymiydev-prog/HashA2A --skill hasha2a -g -y
 ### Visual Studio Code (VS Code)
 Add to `.vscode/mcp.json` or VS Code MCP settings:
 ```json
-{ "servers": { "hasha2a": { "url": "http://localhost:8080/mcp" } } }
+{ "servers": { "hasha2a": { "command": "npx", "args": ["-y", "mcp-remote", "https://hasha2a.com/mcp"] } } }
 ```
 
 ## Pricing
@@ -443,7 +445,7 @@ PORT=8082 python runner.py
 
 - **Python 3.12** + **FastAPI** + **Uvicorn**
 - **Hiero SDK 0.2.6** (Hedera HCS + HIP-991 + HIP-1261)
-- **MCP** (Model Context Protocol, 18 tools)
+- **MCP** (Model Context Protocol, 19 tools)
 - **A2A** (Google Agent-to-Agent protocol)
 - **LangChain** + **OpenAI** (GPT-5-nano)
 - **x402** (Base USDC + Hedera HBAR/HTS, 6-rule verification)

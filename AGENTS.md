@@ -73,7 +73,7 @@ Import note: LangChain ≥1.2 moved message classes to `langchain_core.messages`
 
 ## MCP
 
-18 tools: `get_price`, `list_assets`, `get_asset_profile`, `scan_arbitrage`, `verified_feed`, `list_providers`, `get_market_data`, `check_request`, `get_agent_profile`, `analyze_market`, `deep_research`, `aggregate_market_data`, `kit_setup`, `kit_account_balance`, `kit_transfer_hbar`, `kit_create_topic`, `kit_submit_message`, `kit_get_account_info`.
+19 tools: `get_price`, `list_assets`, `get_asset_profile`, `scan_arbitrage`, `verified_feed`, `list_providers`, `get_market_data`, `check_request`, `get_agent_profile`, `analyze_market`, `deep_research`, `aggregate_market_data`, `kit_setup`, `kit_account_balance`, `kit_transfer_hbar`, `kit_create_topic`, `kit_submit_message`, `kit_topic_messages`, `kit_get_account_info`.
 
 Streamable HTTP protocol requires `Accept: application/json, text/event-stream` header. After `initialize`, subsequent requests need `Mcp-Session-Id` header. Debug with:
 
@@ -83,7 +83,7 @@ npx -y @modelcontextprotocol/inspector http://localhost:8080/mcp
 
 ## README
 
-READme está actualizado y refleja el estado real del proyecto (mainnet, 18 tools, 36 assets, 5 oracles, pricing dinámico, calidad, subastas, staking).
+READme está actualizado y refleja el estado real del proyecto (mainnet, 19 tools, 36 assets, 5 oracles, pricing dinámico, calidad, subastas, staking).
 
 ## Package npm
 
@@ -103,7 +103,7 @@ npx skills add ymiydev-prog/HashA2A --skill hasha2a -g -y
 
 ## AI Prompts
 
-`docs/ai-prompts.md` — 15 prompts copia-pega para todos los 18 MCP tools, API REST, payment flows y operaciones Hedera.
+`docs/ai-prompts.md` — 15 prompts copia-pega para todos los 19 MCP tools, API REST, payment flows y operaciones Hedera.
 
 ## Circle Agent Wallet Integration
 

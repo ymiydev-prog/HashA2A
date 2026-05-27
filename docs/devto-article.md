@@ -91,7 +91,7 @@ All transactions use **HIP-1261 Simple Fees** — transaction fees are capped at
 ## Architecture in One Diagram
 
 ```
-Agent → MCP (18 tools) → HashA2A → OracleHub (5 sources, 36 assets)
+Agent → MCP (19 tools) → HashA2A → OracleHub (5 sources, 36 assets)
                                 → Arbitrage Engine
                                 → Deep Research (LangChain + OpenAI)
                                 → Prediction Markets (5 providers)

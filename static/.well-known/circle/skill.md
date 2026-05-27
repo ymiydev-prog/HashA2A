@@ -52,11 +52,11 @@ npx hasha2a-mcp-client add
 
 ## MCP Tools
 
-18 tools available after setup:
+19 tools available after setup:
 - **Oracle & Data**: `get_price`, `list_assets`, `get_asset_profile`, `scan_arbitrage`, `verified_feed`
 - **AI & Research**: `analyze_market`, `deep_research`
 - **Prediction Markets**: `list_providers`, `get_market_data`, `check_request`, `get_agent_profile`, `aggregate_market_data`
-- **Hedera Kit**: `kit_setup`, `kit_account_balance`, `kit_transfer_hbar`, `kit_create_topic`, `kit_submit_message`, `kit_get_account_info`
+- **Hedera Kit**: `kit_setup`, `kit_account_balance`, `kit_transfer_hbar`, `kit_create_topic`, `kit_submit_message`, `kit_topic_messages`, `kit_get_account_info`
 
 ## Support
 

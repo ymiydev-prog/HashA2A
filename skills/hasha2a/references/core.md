@@ -9,7 +9,7 @@
 | Network | Hedera mainnet |
 | Operator | `0.0.603064` |
 
-## MCP Tools (18)
+## MCP Tools (19)
 
 ### Oracle & Data
 
@@ -42,6 +42,7 @@
 | `kit_transfer_hbar` | `to` (str), `amount` (int, tinybars) | Transfer HBAR |
 | `kit_create_topic` | `memo` (optional str) | Create HCS topic |
 | `kit_submit_message` | `topic_id` (str), `message` (str) | Submit HCS message |
+| `kit_topic_messages` | `topic_id` (str), `limit` (int) | Get messages from HCS topic (Mirror Node) |
 | `kit_get_account_info` | `account_id` (str) | Account details |
 
 ## REST API
