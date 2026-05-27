@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from core.config import Settings
@@ -241,44 +241,67 @@ def create_app() -> FastAPI:
     from api.routes.feeds import router as feeds_router
     app.include_router(feeds_router, prefix="/api/v1")
 
-    async def mcp_asgi(scope, receive, send):
-        if scope["type"] != "http":
-            return
+    @app.get("/mcp", include_in_schema=False)
+    async def mcp_get_info():
+        return JSONResponse({
+            "name": "HashA2A MCP Server",
+            "protocol": "MCP Streamable HTTP",
+            "version": "0.2.0",
+            "tools": [
+                "list_providers", "get_market_data", "check_request",
+                "get_agent_profile", "analyze_market", "deep_research",
+                "aggregate_market_data", "verified_feed", "get_price",
+                "scan_arbitrage", "list_assets", "get_asset_profile",
+                "kit_setup", "kit_account_balance", "kit_account_info",
+                "kit_transfer_hbar", "kit_create_topic", "kit_submit_message",
+                "kit_topic_messages",
+            ],
+            "pricing": {
+                "free": "all tools (incl. enterprise plugin)",
+                "paid": "get_market_data (0.5 HBAR), deep_research (1 HBAR), get_price ($0.25 USDC), scan_arbitrage ($0.50 USDC)",
+            },
+            "discovery": {
+                "a2a_agent_card": "/.well-known/agent.json",
+                "x402_manifest": "/.well-known/x402.json",
+                "llms_txt": "/llms.txt",
+            },
+            "example": {
+                "jsonrpc": "2.0", "id": 1,
+                "method": "tools/list", "params": {},
+            },
+        })
 
-        if scope["method"] == "GET":
-            resp = JSONResponse({
-                "name": "HashA2A MCP Server",
-                "protocol": "MCP Streamable HTTP",
-                "version": "0.2.0",
-                "tools": [
-                    "list_providers", "get_market_data", "check_request",
-                    "get_agent_profile", "analyze_market", "deep_research",
-                    "aggregate_market_data", "verified_feed", "get_price",
-                    "scan_arbitrage", "list_assets", "get_asset_profile",
-                    "kit_setup", "kit_account_balance", "kit_account_info",
-                    "kit_transfer_hbar", "kit_create_topic", "kit_submit_message",
-                    "kit_topic_messages",
-                ],
-                "pricing": {
-                    "free": "all tools (incl. enterprise plugin)",
-                    "paid": "get_market_data (0.5 HBAR), deep_research (1 HBAR), get_price ($0.25 USDC), scan_arbitrage ($0.50 USDC)",
-                },
-                "discovery": {
-                    "a2a_agent_card": "/.well-known/agent.json",
-                    "x402_manifest": "/.well-known/x402.json",
-                    "llms_txt": "/llms.txt",
-                },
-                "example": {
-                    "jsonrpc": "2.0", "id": 1,
-                    "method": "tools/list", "params": {},
-                },
-            })
-            await resp(scope, receive, send)
-        else:
-            mcp_app = app.state.mcp_app
-            await mcp_app(scope, receive, send)
+    @app.post("/mcp", include_in_schema=False)
+    async def mcp_post_handler(request: Request):
+        mcp_app = app.state.mcp_app
+        scope = dict(request.scope)
+        scope["path"] = "/"
+        scope["root_path"] = ""
+        status = 500
+        resp_headers = {}
+        chunks = []
 
-    app.mount("/mcp/", mcp_asgi)
+        async def send(msg):
+            nonlocal status, resp_headers
+            if msg["type"] == "http.response.start":
+                status = msg["status"]
+                resp_headers = {k.decode(): v.decode() for k, v in msg.get("headers", []) if k not in (b"content-length",)}
+            elif msg["type"] == "http.response.body":
+                chunks.append(msg.get("body", b""))
+
+        await mcp_app(scope, request.receive, send)
+        body = b"".join(chunks)
+        content_type = resp_headers.get("content-type", "text/event-stream")
+        return Response(content=body, status_code=status, media_type=content_type, headers=resp_headers)
+
+    @app.get("/mcp/{path:path}", include_in_schema=False)
+    async def mcp_get_sub(path: str):
+        return JSONResponse({
+            "name": "HashA2A MCP Server",
+            "protocol": "MCP Streamable HTTP",
+            "version": "0.2.0",
+            "note": f"sub-path: /{path}",
+        })
 
     import os
     static_dir = os.path.join(os.path.dirname(__file__), "..", "..", "static")
