@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import model_validator
 
 
 class Settings(BaseSettings):
@@ -9,7 +10,7 @@ class Settings(BaseSettings):
     treasury_account: str = ""
     treasury_private_key: str = ""
 
-    mirror_node_url: str = "https://testnet.mirrornode.hedera.com"
+    mirror_node_url: str = ""
     hol_registry_topic: str = "0.0.29640405"
 
     hip991_fee_hbar: float = 0.5
@@ -45,6 +46,15 @@ class Settings(BaseSettings):
 
     dashboard_password: str = ""
     """Optional password to protect /dashboard routes. Empty = public access."""
+
+    @model_validator(mode="after")
+    def _resolve_mirror_node(self):
+        if not self.mirror_node_url:
+            if self.hedera_network in ("mainnet", "mainnet,testnet"):
+                self.mirror_node_url = "https://mainnet.mirrornode.hedera.com"
+            else:
+                self.mirror_node_url = "https://testnet.mirrornode.hedera.com"
+        return self
 
     class Config:
         env_file = ".env"
