@@ -1,5 +1,6 @@
 import json
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 from core.config import Settings
 from core.hedera_manager import HederaManager
@@ -39,6 +40,11 @@ def create_mcp_server() -> FastMCP:
             "36 assets across crypto (21), equities (7), commodities (2), forex (6). "
             "Pay per query via HBAR (HIP-991) or USDC (x402). "
             "Agent discovery: /.well-known/agent.json"
+        ),
+        transport_security=TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=["hasha2a.com", "localhost:*", "127.0.0.1:*", "[::1]:*"],
+            allowed_origins=["https://hasha2a.com", "https://mcp.so", "http://localhost:*", "http://127.0.0.1:*"],
         ),
     )
 
