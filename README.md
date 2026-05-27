@@ -19,6 +19,41 @@
 
 </div>
 
+## What it does
+
+- **Multi-oracle prices** — 36 assets across 5 sources (Pyth, CoinGecko, Binance, DeFiLlama, ForexAPI). Median with IQR confidence intervals.
+- **Prediction markets** — 5 providers (Polymarket, Kalshi, PredictIt, Manifold, Hyperliquid). Cross-validated probabilities.
+- **Arbitrage scanning** — Real-time cross-oracle spread detection across all assets, ranked by opportunity.
+- **Deep research** — Web search + news + social signals + prediction markets + AI analysis (LangChain + GPT-5-nano).
+- **Enterprise plugin** — Hedera Agent Kit bridge with 6 tools: account balance, transfers, topic management, account info.
+
+## Built for
+
+AI agents, trading bots, DeFi protocols, and enterprise teams that need verified, cross-validated market data with on-chain payment rails.
+
+## Connect
+
+- **Server URL:** `https://hasha2a.com/mcp`
+- **Auth:** HBAR (HIP-991 auto-fees) or USDC (x402/Circle Gateway, gasless)
+- **Transport:** Streamable HTTP, remote hosted
+- **Install:** `npx hasha2a-mcp-client add`
+
+## Trust
+
+- **18 MCP tools**, 5 oracle sources (36 assets), 5 prediction market providers
+- **115 tests passing**, mainnet live on **Hedera**
+- **HIP-991** fee collection, **HIP-1261** simple fees
+- **x402 6-rule verification**: layout, amount, fee payer, signature, nonce, asset
+
+## Links
+
+- Docs: [github.com/ymiydev-prog/HashA2A](https://github.com/ymiydev-prog/HashA2A)
+- Agent Card: [hasha2a.com/.well-known/agent.json](https://hasha2a.com/.well-known/agent.json)
+- OpenAPI: [hasha2a.com/openapi.json](https://hasha2a.com/openapi.json)
+- Install Script: [raw.githubusercontent.com/.../install-mcp.sh](https://raw.githubusercontent.com/ymiydev-prog/HashA2A/main/scripts/install-mcp.sh)
+
+---
+
 ## Features
 
 | Feature | Description |
